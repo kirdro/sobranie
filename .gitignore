@@ -1,0 +1,6 @@
+node_modules
+.next
+out
+bun.lockb
+.DS_Store
+*.log
