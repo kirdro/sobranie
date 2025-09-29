@@ -1,44 +1,53 @@
 "use client";
 
 import { ReactNode, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { HiOutlineLightningBolt, HiOutlineChat, HiOutlinePhotograph } from "react-icons/hi";
 import { LuClock3, LuShare2 } from "react-icons/lu";
 
-const fetchActivity = async () => {
-  await new Promise((resolve) => setTimeout(resolve, 420));
-  return [
-    {
-      id: "pulse-1",
-      title: "Экспедиция RAG",
-      author: "Агата Н.",
-      description: "Собрали подборку материалов про цифровой гуманизм. ИИ выделил 3 свежих цитаты.",
-      tags: ["RAG", "анализ"],
-      icon: HiOutlineLightningBolt,
-      status: "live"
-    },
-    {
-      id: "pulse-2",
-      title: "Подкаст-эфир",
-      author: "Модуль Миссия",
-      description: "Запускаем аудио-чат, подключайтесь со своими вопросами и историями.",
-      tags: ["эфир", "сообщество"],
-      icon: HiOutlineChat,
-      status: "soon"
-    },
-    {
-      id: "pulse-3",
-      title: "Визуальный отчёт",
-      author: "Ярослав Т.",
-      description: "Опубликовал визуализацию роста подписчиков и откликов за последнюю неделю.",
-      tags: ["growth", "визуал"],
-      icon: HiOutlinePhotograph,
-      status: "replay"
-    }
-  ] as const;
+import type { Post } from "@/lib/api/types";
+import { usePostsQuery } from "@/lib/hooks/usePostsQuery";
+import { initialsFromName } from "@/lib/data/feed";
+import { formatRelativeTime } from "@/lib/utils/datetime";
+
+type Activity = {
+  id: string;
+  title: string;
+  author: string;
+  description: string;
+  tags: string[];
+  status: "live" | "soon" | "replay";
+  icon: React.ComponentType<{ className?: string }>;
 };
 
-type Activity = Awaited<ReturnType<typeof fetchActivity>>[number];
+const fallbackActivities: Activity[] = [
+  {
+    id: "pulse-1",
+    title: "Экспедиция RAG",
+    author: "Агата Н.",
+    description: "Собрали подборку материалов про цифровой гуманизм. ИИ выделил 3 свежих цитаты.",
+    tags: ["RAG", "анализ"],
+    icon: HiOutlineLightningBolt,
+    status: "live"
+  },
+  {
+    id: "pulse-2",
+    title: "Подкаст-эфир",
+    author: "Модуль Миссия",
+    description: "Запускаем аудио-чат, подключайтесь со своими вопросами и историями.",
+    tags: ["эфир", "сообщество"],
+    icon: HiOutlineChat,
+    status: "soon"
+  },
+  {
+    id: "pulse-3",
+    title: "Визуальный отчёт",
+    author: "Ярослав Т.",
+    description: "Опубликовал визуализацию роста подписчиков и откликов за последнюю неделю.",
+    tags: ["growth", "визуал"],
+    icon: HiOutlinePhotograph,
+    status: "replay"
+  }
+];
 
 const statusMeta: Record<Activity["status"], { label: string; accent: string; icon: ReactNode }> = {
   live: {
@@ -58,18 +67,53 @@ const statusMeta: Record<Activity["status"], { label: string; accent: string; ic
   }
 };
 
-export function ActivityStream() {
-  const { data, isLoading } = useQuery({ queryKey: ["activity"], queryFn: fetchActivity, refetchInterval: 6000 });
+const activityIcons = [HiOutlineLightningBolt, HiOutlineChat, HiOutlinePhotograph];
+const activityStatuses: Activity["status"][] = ["live", "soon", "replay"];
 
-  const pulses = useMemo(() => data ?? [], [data]);
+function mapPostToActivity(post: Post, index: number): Activity {
+  const icon = activityIcons[index % activityIcons.length];
+  const status = activityStatuses[index % activityStatuses.length];
+  const authorInfo = (post as unknown as { author?: { displayName?: string; firstName?: string; lastName?: string } }).author;
+  const authorName = authorInfo?.displayName
+    ?? [authorInfo?.firstName, authorInfo?.lastName].filter(Boolean).join(" ").trim()
+    ?? initialsFromName(post.authorId);
+
+  return {
+    id: post.id,
+    title: post.content.slice(0, 80) + (post.content.length > 80 ? "…" : ""),
+    author: authorName,
+    description: `Обновлено ${formatRelativeTime(post.createdAt)}`,
+    tags: (post.tags ?? []).map((tag) => tag.replace(/^#/, "")),
+    icon,
+    status
+  };
+}
+
+export function ActivityStream() {
+  const { data, isLoading, isError } = usePostsQuery(5);
+
+  const pulses = useMemo<Activity[]>(() => {
+    const posts = data?.items ?? [];
+    if (!posts.length) {
+      return fallbackActivities;
+    }
+    return posts.map(mapPostToActivity);
+  }, [data]);
+
+  if (isLoading) {
+    return <div className="surface-panel animate-pulse rounded-[24px] p-6 text-sm text-dawn/50">Загружаем живой поток...</div>;
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-[24px] border border-red-500/40 bg-red-500/10 p-6 text-sm text-red-200">
+        Поток временно недоступен. Обновите страницу позже.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {isLoading && (
-        <div className="surface-panel animate-pulse rounded-[24px] p-6 text-sm text-dawn/50">
-          Загружаем живой поток...
-        </div>
-      )}
       {pulses.map((item) => {
         const meta = statusMeta[item.status];
         const Icon = item.icon;

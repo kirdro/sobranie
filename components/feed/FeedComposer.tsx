@@ -1,35 +1,68 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { HiOutlineSparkles } from "react-icons/hi";
+import { FormEvent, useEffect, useState } from "react";
 import { useUnit } from "effector-react";
-
-import { rotateAiPrompts } from "@/lib/stores/dashboard";
+import { HiOutlineSparkles } from "react-icons/hi";
+import { postCreated, $createPostLoading, $isAuthenticated } from "@/lib/effector";
 
 type FeedComposerProps = {
   placeholder: string;
   aiLabel: string;
   submitLabel: string;
   suggestions: string[];
-  onSubmit?: (value: string) => void;
+  onSubmit?: (value: string) => Promise<void> | void;
 };
 
 export function FeedComposer({ placeholder, aiLabel, submitLabel, suggestions, onSubmit }: FeedComposerProps) {
-  const rotateSuggestions = useUnit(rotateAiPrompts);
   const [value, setValue] = useState("");
-  const [isSubmitting, setSubmitting] = useState(false);
+  const [localSuggestions, setLocalSuggestions] = useState<string[]>(suggestions);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  // Use Effector stores
+  const [isAuthenticated, isCreatingPost, onCreatePost] = useUnit([
+    $isAuthenticated,
+    $createPostLoading,
+    postCreated
+  ]);
+
+  useEffect(() => {
+    setLocalSuggestions(suggestions);
+  }, [suggestions]);
+
+  const rotateSuggestions = () => {
+    setLocalSuggestions((prev) => {
+      if (!prev.length) {
+        return prev;
+      }
+      return prev.slice(1).concat(prev[0]);
+    });
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = value.trim();
     if (!trimmed) return;
 
-    setSubmitting(true);
-    setTimeout(() => {
-      onSubmit?.(trimmed);
+    if (!isAuthenticated) {
+      setError("Войдите в систему, чтобы создать пост");
+      return;
+    }
+
+    setError(null);
+    try {
+      // Use Effector event for post creation
+      onCreatePost({
+        content: trimmed,
+        visibility: 'public',
+        tags: []
+      });
+
+      // Also call legacy onSubmit if provided
+      await onSubmit?.(trimmed);
       setValue("");
-      setSubmitting(false);
-    }, 600);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Не удалось отправить пост");
+    }
   };
 
   const handleSuggestion = (next: string) => {
@@ -59,7 +92,7 @@ export function FeedComposer({ placeholder, aiLabel, submitLabel, suggestions, o
           </button>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.25em] text-dawn/50">
-          {suggestions.map((suggestion) => (
+          {localSuggestions.map((suggestion) => (
             <button
               key={suggestion}
               type="button"
@@ -70,6 +103,7 @@ export function FeedComposer({ placeholder, aiLabel, submitLabel, suggestions, o
             </button>
           ))}
         </div>
+        {error ? <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs text-red-200">{error}</p> : null}
         <div className="flex items-center justify-between gap-4">
           <span className="flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-3 py-2 text-xs uppercase tracking-[0.25em] text-dawn/70">
             <HiOutlineSparkles className="h-4 w-4 text-accent-teal" />
@@ -77,13 +111,13 @@ export function FeedComposer({ placeholder, aiLabel, submitLabel, suggestions, o
           </span>
           <button
             type="submit"
-            disabled={isSubmitting || value.trim().length === 0}
+            disabled={isCreatingPost || value.trim().length === 0 || !isAuthenticated}
             className={`inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-midnight transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-white/40 disabled:text-midnight/60 ${
-              isSubmitting ? "animate-pulse" : ""
+              isCreatingPost ? "animate-pulse" : ""
             }`}
-            aria-busy={isSubmitting}
+            aria-busy={isCreatingPost}
           >
-            {isSubmitting ? "Отправка..." : submitLabel}
+            {isCreatingPost ? "Отправка..." : submitLabel}
           </button>
         </div>
       </form>

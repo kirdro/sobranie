@@ -1,10 +1,27 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactNode, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
 
-export function Providers({ children }: { children: ReactNode }) {
+import type { User } from "@/lib/api/types";
+import { SessionProvider } from "@/components/auth/SessionProvider";
+import { EffectorProvider } from "@/lib/effector";
+
+type ProvidersProps = {
+  children: ReactNode;
+  initialUser: User | null;
+};
+
+export function Providers({ children, initialUser }: ProvidersProps) {
   const [client] = useState(() => new QueryClient());
 
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  const queryClient = useMemo(() => client, [client]);
+
+  return (
+    <EffectorProvider>
+      <QueryClientProvider client={queryClient}>
+        <SessionProvider initialUser={initialUser}>{children}</SessionProvider>
+      </QueryClientProvider>
+    </EffectorProvider>
+  );
 }

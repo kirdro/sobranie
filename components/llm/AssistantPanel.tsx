@@ -3,7 +3,8 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { HiOutlinePaperAirplane, HiOutlineSparkles } from "react-icons/hi2";
-import { LuBookMarked, LuLoader2 } from "react-icons/lu";
+import { LuBookMarked } from "react-icons/lu";
+import { HiArrowPath } from "react-icons/hi2";
 
 type Message = {
   role: "assistant" | "user";
@@ -126,7 +127,7 @@ export function AssistantPanel() {
                 disabled={isPending}
                 aria-busy={isPending}
               >
-                {isPending ? <LuLoader2 className="h-4 w-4 animate-spin" /> : <HiOutlinePaperAirplane className="h-4 w-4" />}
+                {isPending ? <HiArrowPath className="h-4 w-4 animate-spin" /> : <HiOutlinePaperAirplane className="h-4 w-4" />}
               </button>
             </form>
           </div>

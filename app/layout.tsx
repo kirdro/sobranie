@@ -5,6 +5,7 @@ import { Inter, Space_Grotesk } from "next/font/google";
 
 import { Background } from "@components/layout/Background";
 import { Providers } from "./providers";
+import { getSessionUser } from "@/lib/auth/session";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk" });
@@ -18,12 +19,14 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await getSessionUser();
+
   return (
     <html lang="ru" className={`${inter.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <body className="relative flex min-h-screen flex-col overflow-x-hidden">
         <Background />
-        <Providers>
+        <Providers initialUser={user}>
           <main className="relative z-10 flex min-h-screen flex-col px-4 pb-8 pt-6 md:px-8">
             {children}
           </main>

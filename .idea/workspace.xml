@@ -5,9 +5,30 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="98062a41-2e79-4b1e-8492-ff896914d863" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/docs/description.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/images/design.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/start.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.prettierrc.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/api/api-documentation.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/api/api-endpoints-table.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/api/api-schema.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/api/integration-examples.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/llm-full.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/providers.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/providers.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bun.lock" beforeDir="false" afterPath="$PROJECT_DIR$/bun.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/dashboard/CirclesShell.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/CirclesShell.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/dashboard/DashboardShell.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/DashboardShell.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/dashboard/NotificationsShell.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/NotificationsShell.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/dashboard/SidebarNav.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/SidebarNav.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/dashboard/useDashboardData.ts" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/useDashboardData.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/feed/ActivityStream.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/feed/ActivityStream.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/feed/FeedComposer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/feed/FeedComposer.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/feed/FeedTimeline.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/feed/FeedTimeline.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/layout/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/layout/Header.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/llm/AssistantPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/llm/AssistantPanel.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/data/feed.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/data/feed.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/stores/dashboard.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/next.config.mjs" beforeDir="false" afterPath="$PROJECT_DIR$/next.config.mjs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,7 +67,7 @@
     "git-widget-placeholder": "main",
     "js.debugger.nextJs.config.created.client": "true",
     "js.debugger.nextJs.config.created.server": "true",
-    "last_opened_file_path": "/home/kirill/projects/sobranie/app/images",
+    "last_opened_file_path": "/home/kirill/projects/sobranie",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -58,6 +79,7 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/app/images" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
@@ -95,6 +117,9 @@
       <updated>1758975636432</updated>
       <workItem from="1758975637683" duration="165000" />
       <workItem from="1758975811799" duration="10550000" />
+      <workItem from="1759034051328" duration="5471000" />
+      <workItem from="1759152933673" duration="77000" />
+      <workItem from="1759153020544" duration="5286000" />
     </task>
     <servers />
   </component>
