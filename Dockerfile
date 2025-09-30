@@ -1,22 +1,22 @@
-FROM oven/bun:1.1.9 AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 # Copy package files
-COPY package.json bun.lock ./
+COPY package.json ./
 
-# Install dependencies
-RUN bun install --frozen-lockfile
+# Install dependencies with npm
+RUN npm install
 
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application using Node.js (for Next.js compatibility)
 ENV SOBRANIE_API_BASE_URL=https://api.sobranie.yaropolk.tech
-RUN bun run build
+RUN npm run build
 
 # Production stage
-FROM oven/bun:1.1.9-slim
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -24,10 +24,9 @@ WORKDIR /app
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./
-COPY --from=builder /app/bun.lock ./
 
 # Install only production dependencies
-RUN bun install --frozen-lockfile --production
+RUN npm install --only=production
 
 # Expose port
 EXPOSE 3011
@@ -38,4 +37,4 @@ ENV PORT=3011
 ENV SOBRANIE_API_BASE_URL=https://api.sobranie.yaropolk.tech
 
 # Start the application
-CMD ["bun", "start"]
+CMD ["npm", "start"]
