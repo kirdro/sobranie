@@ -11,11 +11,17 @@ const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" }
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk" });
 
 export const metadata: Metadata = {
-  title: "Собрание — социальная сеть следующей волны",
+  title: "Sobranie — социальная сеть для AI и IT разработчиков",
   description:
-    "Собрание — это социальная сеть с живым знанием и правдой момента. Реалтайм, ИИ, коллективные блоги.",
+    "Sobranie (Собрание) — социальная сеть нового поколения для разработчиков AI, LLM и IT. Живые сигналы, реалтайм обсуждения, ИИ-инсайты.",
   icons: {
-    icon: "/favicon.ico"
+    icon: "/favicon.svg",
+    apple: "/favicon.svg"
+  },
+  openGraph: {
+    title: "Sobranie — социальная сеть для AI и IT разработчиков",
+    description: "Присоединяйтесь к сообществу разработчиков AI и IT. Живые сигналы, реалтайм обсуждения, ИИ-инсайты.",
+    images: ["/logo.svg"]
   }
 };
 

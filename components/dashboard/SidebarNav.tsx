@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { useUnit } from "effector-react";
@@ -47,15 +48,17 @@ export function SidebarNav({ items }: SidebarNavProps) {
   return (
     <nav className="surface-panel flex h-full flex-col justify-between rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur-2xl">
       <div className="space-y-8">
-        <div className="flex items-center gap-3">
-          <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-accent-purple/70 via-accent-teal/60 to-accent-amber/50 text-lg font-bold text-white shadow-neon">
-            Сб
-            <div className="pointer-events-none absolute inset-0 rounded-2xl border border-white/20" />
-          </div>
-          <div>
-            <p className="text-lg font-display uppercase tracking-[0.32em] text-white">Собрание</p>
-            <p className="text-xs text-dawn/60">сеть живых сигналов</p>
-          </div>
+        <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+            <Image
+              src="/logo.svg"
+              alt="Sobranie"
+              width={180}
+              height={60}
+              className="w-auto h-12"
+              priority
+            />
+          </Link>
         </div>
         <ul className="flex flex-col gap-2">
           {items.map((item) => {
