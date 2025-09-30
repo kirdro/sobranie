@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="98062a41-2e79-4b1e-8492-ff896914d863" name="Changes" comment="&quot;Set up development tooling with ESLint, Jest, and Docker. Implement CI/CD pipeline and Jest test cases. Add codebase improvements and type updates.&quot;">
-      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-    </list>
+    <list default="true" id="98062a41-2e79-4b1e-8492-ff896914d863" name="Changes" comment="Generate `package-lock.json` for dependency management and compatibility with npm." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -99,6 +97,7 @@
       <workItem from="1759153020544" duration="5286000" />
       <workItem from="1759222080508" duration="8504000" />
       <workItem from="1759233251148" duration="5158000" />
+      <workItem from="1759259828965" duration="385000" />
     </task>
     <task id="LOCAL-00001" summary="&quot;Add deployment pipeline with Docker integration, GitHub Actions workflow, and server configuration scripts. Implement production environment setup, monitoring tools, and profile page structure.&quot;">
       <option name="closed" value="true" />
@@ -116,7 +115,15 @@
       <option name="project" value="LOCAL" />
       <updated>1759238253887</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Generate `package-lock.json` for dependency management and compatibility with npm.">
+      <option name="closed" value="true" />
+      <created>1759260053338</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1759260053338</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -125,6 +132,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="&quot;Add deployment pipeline with Docker integration, GitHub Actions workflow, and server configuration scripts. Implement production environment setup, monitoring tools, and profile page structure.&quot;" />
     <MESSAGE value="&quot;Set up development tooling with ESLint, Jest, and Docker. Implement CI/CD pipeline and Jest test cases. Add codebase improvements and type updates.&quot;" />
-    <option name="LAST_COMMIT_MESSAGE" value="&quot;Set up development tooling with ESLint, Jest, and Docker. Implement CI/CD pipeline and Jest test cases. Add codebase improvements and type updates.&quot;" />
+    <MESSAGE value="Generate `package-lock.json` for dependency management and compatibility with npm." />
+    <option name="LAST_COMMIT_MESSAGE" value="Generate `package-lock.json` for dependency management and compatibility with npm." />
   </component>
 </project>

@@ -22,11 +22,11 @@ WORKDIR /app
 
 # Copy built application
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
 
-# Install only production dependencies (using legacy peer deps for React 19 compatibility)
-RUN npm install --only=production --legacy-peer-deps
+# Copy public directory if it exists (it might be empty)
+COPY --from=builder /app/public* ./public/
 
 # Expose port
 EXPOSE 3011
