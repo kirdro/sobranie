@@ -11,6 +11,7 @@ import { useSession } from "@/components/auth/SessionProvider";
 import { $isAuthenticated, $user, logoutTriggered } from "@/lib/effector";
 import type { NavItem } from "@/lib/data/feed";
 import { initialsFromName } from "@/lib/data/feed";
+import { GlowingCube } from "@/components/ui/GlowingCube";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   home: LuHouse,
@@ -85,6 +86,7 @@ export function SidebarNav({ items }: SidebarNavProps) {
             );
           })}
         </ul>
+        <GlowingCube />
       </div>
       <div className="space-y-4">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-5 text-xs text-dawn/70">

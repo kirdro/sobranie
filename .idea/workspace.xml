@@ -4,12 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="98062a41-2e79-4b1e-8492-ff896914d863" name="Changes" comment="Update Dockerfile and `.idea/workspace.xml` for improved dependency handling and build process&#10;&#10;- Replace `npm install` with production-ready `node_modules` copy&#10;- Adjust public folder copying logic in Dockerfile  &#10;- Update `.idea/workspace.xml` task comments and commit messages appropriately">
+    <list default="true" id="98062a41-2e79-4b1e-8492-ff896914d863" name="Changes" comment="Add new logo and favicon, update layouts and metadata&#10;&#10;- Add `logo.svg` and `favicon.svg` assets&#10;- Integrate new logo in `SidebarNav`, `AuthLayout`, and `app` layout&#10;- Update metadata with a new title, description, and OpenGraph details&#10;- Adjust public folder for updated icon format">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(auth)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/layout.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/dashboard/SidebarNav.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/SidebarNav.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -103,7 +100,7 @@
       <workItem from="1759153020544" duration="5286000" />
       <workItem from="1759222080508" duration="8504000" />
       <workItem from="1759233251148" duration="5158000" />
-      <workItem from="1759259828965" duration="1881000" />
+      <workItem from="1759259828965" duration="3037000" />
     </task>
     <task id="LOCAL-00001" summary="&quot;Add deployment pipeline with Docker integration, GitHub Actions workflow, and server configuration scripts. Implement production environment setup, monitoring tools, and profile page structure.&quot;">
       <option name="closed" value="true" />
@@ -137,7 +134,15 @@
       <option name="project" value="LOCAL" />
       <updated>1759260331864</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Add new logo and favicon, update layouts and metadata&#10;&#10;- Add `logo.svg` and `favicon.svg` assets&#10;- Integrate new logo in `SidebarNav`, `AuthLayout`, and `app` layout&#10;- Update metadata with a new title, description, and OpenGraph details&#10;- Adjust public folder for updated icon format">
+      <option name="closed" value="true" />
+      <created>1759262760270</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1759262760270</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -148,6 +153,7 @@
     <MESSAGE value="&quot;Set up development tooling with ESLint, Jest, and Docker. Implement CI/CD pipeline and Jest test cases. Add codebase improvements and type updates.&quot;" />
     <MESSAGE value="Generate `package-lock.json` for dependency management and compatibility with npm." />
     <MESSAGE value="Update Dockerfile and `.idea/workspace.xml` for improved dependency handling and build process&#10;&#10;- Replace `npm install` with production-ready `node_modules` copy&#10;- Adjust public folder copying logic in Dockerfile  &#10;- Update `.idea/workspace.xml` task comments and commit messages appropriately" />
-    <option name="LAST_COMMIT_MESSAGE" value="Update Dockerfile and `.idea/workspace.xml` for improved dependency handling and build process&#10;&#10;- Replace `npm install` with production-ready `node_modules` copy&#10;- Adjust public folder copying logic in Dockerfile  &#10;- Update `.idea/workspace.xml` task comments and commit messages appropriately" />
+    <MESSAGE value="Add new logo and favicon, update layouts and metadata&#10;&#10;- Add `logo.svg` and `favicon.svg` assets&#10;- Integrate new logo in `SidebarNav`, `AuthLayout`, and `app` layout&#10;- Update metadata with a new title, description, and OpenGraph details&#10;- Adjust public folder for updated icon format" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add new logo and favicon, update layouts and metadata&#10;&#10;- Add `logo.svg` and `favicon.svg` assets&#10;- Integrate new logo in `SidebarNav`, `AuthLayout`, and `app` layout&#10;- Update metadata with a new title, description, and OpenGraph details&#10;- Adjust public folder for updated icon format" />
   </component>
 </project>
