@@ -5,8 +5,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json ./
 
-# Install dependencies with npm
-RUN npm install
+# Install dependencies with npm (using legacy peer deps for React 19 compatibility)
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
@@ -25,8 +25,8 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./
 
-# Install only production dependencies
-RUN npm install --only=production
+# Install only production dependencies (using legacy peer deps for React 19 compatibility)
+RUN npm install --only=production --legacy-peer-deps
 
 # Expose port
 EXPOSE 3011

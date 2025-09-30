@@ -4,25 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="98062a41-2e79-4b1e-8492-ff896914d863" name="Changes" comment="&quot;Add deployment pipeline with Docker integration, GitHub Actions workflow, and server configuration scripts. Implement production environment setup, monitoring tools, and profile page structure.&quot;">
-      <change beforePath="$PROJECT_DIR$/.github/workflows/deploy.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/deploy.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/auth/LoginForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/auth/LoginForm.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/auth/SessionProvider.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/auth/SessionProvider.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/dashboard/ProfileShell.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/ProfileShell.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/dashboard/SidebarNav.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/SidebarNav.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/feed/ActivityStream.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/feed/ActivityStream.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/feed/FeedTimeline.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/feed/FeedTimeline.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/api/client.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/api/client.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/effects/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/effects/auth.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/effects/circles.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/effects/circles.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/effects/notifications.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/effects/notifications.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/effects/posts.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/effects/posts.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/stores/circles.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/stores/circles.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/stores/posts.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/stores/posts.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+    <list default="true" id="98062a41-2e79-4b1e-8492-ff896914d863" name="Changes" comment="&quot;Set up development tooling with ESLint, Jest, and Docker. Implement CI/CD pipeline and Jest test cases. Add codebase improvements and type updates.&quot;">
+      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -115,7 +98,7 @@
       <workItem from="1759152933673" duration="77000" />
       <workItem from="1759153020544" duration="5286000" />
       <workItem from="1759222080508" duration="8504000" />
-      <workItem from="1759233251148" duration="4857000" />
+      <workItem from="1759233251148" duration="5158000" />
     </task>
     <task id="LOCAL-00001" summary="&quot;Add deployment pipeline with Docker integration, GitHub Actions workflow, and server configuration scripts. Implement production environment setup, monitoring tools, and profile page structure.&quot;">
       <option name="closed" value="true" />
@@ -125,7 +108,15 @@
       <option name="project" value="LOCAL" />
       <updated>1759237064093</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="&quot;Set up development tooling with ESLint, Jest, and Docker. Implement CI/CD pipeline and Jest test cases. Add codebase improvements and type updates.&quot;">
+      <option name="closed" value="true" />
+      <created>1759238253887</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1759238253887</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -133,6 +124,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="&quot;Add deployment pipeline with Docker integration, GitHub Actions workflow, and server configuration scripts. Implement production environment setup, monitoring tools, and profile page structure.&quot;" />
-    <option name="LAST_COMMIT_MESSAGE" value="&quot;Add deployment pipeline with Docker integration, GitHub Actions workflow, and server configuration scripts. Implement production environment setup, monitoring tools, and profile page structure.&quot;" />
+    <MESSAGE value="&quot;Set up development tooling with ESLint, Jest, and Docker. Implement CI/CD pipeline and Jest test cases. Add codebase improvements and type updates.&quot;" />
+    <option name="LAST_COMMIT_MESSAGE" value="&quot;Set up development tooling with ESLint, Jest, and Docker. Implement CI/CD pipeline and Jest test cases. Add codebase improvements and type updates.&quot;" />
   </component>
 </project>
