@@ -4,3 +4,37 @@ out
 bun.lockb
 .DS_Store
 *.log
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+Thumbs.db
+.DS_Store
+
+# Deploy keys (security)
+*.pem
+*.key
+id_rsa*
+deploy_key*
+
+# PM2 files
+ecosystem.config.json
+.pm2/
+
+# Backup files
+*.backup
+*.bak
+
+# Temporary files
+*.tmp
+*.temp

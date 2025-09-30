@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUnit } from "effector-react";
 import { loginSubmitted, $isLoading, $authError, loginSuccessful } from "@/lib/effector";
+import { ButtonSpinner } from "@/components/ui/Spinner";
 
 type FormState = {
   email: string;
@@ -28,7 +29,7 @@ export function LoginForm() {
 
   // Handle successful login navigation
   useEffect(() => {
-    const unsubscribe = loginSuccessful.watch(({ redirect }) => {
+    const unsubscribe = loginSuccessful.watch(({ user, redirect }) => {
       if (redirect) {
         router.push(redirect);
         router.refresh();
@@ -92,8 +93,9 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full rounded-2xl bg-gradient-to-r from-accent-purple via-accent-teal to-accent-amber px-4 py-3 text-sm font-semibold text-midnight transition disabled:opacity-50"
+        className="w-full rounded-2xl bg-gradient-to-r from-accent-purple via-accent-teal to-accent-amber px-4 py-3 text-sm font-semibold text-midnight transition disabled:opacity-50 flex items-center justify-center"
       >
+        {isLoading && <ButtonSpinner />}
         {isLoading ? "Входим..." : "Войти"}
       </button>
     </form>

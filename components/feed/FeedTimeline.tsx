@@ -13,10 +13,11 @@ import {
   $posts,
   $postsLoading,
   $postsError,
-  postsRequested
+  postsInitRequested
 } from "@/lib/effector";
 
 import { FeedCard } from "./FeedCard";
+import { PanelSpinner } from "@/components/ui/Spinner";
 
 function mapPostToFeedCard(post: Post): FeedPost {
   const authorInfo = post.author;
@@ -43,21 +44,24 @@ function mapPostToFeedCard(post: Post): FeedPost {
 }
 
 export function FeedTimeline() {
-  // Use Effector stores instead of React Query
-  const [posts, isLoading, error, onPostsRequest] = useUnit([
+  // Use Effector stores and event handler
+  const [posts, isLoading, error, loadPosts] = useUnit([
     $posts,
     $postsLoading,
     $postsError,
-    postsRequested
+    postsInitRequested
   ]);
 
   // Load posts on mount
   useEffect(() => {
-    onPostsRequest({ page: 1, limit: 20 });
-  }, [onPostsRequest]);
+    // Only load if no posts yet and posts is defined
+    if (Array.isArray(posts) && posts.length === 0) {
+      loadPosts();
+    }
+  }, [posts, loadPosts]); // Include dependencies
 
   const items = useMemo<FeedPost[]>(() => {
-    if (!posts.length) {
+    if (!Array.isArray(posts) || posts.length === 0) {
       return fallbackFeedPosts;
     }
 
@@ -65,12 +69,7 @@ export function FeedTimeline() {
   }, [posts]);
 
   if (isLoading) {
-    return (
-      <div className="grid gap-6">
-        <div className="h-48 animate-pulse rounded-[28px] border border-white/10 bg-white/5" />
-        <div className="h-48 animate-pulse rounded-[28px] border border-white/10 bg-white/5" />
-      </div>
-    );
+    return <PanelSpinner text="Загружаем ленту..." />;
   }
 
   if (error) {

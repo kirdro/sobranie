@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useUnit } from "effector-react";
 import { HiOutlineSparkles } from "react-icons/hi";
 import { postCreated, $createPostLoading, $isAuthenticated } from "@/lib/effector";
+import { ButtonSpinner } from "@/components/ui/Spinner";
 
 type FeedComposerProps = {
   placeholder: string;
@@ -112,11 +113,10 @@ export function FeedComposer({ placeholder, aiLabel, submitLabel, suggestions, o
           <button
             type="submit"
             disabled={isCreatingPost || value.trim().length === 0 || !isAuthenticated}
-            className={`inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-midnight transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-white/40 disabled:text-midnight/60 ${
-              isCreatingPost ? "animate-pulse" : ""
-            }`}
+            className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-midnight transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-white/40 disabled:text-midnight/60"
             aria-busy={isCreatingPost}
           >
+            {isCreatingPost && <ButtonSpinner size="sm" />}
             {isCreatingPost ? "Отправка..." : submitLabel}
           </button>
         </div>

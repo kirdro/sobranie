@@ -11,6 +11,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.35.5",
     "autoprefixer": "^10.4.17",
+    "clsx": "^2.1.1",
     "effector": "^23.4.4",
     "effector-react": "^23.3.0",
     "effector-storage": "^7.1.0",
@@ -20,6 +21,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.1.0",
+    "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.3"
   },
   "devDependencies": {

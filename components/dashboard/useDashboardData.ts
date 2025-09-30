@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useUnit } from "effector-react";
 
 import type { NavigationLink, PaginatedResponse, Post, User } from "@/lib/api/types";
 import type { AiPrompts, NavItem, SuggestedPerson, TrendTopic } from "@/lib/data/feed";
@@ -14,7 +15,7 @@ import {
 } from "@/lib/data/fallback-content";
 import { useSession } from "@/components/auth/SessionProvider";
 import { fetchJson } from "@/lib/frontend/fetch-json";
-import { usePostsQuery } from "@/lib/hooks/usePostsQuery";
+import { $posts } from "@/lib/effector";
 
 type AssistantModesResponse = {
   items: Array<{
@@ -42,6 +43,11 @@ function computeMutualsSeed(id: string): number {
 
 function mapPostsToTopics(posts: Post[]): TrendTopic[] {
   const tagCount = new Map<string, number>();
+
+  // Check if posts is defined and is an array
+  if (!posts || !Array.isArray(posts)) {
+    return fallbackTrendTopics;
+  }
 
   posts.forEach((post) => {
     (post.tags ?? []).forEach((tag) => {
@@ -108,6 +114,7 @@ function mapAssistantModesToPrompts(response: AssistantModesResponse | undefined
 
 export function useDashboardData() {
   const { user } = useSession();
+  const [posts] = useUnit([$posts]);
 
   const navigationQuery = useQuery({
     queryKey: ["navigation", "links"],
@@ -120,8 +127,6 @@ export function useDashboardData() {
     queryFn: () => fetchJson<AssistantModesResponse>("/api/assistant/modes"),
     staleTime: 300_000
   });
-
-  const postsQuery = usePostsQuery(20);
 
   const usersQuery = useQuery({
     queryKey: ["users", "suggested"],
@@ -149,9 +154,7 @@ export function useDashboardData() {
 
   const aiPrompts = useMemo(() => mapAssistantModesToPrompts(assistantQuery.data), [assistantQuery.data]);
 
-  const posts = postsQuery.data?.items ?? [];
-
-  const trendTopics = useMemo<TrendTopic[]>(() => mapPostsToTopics(posts), [posts]);
+  const trendTopics = useMemo<TrendTopic[]>(() => mapPostsToTopics(posts || []), [posts]);
 
   const suggestedPeople = useMemo<SuggestedPerson[]>(() => {
     const people = usersQuery.data?.items ?? [];

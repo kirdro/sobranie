@@ -14,3 +14,4 @@ export const userProfileRequested = createEvent<string>();
 // Session events
 export const sessionRestored = createEvent();
 export const sessionExpired = createEvent();
+export const sessionCheckRequested = createEvent();

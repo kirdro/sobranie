@@ -13,7 +13,8 @@ const API_BASE_URL = 'https://api.sobranie.yaropolk.tech';
 // Authentication effects
 export const loginFx = createEffect<LoginCredentials, AuthResponse>(
   async (credentials) => {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    // Use internal API route instead of external API directly
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -21,23 +22,22 @@ export const loginFx = createEffect<LoginCredentials, AuthResponse>(
       body: JSON.stringify(credentials),
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
-      throw new Error(`Login failed: ${response.statusText}`);
+      // API returns {error: string, message: string} on error
+      throw new Error(result.message || result.error || 'Login failed');
     }
 
-    const result: ApiResponse<AuthResponse> = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.message || 'Login failed');
-    }
-
-    return result.data;
+    // Internal API returns AuthResponse directly
+    return result as AuthResponse;
   }
 );
 
 export const registerFx = createEffect<RegisterData, AuthResponse>(
   async (data) => {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    // Use internal API route instead of external API directly
+    const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -45,17 +45,15 @@ export const registerFx = createEffect<RegisterData, AuthResponse>(
       body: JSON.stringify(data),
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
-      throw new Error(`Registration failed: ${response.statusText}`);
+      // API returns {error: string, message: string} on error
+      throw new Error(result.message || result.error || 'Registration failed');
     }
 
-    const result: ApiResponse<AuthResponse> = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.message || 'Registration failed');
-    }
-
-    return result.data;
+    // Internal API returns AuthResponse directly
+    return result as AuthResponse;
   }
 );
 
@@ -68,17 +66,25 @@ export const fetchCurrentUserFx = createEffect<string, User>(
       },
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
-      throw new Error(`Fetch user failed: ${response.statusText}`);
+      // API returns {error: string, message: string} on error
+      throw new Error(result.message || result.error || 'Failed to fetch user');
     }
 
-    const result: ApiResponse<User> = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.message || 'Failed to fetch user');
+    // Check if the response has the expected structure
+    // API might return data directly or wrapped in {success: true, data: ...}
+    if (result.success !== undefined) {
+      // Wrapped response
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch user');
+      }
+      return result.data as User;
     }
 
-    return result.data;
+    // Direct response - assume it's the User
+    return result as User;
   }
 );
 
@@ -92,16 +98,45 @@ export const refreshTokenFx = createEffect<string, AuthResponse>(
       body: JSON.stringify({ refreshToken }),
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
-      throw new Error(`Token refresh failed: ${response.statusText}`);
+      // API returns {error: string, message: string} on error
+      throw new Error(result.message || result.error || 'Token refresh failed');
     }
 
-    const result: ApiResponse<AuthResponse> = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.message || 'Token refresh failed');
+    // Check if the response has the expected structure
+    // API might return data directly or wrapped in {success: true, data: ...}
+    if (result.success !== undefined) {
+      // Wrapped response
+      if (!result.success) {
+        throw new Error(result.message || 'Token refresh failed');
+      }
+      return result.data as AuthResponse;
     }
 
-    return result.data;
+    // Direct response - assume it's the AuthResponse
+    return result as AuthResponse;
+  }
+);
+
+export const checkSessionFx = createEffect<void, User | null>(
+  async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return null; // Not authenticated
+        }
+        throw new Error('Failed to check session');
+      }
+
+      const user = await response.json();
+      return user as User;
+    } catch (error) {
+      console.error('Session check failed:', error);
+      return null;
+    }
   }
 );

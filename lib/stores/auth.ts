@@ -13,13 +13,15 @@ import {
   tokenRefreshTriggered,
   sessionRestored,
   sessionExpired,
-  userUpdated
+  userUpdated,
+  sessionCheckRequested
 } from '../events';
 import {
   loginFx,
   registerFx,
   fetchCurrentUserFx,
-  refreshTokenFx
+  refreshTokenFx,
+  checkSessionFx
 } from '../effects';
 
 // Initial auth state
@@ -183,4 +185,39 @@ sample({
     redirect: '/'
   }),
   target: loginSuccessful,
+});
+
+// Connect session check event to effect
+sample({
+  clock: sessionCheckRequested,
+  target: checkSessionFx,
+});
+
+// Handle session check results
+sample({
+  clock: checkSessionFx.doneData,
+  filter: (user) => user !== null,
+  fn: (user) => user!,
+  target: $user,
+});
+
+sample({
+  clock: checkSessionFx.doneData,
+  fn: (user) => user !== null,
+  target: $isAuthenticated,
+});
+
+// Clear user when session check returns null
+sample({
+  clock: checkSessionFx.doneData,
+  filter: (user) => user === null,
+  fn: () => null,
+  target: $user,
+});
+
+sample({
+  clock: checkSessionFx.doneData,
+  filter: (user) => user === null,
+  fn: () => false,
+  target: $isAuthenticated,
 });

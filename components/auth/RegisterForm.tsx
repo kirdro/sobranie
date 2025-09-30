@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUnit } from "effector-react";
 import { registerSubmitted, $isLoading, $authError, loginSuccessful } from "@/lib/effector";
+import { ButtonSpinner } from "@/components/ui/Spinner";
 
 type FormState = {
   email: string;
@@ -122,8 +123,9 @@ export function RegisterForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full rounded-2xl bg-gradient-to-r from-accent-purple via-accent-teal to-accent-amber px-4 py-3 text-sm font-semibold text-midnight transition disabled:opacity-50"
+        className="w-full rounded-2xl bg-gradient-to-r from-accent-purple via-accent-teal to-accent-amber px-4 py-3 text-sm font-semibold text-midnight transition disabled:opacity-50 flex items-center justify-center"
       >
+        {isLoading && <ButtonSpinner />}
         {isLoading ? "Создаём..." : "Зарегистрироваться"}
       </button>
     </form>

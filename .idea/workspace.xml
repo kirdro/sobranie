@@ -5,28 +5,29 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="98062a41-2e79-4b1e-8492-ff896914d863" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.prettierrc.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/api/api-documentation.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/api/api-endpoints-table.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/api/api-schema.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/api/integration-examples.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/llm-full.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/auth/logout/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/auth/logout/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/posts/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/posts/route.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/providers.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/providers.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bun.lock" beforeDir="false" afterPath="$PROJECT_DIR$/bun.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/auth/LoginForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/auth/LoginForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/auth/RegisterForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/auth/RegisterForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/auth/SessionProvider.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/auth/SessionProvider.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/dashboard/CirclesShell.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/CirclesShell.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/dashboard/DashboardShell.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/DashboardShell.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/dashboard/NotificationsShell.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/NotificationsShell.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/dashboard/SidebarNav.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/SidebarNav.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/dashboard/useDashboardData.ts" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/useDashboardData.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/feed/ActivityStream.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/feed/ActivityStream.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/feed/FeedComposer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/feed/FeedComposer.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/feed/FeedTimeline.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/feed/FeedTimeline.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/layout/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/layout/Header.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/llm/AssistantPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/llm/AssistantPanel.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/data/feed.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/data/feed.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/stores/dashboard.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/auth/session.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/auth/session.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/effects/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/effects/auth.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/effects/posts.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/effects/posts.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/events/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/events/auth.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/events/posts.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/events/posts.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/stores/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/stores/auth.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/stores/posts.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/stores/posts.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/next.config.mjs" beforeDir="false" afterPath="$PROJECT_DIR$/next.config.mjs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
     </list>
@@ -58,25 +59,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "js.debugger.nextJs.config.created.client": "true",
-    "js.debugger.nextJs.config.created.server": "true",
-    "last_opened_file_path": "/home/kirill/projects/sobranie",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "bun",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;js.debugger.nextJs.config.created.client&quot;: &quot;true&quot;,
+    &quot;js.debugger.nextJs.config.created.server&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/kirill/projects/sobranie&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;bun&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
@@ -120,10 +121,15 @@
       <workItem from="1759034051328" duration="5471000" />
       <workItem from="1759152933673" duration="77000" />
       <workItem from="1759153020544" duration="5286000" />
+      <workItem from="1759222080508" duration="8504000" />
+      <workItem from="1759233251148" duration="3650000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="LAST_COMMIT_MESSAGE" value="" />
   </component>
 </project>

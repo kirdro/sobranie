@@ -15,12 +15,43 @@ const getAuthToken = (): string | null => {
   return localStorage.getItem('accessToken');
 };
 
+// Simple cache for preventing duplicate requests
+let pendingPostsRequest: Promise<PaginatedResponse<Post>> | null = null;
+let lastPostsParams: string | null = null;
+
+// Effect for initial posts loading without parameters
+export const initPostsFx = createEffect<void, PaginatedResponse<Post>>(
+  async () => {
+    const queryParams = new URLSearchParams({
+      page: '1',
+      limit: '20',
+    });
+
+    try {
+      const response = await fetch(`/api/posts?${queryParams}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || result.error || 'Fetch posts failed');
+      }
+
+      return result as PaginatedResponse<Post>;
+    } catch (error) {
+      throw error;
+    }
+  }
+);
+
 export const fetchPostsFx = createEffect<
   { page?: number; limit?: number; filter?: PostsFilter },
   PaginatedResponse<Post>
 >(
   async ({ page = 1, limit = 20, filter }) => {
-    const token = getAuthToken();
     const queryParams = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
@@ -34,50 +65,62 @@ export const fetchPostsFx = createEffect<
       });
     }
 
-    const response = await fetch(`${API_BASE_URL}/posts?${queryParams}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-    });
+    const paramsString = queryParams.toString();
 
-    if (!response.ok) {
-      throw new Error(`Fetch posts failed: ${response.statusText}`);
+    // Return pending request if same params
+    if (pendingPostsRequest && lastPostsParams === paramsString) {
+      return pendingPostsRequest;
     }
 
-    const result: PaginatedResponse<Post> = await response.json();
-    return result;
+    // Create new request
+    const request = async (): Promise<PaginatedResponse<Post>> => {
+      try {
+        // Use internal API route instead of external API directly
+        const response = await fetch(`/api/posts?${queryParams}`, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || result.error || 'Fetch posts failed');
+        }
+
+        return result as PaginatedResponse<Post>;
+      } finally {
+        // Clear pending request when done
+        pendingPostsRequest = null;
+        lastPostsParams = null;
+      }
+    };
+
+    pendingPostsRequest = request();
+    lastPostsParams = paramsString;
+
+    return pendingPostsRequest;
   }
 );
 
 export const createPostFx = createEffect<CreatePostData, Post>(
   async (postData) => {
-    const token = getAuthToken();
-
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/posts`, {
+    // Use internal API route instead of external API directly
+    const response = await fetch('/api/posts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(postData),
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
-      throw new Error(`Create post failed: ${response.statusText}`);
+      throw new Error(result.message || result.error || 'Failed to create post');
     }
 
-    const result: ApiResponse<Post> = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.message || 'Failed to create post');
-    }
-
-    return result.data;
+    return result as Post;
   }
 );
 

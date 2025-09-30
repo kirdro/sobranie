@@ -1,0 +1,74 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to server
+      if: github.ref == 'refs/heads/main'
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        script: |
+          # Создание директории проекта если её нет
+          mkdir -p /var/www/sobranie
+          cd /var/www/sobranie
+
+          # Клонирование/обновление репозитория
+          if [ -d ".git" ]; then
+            echo "🔄 Обновление существующего репозитория..."
+            git fetch origin
+            git reset --hard origin/main
+          else
+            echo "📦 Клонирование репозитория..."
+            git clone https://github.com/${{ github.repository }}.git .
+          fi
+
+          # Остановка и удаление существующего контейнера
+          echo "🛑 Остановка контейнера..."
+          docker-compose down || true
+
+          # Удаление старых образов для экономии места
+          echo "🧹 Очистка старых образов..."
+          docker image prune -f || true
+
+          # Сборка и запуск нового контейнера
+          echo "🏗️ Сборка и запуск контейнера..."
+          docker-compose up -d --build
+
+          # Ожидание запуска контейнера
+          echo "⏳ Ожидание запуска контейнера..."
+          sleep 10
+
+          # Проверка статуса контейнера
+          echo "📊 Проверка статуса..."
+          docker-compose ps
+
+          # Проверка логов контейнера
+          echo "📝 Последние логи:"
+          docker-compose logs --tail=20 sobranie-frontend
+
+          # Проверка здоровья приложения
+          echo "🔍 Проверка здоровья приложения..."
+          if curl -f http://localhost:3011 > /dev/null 2>&1; then
+            echo "✅ Приложение запущено успешно"
+          else
+            echo "❌ Приложение недоступно"
+            docker-compose logs sobranie-frontend
+            exit 1
+          fi
+
+          echo "🎉 Деплой завершен успешно!"

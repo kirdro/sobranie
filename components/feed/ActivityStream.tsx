@@ -1,13 +1,15 @@
 "use client";
 
 import { ReactNode, useMemo } from "react";
+import { useUnit } from "effector-react";
 import { HiOutlineLightningBolt, HiOutlineChat, HiOutlinePhotograph } from "react-icons/hi";
 import { LuClock3, LuShare2 } from "react-icons/lu";
 
 import type { Post } from "@/lib/api/types";
-import { usePostsQuery } from "@/lib/hooks/usePostsQuery";
+import { $posts, $postsLoading, $postsError } from "@/lib/effector";
 import { initialsFromName } from "@/lib/data/feed";
 import { formatRelativeTime } from "@/lib/utils/datetime";
+import { PanelSpinner } from "@/components/ui/Spinner";
 
 type Activity = {
   id: string;
@@ -90,21 +92,21 @@ function mapPostToActivity(post: Post, index: number): Activity {
 }
 
 export function ActivityStream() {
-  const { data, isLoading, isError } = usePostsQuery(5);
+  const [posts, isLoading, error] = useUnit([$posts, $postsLoading, $postsError]);
 
   const pulses = useMemo<Activity[]>(() => {
-    const posts = data?.items ?? [];
-    if (!posts.length) {
+    if (!Array.isArray(posts) || posts.length === 0) {
       return fallbackActivities;
     }
-    return posts.map(mapPostToActivity);
-  }, [data]);
+    // Take only first 5 posts for activity stream
+    return posts.slice(0, 5).map(mapPostToActivity);
+  }, [posts]);
 
   if (isLoading) {
-    return <div className="surface-panel animate-pulse rounded-[24px] p-6 text-sm text-dawn/50">Загружаем живой поток...</div>;
+    return <PanelSpinner text="Загружаем живой поток..." />;
   }
 
-  if (isError) {
+  if (error) {
     return (
       <div className="rounded-[24px] border border-red-500/40 bg-red-500/10 p-6 text-sm text-red-200">
         Поток временно недоступен. Обновите страницу позже.

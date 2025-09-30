@@ -1,3 +1,4 @@
+import "effector/enable_debug_traces";
 import "./globals.css";
 
 import type { Metadata } from "next";

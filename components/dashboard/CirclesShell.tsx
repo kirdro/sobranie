@@ -8,6 +8,7 @@ import { DashboardLayout } from "@components/dashboard/DashboardLayout";
 import { circlesCopy } from "@/lib/content/circles";
 import type { CirclesResponse } from "@/lib/api/circles";
 import { fetchJson } from "@/lib/frontend/fetch-json";
+import { PanelSpinner } from "@/components/ui/Spinner";
 
 const toneMap: Record<"purple" | "teal", string> = {
   purple: "from-accent-purple/40 via-transparent to-accent-teal/20",
@@ -61,10 +62,7 @@ export function CirclesShell() {
           <LuTrendingUp className="h-6 w-6 text-accent-teal" />
         </header>
         {circlesQuery.isLoading ? (
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="h-40 animate-pulse rounded-[24px] border border-white/10 bg-white/10" />
-            <div className="h-40 animate-pulse rounded-[24px] border border-white/10 bg-white/10" />
-          </div>
+          <PanelSpinner text="Загружаем круги..." />
         ) : (
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {spotlight.map((community) => (

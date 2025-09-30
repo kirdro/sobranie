@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { useUnit } from "effector-react";
-import { LuBell, LuCompass, LuHouse, LuLibrary, LuLogOut, LuSparkles, LuLogIn, LuUserPlus } from "react-icons/lu";
+import { LuBell, LuCompass, LuHouse, LuLibrary, LuLogOut, LuSparkles, LuLogIn, LuUserPlus, LuUser } from "react-icons/lu";
 
 import { useSession } from "@/components/auth/SessionProvider";
 import { $isAuthenticated, $user, logoutTriggered } from "@/lib/effector";
@@ -92,20 +92,23 @@ export function SidebarNav({ items }: SidebarNavProps) {
           </p>
         </div>
         {isAuthenticated && user ? (
-          <div className="flex items-center justify-between gap-3 rounded-3xl border border-white/10 bg-white/10 p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-semibold text-white">
-                {initialsFromName(user.name || user.email)}
+          <div className="space-y-3">
+            <Link href="/profile" className="group block">
+              <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-white/10 p-4 transition hover:border-accent-teal/50 hover:bg-white/15 hover:shadow-neon">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-semibold text-white group-hover:border-accent-teal/30">
+                  {initialsFromName(user.name || user.email)}
+                </div>
+                <div className="flex-1 text-xs text-dawn/60">
+                  <p className="text-sm font-semibold text-white group-hover:text-accent-teal transition">{user.name || user.email}</p>
+                  <p className="group-hover:text-dawn/80 transition">{user.email}</p>
+                </div>
+                <LuUser className="h-4 w-4 text-dawn/40 group-hover:text-accent-teal transition" />
               </div>
-              <div className="text-xs text-dawn/60">
-                <p className="text-sm font-semibold text-white">{user.name || user.email}</p>
-                <p>{user.email}</p>
-              </div>
-            </div>
+            </Link>
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-dawn/60 transition hover:border-accent-teal/50 hover:text-white"
+              className="w-full flex items-center justify-center gap-2 rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm uppercase tracking-[0.2em] text-dawn/60 transition hover:border-accent-teal/50 hover:bg-white/10 hover:text-white"
             >
               <LuLogOut className="h-4 w-4" />
               выйти
