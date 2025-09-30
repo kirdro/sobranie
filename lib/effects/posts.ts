@@ -3,8 +3,7 @@ import type {
   Post,
   CreatePostData,
   PostsFilter,
-  PaginatedResponse,
-  ApiResponse
+  PaginatedResponse
 } from '../types';
 
 const API_BASE_URL = 'https://api.sobranie.yaropolk.tech';

@@ -29,7 +29,7 @@ export function LoginForm() {
 
   // Handle successful login navigation
   useEffect(() => {
-    const unsubscribe = loginSuccessful.watch(({ user, redirect }) => {
+    const unsubscribe = loginSuccessful.watch(({ redirect }) => {
       if (redirect) {
         router.push(redirect);
         router.refresh();

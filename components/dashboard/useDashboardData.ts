@@ -154,7 +154,7 @@ export function useDashboardData() {
 
   const aiPrompts = useMemo(() => mapAssistantModesToPrompts(assistantQuery.data), [assistantQuery.data]);
 
-  const trendTopics = useMemo<TrendTopic[]>(() => mapPostsToTopics(posts || []), [posts]);
+  const trendTopics = useMemo<TrendTopic[]>(() => mapPostsToTopics(posts as any || []), [posts]);
 
   const suggestedPeople = useMemo<SuggestedPerson[]>(() => {
     const people = usersQuery.data?.items ?? [];

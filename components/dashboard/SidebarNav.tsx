@@ -28,7 +28,7 @@ type SidebarNavProps = {
 export function SidebarNav({ items }: SidebarNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user: sessionUser, setUser } = useSession();
+  useSession(); // Access session context
 
   // Use Effector stores
   const [isAuthenticated, user, onLogout] = useUnit([
@@ -39,11 +39,10 @@ export function SidebarNav({ items }: SidebarNavProps) {
 
   const handleLogout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    setUser(null);
     onLogout();
     router.replace("/");
     router.refresh();
-  }, [router, setUser, onLogout]);
+  }, [router, onLogout]);
 
   return (
     <nav className="surface-panel flex h-full flex-col justify-between rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur-2xl">

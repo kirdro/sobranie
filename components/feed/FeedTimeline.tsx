@@ -6,7 +6,6 @@ import { useUnit } from "effector-react";
 import type { FeedPost } from "@/lib/data/feed";
 import { fallbackFeedPosts } from "@/lib/data/fallback-content";
 import { initialsFromName } from "@/lib/data/feed";
-import { usePostsQuery } from "@/lib/hooks/usePostsQuery";
 import type { Post } from "@/lib/types";
 import { formatRelativeTime } from "@/lib/utils/datetime";
 import {

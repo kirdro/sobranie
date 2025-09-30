@@ -1,21 +1,104 @@
-name: Deploy to Production
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
-  deploy:
+  # Job 1: Тестирование и линтинг
+  test:
     runs-on: ubuntu-latest
+    name: Test & Lint
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: 1.1.9
+
+    - name: Install dependencies
+      run: bun install
+
+    - name: Run ESLint
+      run: bun run lint
+
+    - name: Run tests
+      run: bun test
+
+    - name: Type checking
+      run: bun run build
+      env:
+        SOBRANIE_API_BASE_URL: https://api.sobranie.yaropolk.tech
+
+  # Job 2: Сборка и публикация Docker образа
+  build:
+    runs-on: ubuntu-latest
+    name: Build & Push Docker Image
+    needs: test
+    if: github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Job 3: Деплой на продакшн
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    needs: [test, build]
+    if: github.ref == 'refs/heads/main'
+
+    environment:
+      name: production
+      url: https://sobranie.yaropolk.tech
+
+    steps:
     - name: Deploy to server
-      if: github.ref == 'refs/heads/main'
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HOST }}
@@ -23,52 +106,59 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
         script: |
-          # Создание директории проекта если её нет
+          # Создание директории проекта
           mkdir -p /var/www/sobranie
           cd /var/www/sobranie
 
-          # Клонирование/обновление репозитория
-          if [ -d ".git" ]; then
-            echo "🔄 Обновление существующего репозитория..."
-            git fetch origin
-            git reset --hard origin/main
-          else
-            echo "📦 Клонирование репозитория..."
-            git clone https://github.com/${{ github.repository }}.git .
-          fi
+          # Очистка директории и клонирование свежего кода
+          echo "🧹 Очистка и подготовка директории..."
+          rm -rf * .git .env.* || true
 
-          # Остановка и удаление существующего контейнера
-          echo "🛑 Остановка контейнера..."
+          echo "📦 Клонирование репозитория..."
+          git clone https://github.com/${{ github.repository }}.git .
+
+          # Создание .env файла
+          echo "⚙️ Настройка окружения..."
+          cat > .env.production << 'EOF'
+          NODE_ENV=production
+          PORT=3011
+          SOBRANIE_API_BASE_URL=https://api.sobranie.yaropolk.tech
+          NEXT_TELEMETRY_DISABLED=1
+          EOF
+
+          # Логин в Docker registry
+          echo "🔐 Авторизация в registry..."
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+          # Остановка и удаление контейнера
+          echo "🛑 Остановка существующих контейнеров..."
           docker-compose down || true
 
-          # Удаление старых образов для экономии места
-          echo "🧹 Очистка старых образов..."
-          docker image prune -f || true
+          # Обновление образа
+          echo "📥 Получение нового образа..."
+          docker-compose pull
 
-          # Сборка и запуск нового контейнера
-          echo "🏗️ Сборка и запуск контейнера..."
-          docker-compose up -d --build
+          # Запуск обновленного контейнера
+          echo "🚀 Запуск обновленного контейнера..."
+          docker-compose up -d
 
-          # Ожидание запуска контейнера
-          echo "⏳ Ожидание запуска контейнера..."
-          sleep 10
+          # Ожидание запуска
+          echo "⏳ Ожидание запуска (30 секунд)..."
+          sleep 30
 
-          # Проверка статуса контейнера
-          echo "📊 Проверка статуса..."
-          docker-compose ps
-
-          # Проверка логов контейнера
-          echo "📝 Последние логи:"
-          docker-compose logs --tail=20 sobranie-frontend
-
-          # Проверка здоровья приложения
-          echo "🔍 Проверка здоровья приложения..."
-          if curl -f http://localhost:3011 > /dev/null 2>&1; then
+          # Проверка здоровья
+          echo "🔍 Проверка состояния приложения..."
+          if curl -f http://localhost:3011 >/dev/null 2>&1; then
             echo "✅ Приложение запущено успешно"
+            echo "🌐 Доступно по адресу: https://sobranie.yaropolk.tech"
           else
-            echo "❌ Приложение недоступно"
-            docker-compose logs sobranie-frontend
+            echo "❌ Приложение недоступно. Проверяем логи..."
+            docker-compose logs --tail=50 sobranie-frontend
             exit 1
           fi
+
+          # Очистка старых образов
+          echo "🧹 Очистка старых Docker образов..."
+          docker image prune -f || true
 
           echo "🎉 Деплой завершен успешно!"

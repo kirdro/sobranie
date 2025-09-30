@@ -99,7 +99,7 @@ export function ActivityStream() {
       return fallbackActivities;
     }
     // Take only first 5 posts for activity stream
-    return posts.slice(0, 5).map(mapPostToActivity);
+    return posts.slice(0, 5).map((post: any, index: number) => mapPostToActivity(post, index));
   }, [posts]);
 
   if (isLoading) {

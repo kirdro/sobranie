@@ -4,12 +4,10 @@ import {
   postsRequested,
   postsInitRequested,
   postCreated,
-  postUpdated,
   postDeleted,
   postLiked,
   postUnliked,
   postReposted,
-  postUnreposted,
   postSelected,
   postModalOpened,
   postModalClosed

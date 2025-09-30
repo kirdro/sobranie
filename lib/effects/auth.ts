@@ -3,8 +3,7 @@ import type {
   LoginCredentials,
   RegisterData,
   AuthResponse,
-  User,
-  ApiResponse
+  User
 } from '../types';
 
 // Base API URL from environment

@@ -5,8 +5,7 @@ import {
   circleSelected,
   circleCreated,
   circleJoined,
-  circleLeft,
-  circleMembersRequested
+  circleLeft
 } from '../events';
 import {
   fetchCirclesFx,

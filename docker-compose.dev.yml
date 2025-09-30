@@ -2,15 +2,23 @@ version: '3.8'
 
 services:
   sobranie-frontend:
-    image: ghcr.io/kirdro/sobranie:latest
-    container_name: sobranie-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sobranie-frontend-dev
     restart: unless-stopped
     ports:
       - "127.0.0.1:3011:3011"
-    env_file:
-      - .env.production
+    environment:
+      - NODE_ENV=development
+      - PORT=3011
+      - SOBRANIE_API_BASE_URL=https://api.sobranie.yaropolk.tech
     networks:
       - sobranie-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3011"]
       interval: 30s
@@ -18,8 +26,7 @@ services:
       retries: 3
       start_period: 40s
     labels:
-      - "com.docker.compose.project=sobranie"
-      - "traefik.enable=false"
+      - "com.docker.compose.project=sobranie-dev"
     logging:
       driver: "json-file"
       options:

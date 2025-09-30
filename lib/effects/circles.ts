@@ -3,9 +3,7 @@ import type {
   Circle,
   CreateCircleData,
   CirclesFilter,
-  CircleMember,
-  ApiResponse,
-  PaginatedResponse
+  ApiResponse
 } from '../types';
 
 const API_BASE_URL = 'https://api.sobranie.yaropolk.tech';

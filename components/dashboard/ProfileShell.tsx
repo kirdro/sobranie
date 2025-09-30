@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useUnit } from "effector-react";
-import { LuUser, LuMail, LuCalendar, LuEdit2, LuSave, LuX } from "react-icons/lu";
+import { LuMail, LuCalendar, LuPencil, LuSave, LuX } from "react-icons/lu";
 
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { $user } from "@/lib/effector";
@@ -77,7 +77,7 @@ export function ProfileShell() {
                     onClick={() => handleEdit('name')}
                     className="flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs text-dawn/60 transition hover:border-accent-teal/50 hover:text-white"
                   >
-                    <LuEdit2 className="h-3 w-3" />
+                    <LuPencil className="h-3 w-3" />
                     изменить
                   </button>
                 )}
@@ -158,7 +158,7 @@ export function ProfileShell() {
                 onClick={() => handleEdit('bio')}
                 className="flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs text-dawn/60 transition hover:border-accent-teal/50 hover:text-white"
               >
-                <LuEdit2 className="h-3 w-3" />
+                <LuPencil className="h-3 w-3" />
                 изменить
               </button>
             )}

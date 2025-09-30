@@ -53,7 +53,7 @@ function buildHeaders(options: ApiRequestOptions): HeadersInit {
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
-  const { body, token, ...rest } = options;
+  const { body, token } = options;
 
   const response = await fetch(url, {
     method: options.method ?? "GET",
