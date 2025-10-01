@@ -1,5 +1,5 @@
-import { LlmShell } from "@components/dashboard/LlmShell";
+import { LlmShell } from '@components/dashboard/LlmShell';
 
 export default function LlmPage() {
-  return <LlmShell />;
+	return <LlmShell />;
 }

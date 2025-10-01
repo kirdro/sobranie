@@ -1,12 +1,12 @@
-import { apiRequest } from "@/lib/api/client";
-import type { AssistantMode } from "@/lib/api/types";
+import { apiRequest } from '@/lib/api/client';
+import type { AssistantMode } from '@/lib/api/types';
 
 type AssistantModesResponse = {
-  items: AssistantMode[];
+	items: AssistantMode[];
 };
 
 export async function fetchAssistantModes(): Promise<AssistantMode[]> {
-  const response = await apiRequest<AssistantModesResponse>("/assistant/modes");
-  return response.items;
+	const response =
+		await apiRequest<AssistantModesResponse>('/assistant/modes');
+	return response.items;
 }
-

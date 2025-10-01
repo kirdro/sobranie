@@ -7,27 +7,27 @@ import { clientScope } from './scope';
 import { appStarted, appMounted, sessionRestored } from '../events';
 
 interface EffectorProviderProps {
-  children: ReactNode;
+	children: ReactNode;
 }
 
 export function EffectorProvider({ children }: EffectorProviderProps) {
-  useLayoutEffect(() => {
-    if (!clientScope) return;
+	useLayoutEffect(() => {
+		if (!clientScope) return;
 
-    // Initialize app on client
-    allSettled(appMounted, { scope: clientScope });
-    allSettled(sessionRestored, { scope: clientScope });
-    allSettled(appStarted, { scope: clientScope });
+		// Initialize app on client
+		allSettled(appMounted, { scope: clientScope });
+		allSettled(sessionRestored, { scope: clientScope });
+		allSettled(appStarted, { scope: clientScope });
 
-    return () => {
-      // Cleanup on unmount (optional)
-    };
-  }, []);
+		return () => {
+			// Cleanup on unmount (optional)
+		};
+	}, []);
 
-  if (!clientScope) {
-    // Server-side or no scope available
-    return <>{children}</>;
-  }
+	if (!clientScope) {
+		// Server-side or no scope available
+		return <>{children}</>;
+	}
 
-  return <Provider value={clientScope}>{children}</Provider>;
+	return <Provider value={clientScope}>{children}</Provider>;
 }

@@ -1,5 +1,5 @@
-import { FeedShell } from "@components/dashboard/FeedShell";
+import { FeedShell } from '@components/dashboard/FeedShell';
 
 export default function FeedPage() {
-  return <FeedShell />;
+	return <FeedShell />;
 }

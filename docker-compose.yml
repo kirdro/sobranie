@@ -1,31 +1,31 @@
 version: '3.8'
 
 services:
-  sobranie-frontend:
-    image: ghcr.io/kirdro/sobranie:latest
-    container_name: sobranie-frontend
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:3011:3011"
-    env_file:
-      - .env.production
-    networks:
-      - sobranie-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3011"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    labels:
-      - "com.docker.compose.project=sobranie"
-      - "traefik.enable=false"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    sobranie-frontend:
+        image: ghcr.io/kirdro/sobranie:latest
+        container_name: sobranie-frontend
+        restart: unless-stopped
+        ports:
+            - '127.0.0.1:3011:3011'
+        env_file:
+            - .env.production
+        networks:
+            - sobranie-network
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://localhost:3011']
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+        labels:
+            - 'com.docker.compose.project=sobranie'
+            - 'traefik.enable=false'
+        logging:
+            driver: 'json-file'
+            options:
+                max-size: '10m'
+                max-file: '3'
 
 networks:
-  sobranie-network:
-    driver: bridge
+    sobranie-network:
+        driver: bridge

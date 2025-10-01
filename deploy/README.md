@@ -21,10 +21,10 @@ ssh -i ~/.ssh/sobranie_deploy root@176.98.176.195 "echo 'SSH подключен�
 
 В настройках репозитория GitHub перейдите в **Settings → Secrets and variables → Actions** и добавьте:
 
-| Название | Значение |
-|----------|----------|
-| `HOST` | `176.98.176.195` |
-| `USERNAME` | `root` |
+| Название          | Значение                                                   |
+| ----------------- | ---------------------------------------------------------- |
+| `HOST`            | `176.98.176.195`                                           |
+| `USERNAME`        | `root`                                                     |
 | `SSH_PRIVATE_KEY` | Содержимое файла `~/.ssh/sobranie_deploy` (приватный ключ) |
 
 ### 3. Первоначальная настройка сервера
@@ -128,60 +128,66 @@ openssl s_client -connect sobranie.yaropolk.tech:443 -servername sobranie.yaropo
 ### Если деплой не работает
 
 1. **Проверьте SSH подключение:**
-   ```bash
-   ssh -i ~/.ssh/sobranie_deploy root@176.98.176.195
-   ```
+
+    ```bash
+    ssh -i ~/.ssh/sobranie_deploy root@176.98.176.195
+    ```
 
 2. **Проверьте статус контейнера:**
-   ```bash
-   cd /var/www/sobranie
-   docker-compose ps
-   docker logs sobranie-frontend
-   ```
+
+    ```bash
+    cd /var/www/sobranie
+    docker-compose ps
+    docker logs sobranie-frontend
+    ```
 
 3. **Проверьте Caddy:**
-   ```bash
-   systemctl status caddy
-   journalctl -u caddy -n 50
-   ```
+    ```bash
+    systemctl status caddy
+    journalctl -u caddy -n 50
+    ```
 
 ### Если контейнер не запускается
 
 1. **Проверьте логи сборки:**
-   ```bash
-   docker-compose build --no-cache sobranie-frontend
-   ```
+
+    ```bash
+    docker-compose build --no-cache sobranie-frontend
+    ```
 
 2. **Проверьте переменные окружения:**
-   ```bash
-   cat /var/www/sobranie/.env.production
-   ```
+
+    ```bash
+    cat /var/www/sobranie/.env.production
+    ```
 
 3. **Пересоберите контейнер:**
-   ```bash
-   docker-compose down
-   docker image prune -f
-   docker-compose up -d --build
-   ```
+    ```bash
+    docker-compose down
+    docker image prune -f
+    docker-compose up -d --build
+    ```
 
 ### Если SSL не работает
 
 1. **Проверьте DNS:**
-   ```bash
-   nslookup sobranie.yaropolk.tech
-   ```
+
+    ```bash
+    nslookup sobranie.yaropolk.tech
+    ```
 
 2. **Проверьте Caddy логи:**
-   ```bash
-   journalctl -u caddy | grep -i "sobranie\|error"
-   ```
+
+    ```bash
+    journalctl -u caddy | grep -i "sobranie\|error"
+    ```
 
 3. **Принудительное обновление сертификата:**
-   ```bash
-   systemctl stop caddy
-   rm -rf /var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/sobranie.yaropolk.tech/
-   systemctl start caddy
-   ```
+    ```bash
+    systemctl stop caddy
+    rm -rf /var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/sobranie.yaropolk.tech/
+    systemctl start caddy
+    ```
 
 ## 📁 Структура проекта на сервере
 
@@ -208,6 +214,7 @@ openssl s_client -connect sobranie.yaropolk.tech:443 -servername sobranie.yaropo
 После настройки деплой происходит автоматически при каждом push в ветку `main`.
 
 Процесс деплоя:
+
 1. GitHub Actions подключается к серверу по SSH
 2. Клонирует/обновляет код из репозитория в `/var/www/sobranie`
 3. Останавливает существующий контейнер

@@ -1,5 +1,4 @@
-Effector.dev Documentation
----
+## Effector.dev Documentation
 
 # FAQ
 
@@ -14,7 +13,6 @@ Effector plugins inserts special tags - SIDs - into the code, it help to automat
 This will help in the future, in the development of the effector devtools, and now it is used in the [playground](https://share.effector.dev) on the left sidebar.
 If you don't want to do it, you can use the [babel plugin](https://www.npmjs.com/package/@effector/babel-plugin). It will automatically generate the name for events and effects from the variable name.
 
-
 # Isolated scopes
 
 import Tabs from "@components/Tabs/Tabs.astro";
@@ -26,7 +24,7 @@ import SideBySide from "@components/SideBySide/SideBySide.astro";
 With scopes you can work with isolated instance for the entire application, which contains an independent clone of all units (including connections between them) and basic methods to access them:
 
 ```ts "fork" "allSettled"
-import { fork, allSettled } from "effector";
+import { fork, allSettled } from 'effector';
 
 // create a new scope
 const scope = fork();
@@ -53,8 +51,8 @@ Using fork, we create a new scope, and with allSettled we run a chain of events 
 
 In effector, all state is stored globally. In a client-side application (SPA), this is not a problem: each user gets their own instance of the code and works with their own state. But with server-side rendering (SSR) or parallel testing, global state becomes a problem: data from one request or test can “leak” into another. That’s why we need a scope.
 
-* **SSR** — the server runs as a single process and serves requests from many users. For each request, you can create a scope that isolates data from effector’s global scope and prevents one user’s state from leaking into another user’s request.
-* **Testing** — when running tests in parallel, data races and state collisions may occur. A scope allows each test to run with its own isolated state.
+- **SSR** — the server runs as a single process and serves requests from many users. For each request, you can create a scope that isolates data from effector’s global scope and prevents one user’s state from leaking into another user’s request.
+- **Testing** — when running tests in parallel, data races and state collisions may occur. A scope allows each test to run with its own isolated state.
 
 We provide detailed guides on working with server-side rendering (SSR) and testing. Here, we’ll focus on the core principles of using scopes, their rules, and how to avoid common mistakes.
 
@@ -77,14 +75,14 @@ You can call methods like `Promise.all([fx1(), fx2()])` and others from the stan
 ```ts wrap data-border="good" data-height="full"
 // ✅ correct usage for an effect without inner effects
 const delayFx = createEffect(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 80));
+	await new Promise((resolve) => setTimeout(resolve, 80));
 });
 
 // ✅ correct usage for an effect with inner effects
 const authFx = createEffect(async () => {
-  await loginFx();
+	await loginFx();
 
-  await Promise.all([loadProfileFx(), loadSettingsFx()]);
+	await Promise.all([loadProfileFx(), loadSettingsFx()]);
 });
 ```
 
@@ -96,13 +94,13 @@ const authFx = createEffect(async () => {
 // ❌ incorrect usage for an effect with inner effects
 
 const sendWithAuthFx = createEffect(async () => {
-  await authUserFx();
+	await authUserFx();
 
-  // incorrect! This should be wrapped in an effect.
-  await new Promise((resolve) => setTimeout(resolve, 80));
+	// incorrect! This should be wrapped in an effect.
+	await new Promise((resolve) => setTimeout(resolve, 80));
 
-  // scope is lost here.
-  await sendMessageFx();
+	// scope is lost here.
+	await sendMessageFx();
 });
 ```
 
@@ -119,18 +117,22 @@ const sendWithAuthFx = createEffect(async () => {
 Always use the `useUnit` hook with frameworks so effector can invoke the unit in the correct scope:
 
 ```tsx wrap "useUnit"
-import { useUnit } from "effector-react";
-import { $counter, increased, sendToServerFx } from "./model";
+import { useUnit } from 'effector-react';
+import { $counter, increased, sendToServerFx } from './model';
 
 const Component = () => {
-  const [counter, increase, sendToServer] = useUnit([$counter, increased, sendToServerFx]);
+	const [counter, increase, sendToServer] = useUnit([
+		$counter,
+		increased,
+		sendToServerFx,
+	]);
 
-  return (
-    <div>
-      <button onClick={increase}>{counter}</button>
-      <button onClick={sendToServer}>send data to server</button>
-    </div>
-  );
+	return (
+		<div>
+			<button onClick={increase}>{counter}</button>
+			<button onClick={sendToServer}>send data to server</button>
+		</div>
+	);
 };
 ```
 
@@ -140,9 +142,9 @@ Alright, just show me how it works already.
 
 Imagine a website with SSR, where the profile page shows a list of the user’s personal notifications. If we don’t use a scope, here’s what happens:
 
-* User A makes a request → their notifications load into `$notifications` on the server.
-* Almost at the same time, User B makes a request → the store is overwritten with their data.
-* As a result, both users see User B’s notifications.
+- User A makes a request → their notifications load into `$notifications` on the server.
+- Almost at the same time, User B makes a request → the store is overwritten with their data.
+- As a result, both users see User B’s notifications.
 
 Not what we want, right? This is a [race condition](https://en.wikipedia.org/wiki/Race_condition), which leads to a leak of private data.
 
@@ -154,28 +156,28 @@ A request is made → a scope is created → we update state only inside this sc
 
 ```tsx "fork" "allSettled" "serialize"
 // server.tsx
-import { renderToString } from "react-dom/server";
-import { fork, serialize, allSettled } from "effector";
-import { Provider } from "effector-react";
-import { fetchNotificationsFx } from "./model";
+import { renderToString } from 'react-dom/server';
+import { fork, serialize, allSettled } from 'effector';
+import { Provider } from 'effector-react';
+import { fetchNotificationsFx } from './model';
 
 async function serverRender() {
-  const scope = fork();
+	const scope = fork();
 
-  // Load data on the server
-  await allSettled(fetchNotificationsFx, { scope });
+	// Load data on the server
+	await allSettled(fetchNotificationsFx, { scope });
 
-  // Render the app
-  const html = renderToString(
-    <Provider value={scope}>
-      <App />
-    </Provider>,
-  );
+	// Render the app
+	const html = renderToString(
+		<Provider value={scope}>
+			<App />
+		</Provider>,
+	);
 
-  // Serialize state to send to the client
-  const data = serialize(scope);
+	// Serialize state to send to the client
+	const data = serialize(scope);
 
-  return `
+	return `
 	<html>
 	  <body>
 		<div id="root">${html}</div>
@@ -191,19 +193,19 @@ async function serverRender() {
 
 ```tsx
 // client.tsx
-import { hydrateRoot } from "react-dom/client";
-import { fork } from "effector";
+import { hydrateRoot } from 'react-dom/client';
+import { fork } from 'effector';
 
 // hydrate scope with initial values
 const scope = fork({
-  values: window.INITIAL_DATA,
+	values: window.INITIAL_DATA,
 });
 
 hydrateRoot(
-  document.getElementById("root"),
-  <Provider value={scope}>
-    <App />
-  </Provider>,
+	document.getElementById('root'),
+	<Provider value={scope}>
+		<App />
+	</Provider>,
 );
 ```
 
@@ -217,35 +219,32 @@ Things to note in this example:
 
 ### Related APIs and Articles
 
-* **API**
+- **API**
+    - Scope – Description of scope and its methods
+    - scopeBind – Method for binding a unit to a scope
+    - fork – Operator for creating a scope
+    - allSettled – Method for running a unit in a given scope and waiting for the entire chain of effects to complete
+    - serialize – Method for obtaining serialized store values
+    - hydrate – Method for hydrating serialized data
 
-    * Scope – Description of scope and its methods
-    * scopeBind – Method for binding a unit to a scope
-    * fork – Operator for creating a scope
-    * allSettled – Method for running a unit in a given scope and waiting for the entire chain of effects to complete
-    * serialize – Method for obtaining serialized store values
-    * hydrate – Method for hydrating serialized data
-
-* **Articles**
-
-    * What is scope loss and how to fix it
-    * SSR guide
-    * Testing guide
-    * The importance of SIDs for store hydration
-
+- **Articles**
+    - What is scope loss and how to fix it
+    - SSR guide
+    - Testing guide
+    - The importance of SIDs for store hydration
 
 # Effector React Gate
 
-*Gate* is a hook for conditional rendering, based on the current value (or values) in props. It can solve problems such as compiling all required data when a component mounts, or showing an alternative component if there is insufficient data in props. Gate is also useful for routing or animations, similar to ReactTransitionGroup.
+_Gate_ is a hook for conditional rendering, based on the current value (or values) in props. It can solve problems such as compiling all required data when a component mounts, or showing an alternative component if there is insufficient data in props. Gate is also useful for routing or animations, similar to ReactTransitionGroup.
 
-This enables the creation of a feedback loop by sending props back to a *Store*.
+This enables the creation of a feedback loop by sending props back to a _Store_.
 
 Gate can be integrated via the useGate hook or as a component with props. Gate stores and events function as standard units within an application.
 
 Gate has two potential states:
 
-* **Opened**, indicating the component is mounted.
-* **Closed**, indicating the component is unmounted.
+- **Opened**, indicating the component is mounted.
+- **Closed**, indicating the component is unmounted.
 
 <br/>
 
@@ -268,15 +267,15 @@ Gate has two potential states:
 #### Example
 
 ```tsx
-import { createGate, useGate } from "effector-react";
+import { createGate, useGate } from 'effector-react';
 
 const Gate = createGate();
 
-Gate.state.watch((state) => console.info("gate state updated", state));
+Gate.state.watch((state) => console.info('gate state updated', state));
 
 function App() {
-  useGate(Gate, { props: "yep" });
-  return <div>Example</div>;
+	useGate(Gate, { props: 'yep' });
+	return <div>Example</div>;
 }
 
 ReactDOM.render(<App />, root);
@@ -310,29 +309,28 @@ Store: Boolean DerivedStore indicating whether the gate is mounted.
 #### Example
 
 ```tsx
-import { createGate, useGate } from "effector-react";
+import { createGate, useGate } from 'effector-react';
 
 const Gate = createGate();
 
-Gate.status.watch((opened) => console.info("is Gate opened?", opened));
+Gate.status.watch((opened) => console.info('is Gate opened?', opened));
 // => is Gate opened? false
 
 function App() {
-  useGate(Gate);
-  return <div>Example</div>;
+	useGate(Gate);
+	return <div>Example</div>;
 }
 
 ReactDOM.render(<App />, root);
 // => is Gate opened? true
 ```
 
-
 # Provider
 
 React `Context.Provider` component, which takes any Scope in its `value` prop and makes all hooks in the subtree work with this scope:
 
-* `useUnit($store)` (and etc.) will read the state and subscribe to updates of the `$store` in this scope
-* `useUnit(event)` (and etc.) will bind provided event or effect to this scope
+- `useUnit($store)` (and etc.) will read the state and subscribe to updates of the `$store` in this scope
+- `useUnit(event)` (and etc.) will bind provided event or effect to this scope
 
 ## Usage
 
@@ -341,9 +339,9 @@ React `Context.Provider` component, which takes any Scope in its `value` prop an
 Here is an example of `<Provider />` usage.
 
 ```tsx
-import { createEvent, createStore, fork } from "effector";
-import { useUnit, Provider } from "effector-react";
-import { render } from "react-dom";
+import { createEvent, createStore, fork } from 'effector';
+import { useUnit, Provider } from 'effector-react';
+import { render } from 'react-dom';
 
 const buttonClicked = createEvent();
 const $count = createStore(0);
@@ -351,54 +349,54 @@ const $count = createStore(0);
 $count.on(buttonClicked, (counter) => counter + 1);
 
 const App = () => {
-  const [count, handleClick] = useUnit([$count, buttonClicked]);
+	const [count, handleClick] = useUnit([$count, buttonClicked]);
 
-  return (
-    <>
-      <p>Count: {count}</p>
-      <button onClick={() => handleClick()}>increment</button>
-    </>
-  );
+	return (
+		<>
+			<p>Count: {count}</p>
+			<button onClick={() => handleClick()}>increment</button>
+		</>
+	);
 };
 
 const myScope = fork({
-  values: [[$count, 42]],
+	values: [[$count, 42]],
 });
 
 render(
-  <Provider value={myScope}>
-    <App />
-  </Provider>,
-  document.getElementById("root"),
+	<Provider value={myScope}>
+		<App />
+	</Provider>,
+	document.getElementById('root'),
 );
 ```
 
 The `<App />` component is placed in the subtree of `<Provider value={myScope} />`, so its `useUnit([$count, inc])` call will return
 
-* State of the `$count` store in the `myScope`
-* Version of `buttonClicked` event, which is bound to the `myScope`, which, if called, updates the `$count` state in the `myScope`
+- State of the `$count` store in the `myScope`
+- Version of `buttonClicked` event, which is bound to the `myScope`, which, if called, updates the `$count` state in the `myScope`
 
 ### Multiple Providers Usage
 
 There can be as many `<Provider />` instances in the tree, as you may need.
 
 ```tsx
-import { fork } from "effector";
-import { Provider } from "effector-react";
-import { App } from "@/app";
+import { fork } from 'effector';
+import { Provider } from 'effector-react';
+import { App } from '@/app';
 
 const scopeA = fork();
 const scopeB = fork();
 
 const ParallelWidgets = () => (
-  <>
-    <Provider value={scopeA}>
-      <App />
-    </Provider>
-    <Provider value={scopeB}>
-      <App />
-    </Provider>
-  </>
+	<>
+		<Provider value={scopeA}>
+			<App />
+		</Provider>
+		<Provider value={scopeB}>
+			<App />
+		</Provider>
+	</>
 );
 ```
 
@@ -408,11 +406,10 @@ const ParallelWidgets = () => (
 
 `Scope`: any Scope. All hooks in the subtree will work with this scope.
 
-
 # connect
 
 ```ts
-import { connect } from "effector-react";
+import { connect } from 'effector-react';
 ```
 
 > WARNING Deprecated:
@@ -457,11 +454,10 @@ connect(Component)($store: Store<T>): Component
 
 `($store: Store<T>) => Component`: Function, which accepts a store and returns component with store fields merged into props
 
-
 # createComponent
 
 ```ts
-import { createComponent } from "effector-react";
+import { createComponent } from 'effector-react';
 ```
 
 > WARNING Deprecated:
@@ -478,43 +474,42 @@ Creates a store-based React component. The `createComponent` method is useful fo
 
 #### Arguments
 
-1. `$store` (*Store | Object*): `Store` or object of `Store`
-2. `render` (*Function*): Render function which will be called with props and state
+1. `$store` (_Store | Object_): `Store` or object of `Store`
+2. `render` (_Function_): Render function which will be called with props and state
 
 #### Returns
 
-(*`React.Component`*): Returns a React component.
+(_`React.Component`_): Returns a React component.
 
 #### Example
 
 ```jsx
-import { createStore, createEvent } from "effector";
-import { createComponent } from "effector-react";
+import { createStore, createEvent } from 'effector';
+import { createComponent } from 'effector-react';
 
 const increment = createEvent();
 
 const $counter = createStore(0).on(increment, (n) => n + 1);
 
 const MyCounter = createComponent($counter, (props, state) => (
-  <div>
-    Counter: {state}
-    <button onClick={increment}>increment</button>
-  </div>
+	<div>
+		Counter: {state}
+		<button onClick={increment}>increment</button>
+	</div>
 ));
 
 const MyOwnComponent = () => {
-  // any stuff here
-  return <MyCounter />;
+	// any stuff here
+	return <MyCounter />;
 };
 ```
 
 Try it
 
-
 # createGate
 
 ```ts
-import { createGate, type Gate } from "effector-react";
+import { createGate, type Gate } from 'effector-react';
 ```
 
 ## Methods
@@ -531,7 +526,7 @@ createGate(name?: string): Gate<T>
 
 #### Arguments
 
-1. `name?` (*string*): Optional name which will be used as the name of a created React component
+1. `name?` (_string_): Optional name which will be used as the name of a created React component
 
 #### Returns
 
@@ -542,27 +537,27 @@ Gate\<T>
 ##### Basic Usage
 
 ```jsx
-import React from "react";
-import ReactDOM from "react-dom";
-import { createGate } from "effector-react";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { createGate } from 'effector-react';
 
-const Gate = createGate("gate with props");
+const Gate = createGate('gate with props');
 
 const App = () => (
-  <section>
-    <Gate foo="bar" />
-  </section>
+	<section>
+		<Gate foo='bar' />
+	</section>
 );
 
 Gate.state.watch((state) => {
-  console.log("current state", state);
+	console.log('current state', state);
 });
 // => current state {}
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(<App />, document.getElementById('root'));
 // => current state {foo: 'bar'}
 
-ReactDOM.unmountComponentAtNode(document.getElementById("root"));
+ReactDOM.unmountComponentAtNode(document.getElementById('root'));
 // => current state {}
 ```
 
@@ -580,21 +575,20 @@ createGate({ defaultState?: T, domain?: Domain, name?: string }): Gate<T>
 
 #### Arguments
 
-`config` (*Object*): Optional configuration object
+`config` (_Object_): Optional configuration object
 
-* `defaultState?`: Optional default state for Gate.state
-* `domain?` (): Optional domain which will be used to create gate units (Gate.open event, Gate.state store, and so on)
-* `name?` (*string*): Optional name which will be used as the name of a created React component
+- `defaultState?`: Optional default state for Gate.state
+- `domain?` (): Optional domain which will be used to create gate units (Gate.open event, Gate.state store, and so on)
+- `name?` (_string_): Optional name which will be used as the name of a created React component
 
 #### Returns
 
 Gate\<T>
 
-
 # createStoreConsumer
 
 ```ts
-import { createStoreConsumer } from "effector-react";
+import { createStoreConsumer } from 'effector-react';
 ```
 
 > WARNING Deprecated:
@@ -607,7 +601,7 @@ import { createStoreConsumer } from "effector-react";
 
 ### `createStoreConsumer($store)`
 
-Creates a store-based React component which is watching for changes in the store. Based on *Render Props* technique.
+Creates a store-based React component which is watching for changes in the store. Based on _Render Props_ technique.
 
 #### Arguments
 
@@ -620,10 +614,10 @@ Creates a store-based React component which is watching for changes in the store
 #### Examples
 
 ```jsx
-import { createStore } from "effector";
-import { createStoreConsumer } from "effector-react";
+import { createStore } from 'effector';
+import { createStoreConsumer } from 'effector-react';
 
-const $firstName = createStore("Alan");
+const $firstName = createStore('Alan');
 
 const FirstName = createStoreConsumer($firstName);
 
@@ -632,47 +626,45 @@ const App = () => <FirstName>{(name) => <h1>{name}</h1>}</FirstName>;
 
 Try it
 
-
 # effector-react
 
 Effector bindings for ReactJS.
 
 ## Hooks
 
-* useUnit(units)
-* useList(store, renderItem)
-* useStoreMap({ store, keys, fn })
-* useStore(store)
-* useEvent(unit)
+- useUnit(units)
+- useList(store, renderItem)
+- useStoreMap({ store, keys, fn })
+- useStore(store)
+- useEvent(unit)
 
 ## Components
 
-* Provider
+- Provider
 
 ## Gate API
 
-* Gate
-* createGate()
-* useGate(GateComponent, props)
+- Gate
+- createGate()
+- useGate(GateComponent, props)
 
 ## Higher Order Components API
 
-* createComponent(store, render)
-* createStoreConsumer(store) renders props style
-* connect(store)(Component) "connect" style
+- createComponent(store, render)
+- createStoreConsumer(store) renders props style
+- connect(store)(Component) "connect" style
 
 ## Import map
 
 Package `effector-react` provides couple different entry points for different purposes:
 
-* effector-react/compat
-* effector-react/scope
-
+- effector-react/compat
+- effector-react/scope
 
 # effector-react/scope
 
 ```ts
-import {} from "effector-react/scope";
+import {} from 'effector-react/scope';
 ```
 
 > WARNING Deprecated:
@@ -687,19 +679,19 @@ You can use this module in the same way as effector-react, but it will require p
 
 ```jsx
 // main.js
-import { fork } from "effector";
-import { Provider } from "effector-react/scope";
+import { fork } from 'effector';
+import { Provider } from 'effector-react/scope';
 
-import React from "react";
-import ReactDOM from "react-dom/client";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 
 const scope = fork();
-const root = ReactDOM.createRoot(document.getElementById("root"));
+const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
-  <Provider value={scope}>
-    <Application />
-  </Provider>,
+	<Provider value={scope}>
+		<Application />
+	</Provider>,
 );
 ```
 
@@ -770,11 +762,10 @@ function Example() {
 }
 ```
 
-
 # effector-react/compat
 
 ```ts
-import {} from "effector-react/compat";
+import {} from 'effector-react/compat';
 ```
 
 The library provides a separate module with compatibility up to IE11 and Chrome 47 (browser for Smart TV devices).
@@ -791,11 +782,11 @@ Since `effector-react` uses `effector` under the hood, you need to use the compa
 
 You need to install polyfills for these objects:
 
-* `Promise`
-* `Object.assign`
-* `Array.prototype.flat`
-* `Map`
-* `Set`
+- `Promise`
+- `Object.assign`
+- `Array.prototype.flat`
+- `Map`
+- `Set`
 
 In most cases, a bundler can automatically add polyfills.
 
@@ -805,15 +796,21 @@ In most cases, a bundler can automatically add polyfills.
 <summary>Vite Configuration Example</summary>
 
 ```js
-import { defineConfig } from "vite";
-import legacy from "@vitejs/plugin-legacy";
+import { defineConfig } from 'vite';
+import legacy from '@vitejs/plugin-legacy';
 
 export default defineConfig({
-  plugins: [
-    legacy({
-      polyfills: ["es.promise", "es.object.assign", "es.array.flat", "es.map", "es.set"],
-    }),
-  ],
+	plugins: [
+		legacy({
+			polyfills: [
+				'es.promise',
+				'es.object.assign',
+				'es.array.flat',
+				'es.map',
+				'es.set',
+			],
+		}),
+	],
 });
 ```
 
@@ -838,35 +835,34 @@ However, you can set up your bundler to automatically replace `effector` with `e
 
 ```js
 module.exports = {
-  resolve: {
-    alias: {
-      effector: "effector/compat",
-      "effector-react": "effector-react/compat",
-    },
-  },
+	resolve: {
+		alias: {
+			effector: 'effector/compat',
+			'effector-react': 'effector-react/compat',
+		},
+	},
 };
 ```
 
 #### Vite
 
 ```js
-import { defineConfig } from "vite";
+import { defineConfig } from 'vite';
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      effector: "effector/compat",
-      "effector-react": "effector-react/compat",
-    },
-  },
+	resolve: {
+		alias: {
+			effector: 'effector/compat',
+			'effector-react': 'effector-react/compat',
+		},
+	},
 });
 ```
-
 
 # useEvent
 
 ```ts
-import { useEvent } from "effector-react";
+import { useEvent } from 'effector-react';
 ```
 
 > INFO since:
@@ -877,7 +873,7 @@ import { useEvent } from "effector-react";
 >
 > Prefer useUnit hook instead.
 
-Bind event to current  to use in dom event handlers.<br/>
+Bind event to current to use in dom event handlers.<br/>
 Only `effector-react/scope` version works this way, `useEvent` of `effector-react` is a no-op and does not require `Provider` with scope.
 
 > INFO Note:
@@ -901,9 +897,9 @@ Only `effector-react/scope` version works this way, `useEvent` of `effector-reac
 ##### Basic Usage
 
 ```jsx
-import ReactDOM from "react-dom";
-import { createEvent, createStore, fork } from "effector";
-import { useStore, useEvent, Provider } from "effector-react";
+import ReactDOM from 'react-dom';
+import { createEvent, createStore, fork } from 'effector';
+import { useStore, useEvent, Provider } from 'effector-react';
 
 const incremented = createEvent();
 const $count = createStore(0);
@@ -911,24 +907,24 @@ const $count = createStore(0);
 $count.on(incremented, (counter) => counter + 1);
 
 const App = () => {
-  const count = useStore($count);
-  const handleIncrement = useEvent(incremented);
+	const count = useStore($count);
+	const handleIncrement = useEvent(incremented);
 
-  return (
-    <>
-      <p>Count: {count}</p>
-      <button onClick={() => handleIncrement()}>increment</button>
-    </>
-  );
+	return (
+		<>
+			<p>Count: {count}</p>
+			<button onClick={() => handleIncrement()}>increment</button>
+		</>
+	);
 };
 
 const scope = fork();
 
 ReactDOM.render(
-  <Provider value={scope}>
-    <App />
-  </Provider>,
-  document.getElementById("root"),
+	<Provider value={scope}>
+		<App />
+	</Provider>,
+	document.getElementById('root'),
 );
 ```
 
@@ -949,9 +945,9 @@ Try it
 ##### Object Usage
 
 ```jsx
-import ReactDOM from "react-dom";
-import { createStore, createEvent, fork } from "effector";
-import { useStore, useEvent, Provider } from "effector-react";
+import ReactDOM from 'react-dom';
+import { createStore, createEvent, fork } from 'effector';
+import { useStore, useEvent, Provider } from 'effector-react';
 
 const incremented = createEvent();
 const decremented = createEvent();
@@ -962,35 +958,37 @@ $count.on(incremented, (counter) => counter + 1);
 $count.on(decremented, (counter) => counter - 1);
 
 const App = () => {
-  const counter = useStore($count);
-  const handler = useEvent({ incremented, decremented });
-  // or
-  const [handleIncrement, handleDecrement] = useEvent([incremented, decremented]);
+	const counter = useStore($count);
+	const handler = useEvent({ incremented, decremented });
+	// or
+	const [handleIncrement, handleDecrement] = useEvent([
+		incremented,
+		decremented,
+	]);
 
-  return (
-    <>
-      <p>Count: {counter}</p>
-      <button onClick={() => handler.incremented()}>increment</button>
-      <button onClick={() => handler.decremented()}>decrement</button>
-    </>
-  );
+	return (
+		<>
+			<p>Count: {counter}</p>
+			<button onClick={() => handler.incremented()}>increment</button>
+			<button onClick={() => handler.decremented()}>decrement</button>
+		</>
+	);
 };
 
 const scope = fork();
 
 ReactDOM.render(
-  <Provider value={scope}>
-    <App />
-  </Provider>,
-  document.getElementById("root"),
+	<Provider value={scope}>
+		<App />
+	</Provider>,
+	document.getElementById('root'),
 );
 ```
-
 
 # useGate
 
 ```ts
-import { useGate } from "effector-react";
+import { useGate } from 'effector-react';
 ```
 
 ## Methods
@@ -998,6 +996,7 @@ import { useGate } from "effector-react";
 ### `useGate(Gate, props?)`
 
 Hook for passing data to .
+
 #### Formulae
 
 ```ts
@@ -1020,29 +1019,28 @@ useGate(CustomGate, props?: T): void;
 ##### Basic
 
 ```js
-import { createGate, useGate } from "effector-react";
-import { Route } from "react-router";
+import { createGate, useGate } from 'effector-react';
+import { Route } from 'react-router';
 
-const PageGate = createGate("page");
+const PageGate = createGate('page');
 
 PageGate.state.watch(({ match }) => {
-  console.log(match);
+	console.log(match);
 });
 
 const Home = (props) => {
-  useGate(PageGate, props);
+	useGate(PageGate, props);
 
-  return <section>Home</section>;
+	return <section>Home</section>;
 };
 
 const App = () => <Route component={Home} />;
 ```
 
-
 # useList
 
 ```ts
-import { useList } from "effector-react";
+import { useList } from 'effector-react';
 ```
 
 > INFO since:
@@ -1074,7 +1072,7 @@ useList(
 #### Arguments
 
 1. `$store` (Store\<T>): Store with an array of items
-2. `fn` (*Function*): Render function which will be called for every item in list
+2. `fn` (_Function_): Render function which will be called for every item in list
 
 #### Returns
 
@@ -1085,25 +1083,25 @@ useList(
 ##### Basic
 
 ```jsx
-import { createStore } from "effector";
-import { useList } from "effector-react";
+import { createStore } from 'effector';
+import { useList } from 'effector-react';
 
 const $users = createStore([
-  { id: 1, name: "Yung" },
-  { id: 2, name: "Lean" },
-  { id: 3, name: "Kyoto" },
-  { id: 4, name: "Sesh" },
+	{ id: 1, name: 'Yung' },
+	{ id: 2, name: 'Lean' },
+	{ id: 3, name: 'Kyoto' },
+	{ id: 4, name: 'Sesh' },
 ]);
 
 const App = () => {
-  // we don't need keys here any more
-  const list = useList($users, ({ name }, index) => (
-    <li>
-      [{index}] {name}
-    </li>
-  ));
+	// we don't need keys here any more
+	const list = useList($users, ({ name }, index) => (
+		<li>
+			[{index}] {name}
+		</li>
+	));
 
-  return <ul>{list}</ul>;
+	return <ul>{list}</ul>;
 };
 ```
 
@@ -1112,70 +1110,76 @@ Try it
 ##### With store updates
 
 ```jsx
-import { createStore, createEvent } from "effector";
-import { useList, useUnit } from "effector-react";
+import { createStore, createEvent } from 'effector';
+import { useList, useUnit } from 'effector-react';
 
 const todoSubmitted = createEvent();
 const todoToggled = createEvent();
 
 const $todoList = createStore([
-  { text: "write useList example", done: true },
-  { text: "update readme", done: false },
+	{ text: 'write useList example', done: true },
+	{ text: 'update readme', done: false },
 ]);
 
 $todoList.on(todoToggled, (list, id) =>
-  list.map((todo, index) => {
-    if (index === id)
-      return {
-        ...todo,
-        done: !todo.done,
-      };
-    return todo;
-  }),
+	list.map((todo, index) => {
+		if (index === id)
+			return {
+				...todo,
+				done: !todo.done,
+			};
+		return todo;
+	}),
 );
 
 $todoList.on(todoSubmitted, (list, text) => [...list, { text, done: false }]);
 
 todoSubmitted.watch((e) => {
-  e.preventDefault();
+	e.preventDefault();
 });
 
 const TodoList = () => {
-  const [onTodoToggle] = useUnit([todoToggled]);
-  return useList($todoList, ({ text, done }, index) => {
-    const todo = done ? (
-      <del>
-        <span>{text}</span>
-      </del>
-    ) : (
-      <span>{text}</span>
-    );
+	const [onTodoToggle] = useUnit([todoToggled]);
+	return useList($todoList, ({ text, done }, index) => {
+		const todo =
+			done ?
+				<del>
+					<span>{text}</span>
+				</del>
+			:	<span>{text}</span>;
 
-    return <li onClick={() => onTodoToggle(index)}>{todo}</li>;
-  });
+		return <li onClick={() => onTodoToggle(index)}>{todo}</li>;
+	});
 };
 
 const App = () => {
-  const [onTodoSubmit] = useUnit([todoSubmitted]);
+	const [onTodoSubmit] = useUnit([todoSubmitted]);
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    onTodoSubmit(e.currentTarget.elements.content.value);
-  }
+	function handleSubmit(e) {
+		e.preventDefault();
+		onTodoSubmit(e.currentTarget.elements.content.value);
+	}
 
-  return (
-    <div>
-      <h1>todo list</h1>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="content">New todo</label>
-        <input type="text" name="content" required />
-        <input type="submit" value="Add" />
-      </form>
-      <ul>
-        <TodoList />
-      </ul>
-    </div>
-  );
+	return (
+		<div>
+			<h1>todo list</h1>
+			<form onSubmit={handleSubmit}>
+				<label htmlFor='content'>New todo</label>
+				<input
+					type='text'
+					name='content'
+					required
+				/>
+				<input
+					type='submit'
+					value='Add'
+				/>
+			</form>
+			<ul>
+				<TodoList />
+			</ul>
+		</div>
+	);
 };
 ```
 
@@ -1207,10 +1211,10 @@ useList(
 
 1. `$store` (Store\<T>): Store with an array of items
 2. `config` (`Object`)
-    * `keys` (`Array`): Array of dependencies, which will be passed to react by `useList`
-    * `fn` (`(value: T) => React.ReactNode`): Render function which will be called for every item in list
-    * `getKey` (`(value) => React.Key`): Optional function to compute key for every item of list
-    * `placeholder` (`React.ReactNode`): Optional react node to render instead of an empty list
+    - `keys` (`Array`): Array of dependencies, which will be passed to react by `useList`
+    - `fn` (`(value: T) => React.ReactNode`): Render function which will be called for every item in list
+    - `getKey` (`(value) => React.Key`): Optional function to compute key for every item of list
+    - `placeholder` (`React.ReactNode`): Optional react node to render instead of an empty list
 
 > INFO since:
 >
@@ -1229,46 +1233,45 @@ useList(
 ##### Basic
 
 ```jsx
-import ReactDOM from "react-dom";
-import { createEvent, createStore, restore } from "effector";
-import { useUnit, useList } from "effector-react";
+import ReactDOM from 'react-dom';
+import { createEvent, createStore, restore } from 'effector';
+import { useUnit, useList } from 'effector-react';
 
 const renameUser = createEvent();
 
-const $user = createStore("alice");
-const $friends = createStore(["bob"]);
+const $user = createStore('alice');
+const $friends = createStore(['bob']);
 
 $user.on(renameUser, (_, name) => name);
 
 const App = () => {
-  const user = useUnit($user);
+	const user = useUnit($user);
 
-  return useList($friends, {
-    keys: [user],
-    fn: (friend) => (
-      <div>
-        {friend} is a friend of {user}
-      </div>
-    ),
-  });
+	return useList($friends, {
+		keys: [user],
+		fn: (friend) => (
+			<div>
+				{friend} is a friend of {user}
+			</div>
+		),
+	});
 };
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(<App />, document.getElementById('root'));
 // => <div> bob is a friend of alice </div>
 
 setTimeout(() => {
-  renameUser("carol");
-  // => <div> bob is a friend of carol </div>
+	renameUser('carol');
+	// => <div> bob is a friend of carol </div>
 }, 500);
 ```
 
 Try it
 
-
 # useProvidedScope
 
 ```ts
-import { useProvidedScope } from "effector-react";
+import { useProvidedScope } from 'effector-react';
 ```
 
 Low-level React Hook, which returns current Scope from Provider.
@@ -1301,17 +1304,16 @@ For production code usage, see the useUnit hook instead.
 
 ```tsx
 const useCustomLibraryInternals = () => {
-  const scope = useProvidedScope();
+	const scope = useProvidedScope();
 
-  // ...
+	// ...
 };
 ```
-
 
 # useStore
 
 ```ts
-import { useStore } from "effector-react";
+import { useStore } from 'effector-react';
 ```
 
 React hook, which subscribes to a store and returns its current value, so when the store is updated, the component will update automatically.
@@ -1336,42 +1338,44 @@ useStore($store: Store<State>): State
 
 #### Returns
 
-(*`State`*): The value from the store
+(_`State`_): The value from the store
 
 #### Examples
 
 ```jsx
-import { createStore } from "effector";
-import { useStore, useEvent } from "effector-react";
+import { createStore } from 'effector';
+import { useStore, useEvent } from 'effector-react';
 
 const $counter = createStore(0);
 
 const { incrementClicked, decrementClicked } = createApi($counter, {
-  incrementClicked: (state) => state + 1,
-  decrementClicked: (state) => state - 1,
+	incrementClicked: (state) => state + 1,
+	decrementClicked: (state) => state - 1,
 });
 
 const App = () => {
-  const counter = useStore($counter);
-  const [onIncrement, onDecrement] = useEvent([incrementClicked, decrementClicked]);
+	const counter = useStore($counter);
+	const [onIncrement, onDecrement] = useEvent([
+		incrementClicked,
+		decrementClicked,
+	]);
 
-  return (
-    <div>
-      {counter}
-      <button onClick={onIncrement}>Increment</button>
-      <button onClick={onDecrement}>Decrement</button>
-    </div>
-  );
+	return (
+		<div>
+			{counter}
+			<button onClick={onIncrement}>Increment</button>
+			<button onClick={onDecrement}>Decrement</button>
+		</div>
+	);
 };
 ```
 
 Try it
 
-
 # useStoreMap
 
 ```ts
-import { useStoreMap } from "effector-react";
+import { useStoreMap } from 'effector-react';
 ```
 
 > INFO since:
@@ -1437,12 +1441,12 @@ useStoreMap({
 
 #### Arguments
 
-1. `config` (*Object*): Configuration object
-    * `store`: Source Store\<State>
-    * `keys` (*Array*): This argument will be passed to React.useMemo to avoid unnecessary updates
-    * `fn` (`(state: State, keys: any[]) => Result`): Selector function to receive part of source store
-    * `updateFilter` (`(newResult, oldResult) => boolean`): *Optional* function used to compare old and new updates to prevent unnecessary rerenders. Uses createStore updateFilter option under the hood
-    * `defaultValue`: Optional default value, used whenever `fn` returns undefined
+1. `config` (_Object_): Configuration object
+    - `store`: Source Store\<State>
+    - `keys` (_Array_): This argument will be passed to React.useMemo to avoid unnecessary updates
+    - `fn` (`(state: State, keys: any[]) => Result`): Selector function to receive part of source store
+    - `updateFilter` (`(newResult, oldResult) => boolean`): _Optional_ function used to compare old and new updates to prevent unnecessary rerenders. Uses createStore updateFilter option under the hood
+    - `defaultValue`: Optional default value, used whenever `fn` returns undefined
 
 > INFO since:
 >
@@ -1463,57 +1467,56 @@ useStoreMap({
 This hook is useful for working with lists, especially with large ones
 
 ```jsx
-import { createStore } from "effector";
-import { useList, useStoreMap } from "effector-react";
+import { createStore } from 'effector';
+import { useList, useStoreMap } from 'effector-react';
 
 const usersRaw = [
-  {
-    id: 1,
-    name: "Yung",
-  },
-  {
-    id: 2,
-    name: "Lean",
-  },
-  {
-    id: 3,
-    name: "Kyoto",
-  },
-  {
-    id: 4,
-    name: "Sesh",
-  },
+	{
+		id: 1,
+		name: 'Yung',
+	},
+	{
+		id: 2,
+		name: 'Lean',
+	},
+	{
+		id: 3,
+		name: 'Kyoto',
+	},
+	{
+		id: 4,
+		name: 'Sesh',
+	},
 ];
 
 const $users = createStore(usersRaw);
 const $ids = createStore(usersRaw.map(({ id }) => id));
 
 const User = ({ id }) => {
-  const user = useStoreMap({
-    store: $users,
-    keys: [id],
-    fn: (users, [userId]) => users.find(({ id }) => id === userId) ?? null,
-  });
+	const user = useStoreMap({
+		store: $users,
+		keys: [id],
+		fn: (users, [userId]) => users.find(({ id }) => id === userId) ?? null,
+	});
 
-  return (
-    <div>
-      <strong>[{user.id}]</strong> {user.name}
-    </div>
-  );
+	return (
+		<div>
+			<strong>[{user.id}]</strong> {user.name}
+		</div>
+	);
 };
 
 const UserList = () => {
-  return useList($ids, (id) => <User id={id} />);
+	return useList($ids, (id) => <User id={id} />);
 };
 ```
 
 Try it
 
-
 # useUnit
 
 ```ts
-import { useUnit } from "effector-react";
+import { useUnit } from 'effector-react';
 ```
 
 > INFO since:
@@ -1524,7 +1527,7 @@ React hook, which takes any unit or shape of units.
 
 In the case of stores, it subscribes the component to the provided store and returns its current value, so when the store updates, the component will update automatically.
 
-In the case of events/effects – it binds to the current  to use in DOM event handlers.
+In the case of events/effects – it binds to the current to use in DOM event handlers.
 Only the `effector-react/scope` version works this way; the `useUnit` of `effector-react` is no-op for events and does not require a `Provider` with scope.
 
 ## Methods
@@ -1553,9 +1556,9 @@ useUnit(effect: Effect<Params, Done, any>): (payload: Params) => Promise<Done>;
 ##### Basic
 
 ```jsx
-import { createEvent, createStore, fork } from "effector";
-import { useUnit, Provider } from "effector-react";
-import { render } from "react-dom";
+import { createEvent, createStore, fork } from 'effector';
+import { useUnit, Provider } from 'effector-react';
+import { render } from 'react-dom';
 
 const incrementClicked = createEvent();
 const $count = createStore(0);
@@ -1563,25 +1566,25 @@ const $count = createStore(0);
 $count.on(incrementClicked, (count) => count + 1);
 
 const App = () => {
-  const [count, onIncrement] = useUnit([$count, incrementClicked]);
+	const [count, onIncrement] = useUnit([$count, incrementClicked]);
 
-  return (
-    <>
-      <p>Count: {count}</p>
-      <button onClick={() => onIncrement()}>increment</button>
-    </>
-  );
+	return (
+		<>
+			<p>Count: {count}</p>
+			<button onClick={() => onIncrement()}>increment</button>
+		</>
+	);
 };
 
 const scope = fork();
 
 render(
-  () => (
-    <Provider value={scope}>
-      <App />
-    </Provider>
-  ),
-  document.getElementById("root"),
+	() => (
+		<Provider value={scope}>
+			<App />
+		</Provider>
+	),
+	document.getElementById('root'),
 );
 ```
 
@@ -1608,27 +1611,30 @@ Current value of the store.
 ##### Basic
 
 ```js
-import { createStore, createApi } from "effector";
-import { useUnit } from "effector-react";
+import { createStore, createApi } from 'effector';
+import { useUnit } from 'effector-react';
 
 const $counter = createStore(0);
 
 const { incrementClicked, decrementClicked } = createApi($counter, {
-  incrementClicked: (count) => count + 1,
-  decrementClicked: (count) => count - 1,
+	incrementClicked: (count) => count + 1,
+	decrementClicked: (count) => count - 1,
 });
 
 const App = () => {
-  const counter = useUnit($counter);
-  const [onIncrement, onDecrement] = useUnit([incrementClicked, decrementClicked]);
+	const counter = useUnit($counter);
+	const [onIncrement, onDecrement] = useUnit([
+		incrementClicked,
+		decrementClicked,
+	]);
 
-  return (
-    <div>
-      {counter}
-      <button onClick={onIncrement}>Increment</button>
-      <button onClick={onDecrement}>Decrement</button>
-    </div>
-  );
+	return (
+		<div>
+			{counter}
+			<button onClick={onIncrement}>Increment</button>
+			<button onClick={onDecrement}>Decrement</button>
+		</div>
+	);
 };
 ```
 
@@ -1650,17 +1656,17 @@ useUnit([Store<A>, Event<B>, ... ]): [A, (payload: B) => B, ... ]
 
 (`Object` or `Array`):
 
-* If passed `EventCallable` or `Effect`: Functions with the same names or keys as the argument to pass to event handlers. Will trigger the given unit in the current scope. <br/>
-  *Note: events or effects will be bound to `Scope` **only** if component wrapped into Provider.*
-* If passed `Store`: The current value of the store.
+- If passed `EventCallable` or `Effect`: Functions with the same names or keys as the argument to pass to event handlers. Will trigger the given unit in the current scope. <br/>
+  _Note: events or effects will be bound to `Scope` **only** if component wrapped into Provider._
+- If passed `Store`: The current value of the store.
 
 #### Examples
 
 ##### Basic
 
 ```jsx
-import { createStore, createEvent, fork } from "effector";
-import { useUnit, Provider } from "effector-react";
+import { createStore, createEvent, fork } from 'effector';
+import { useUnit, Provider } from 'effector-react';
 
 const incremented = createEvent();
 const decremented = createEvent();
@@ -1671,48 +1677,47 @@ $count.on(incremented, (count) => count + 1);
 $count.on(decremented, (count) => count - 1);
 
 const App = () => {
-  const count = useUnit($count);
-  const on = useUnit({ incremented, decremented });
-  // or
-  const [a, b] = useUnit([incremented, decremented]);
+	const count = useUnit($count);
+	const on = useUnit({ incremented, decremented });
+	// or
+	const [a, b] = useUnit([incremented, decremented]);
 
-  return (
-    <>
-      <p>Count: {count}</p>
-      <button onClick={() => on.incremented()}>increment</button>
-      <button onClick={() => on.decremented()}>decrement</button>
-    </>
-  );
+	return (
+		<>
+			<p>Count: {count}</p>
+			<button onClick={() => on.incremented()}>increment</button>
+			<button onClick={() => on.decremented()}>decrement</button>
+		</>
+	);
 };
 
 const scope = fork();
 
 render(
-  () => (
-    <Provider value={scope}>
-      <App />
-    </Provider>
-  ),
-  document.getElementById("root"),
+	() => (
+		<Provider value={scope}>
+			<App />
+		</Provider>
+	),
+	document.getElementById('root'),
 );
 ```
 
-
 # Effector Solid Gate
 
-*Gate* is a hook for conditional rendering, based on current value (or values) in props.
+_Gate_ is a hook for conditional rendering, based on current value (or values) in props.
 An example of a problem that Gate can solve – you can put together all required data when component was mounted, or show another component if there is not enough data in props.
 Gate also looks good for Routing or animation.
 
-This allows you to send props back to *Store* to create a feedback loop.
+This allows you to send props back to _Store_ to create a feedback loop.
 
 Gate can be used via the useGate hook or as a component with props (`<Gate history={history} />`).
 Gate stores and events can be used in the application as regular units.
 
 Gate can have two states:
 
-* **Open**, which means mounted
-* **Closed**, which means unmounted
+- **Open**, which means mounted
+- **Closed**, which means unmounted
 
 ## Properties
 
@@ -1748,7 +1753,6 @@ Event: Event which will be called during the gate's unmounting.
 
 `Store<boolean>`: Boolean Derived Store, which shows if the given gate is mounted.
 
-
 # createGate
 
 ## Methods
@@ -1763,15 +1767,13 @@ createGate(config): Gate
 
 #### Arguments
 
-`config` (*Object*): Optional configuration object
+`config` (_Object_): Optional configuration object
 
-* `defaultState?`: Optional default state for Gate.state
-* `domain?` (\[*Domain*]/apieffector/Domain)): Optional domain which will be used to create gate units (Gate.open event, Gate.state store and so on)
-* `name?` (*string*): Optional name which will be used as name of a created Solid component
+- `defaultState?`: Optional default state for Gate.state
+- `domain?` (\[_Domain_]/apieffector/Domain)): Optional domain which will be used to create gate units (Gate.open event, Gate.state store and so on)
+- `name?` (_string_): Optional name which will be used as name of a created Solid component
 
 #### Returns
-
-
 
 #### Examples
 
@@ -1787,40 +1789,37 @@ createGate(name): Gate
 
 #### Arguments
 
-1. `name?` (*string*): Optional name which will be used as name of a created Solid component
+1. `name?` (_string_): Optional name which will be used as name of a created Solid component
 
 #### Returns
-
-
 
 #### Examples
 
 ##### Basic usage
 
 ```js
-import { createGate } from "effector-solid";
-import { render } from "solid-js/web";
+import { createGate } from 'effector-solid';
+import { render } from 'solid-js/web';
 
-const Gate = createGate("gate with props");
+const Gate = createGate('gate with props');
 
 const App = () => (
-  <section>
-    <Gate foo="bar" />
-  </section>
+	<section>
+		<Gate foo='bar' />
+	</section>
 );
 
 Gate.state.watch((state) => {
-  console.log("current state", state);
+	console.log('current state', state);
 });
 // => current state {}
 
-const unmount = render(() => <App />, document.getElementById("root"));
+const unmount = render(() => <App />, document.getElementById('root'));
 // => current state {foo: 'bar'}
 
 unmount();
 // => current state {}
 ```
-
 
 # effector-solid
 
@@ -1828,26 +1827,25 @@ Effector bindings for SolidJS.
 
 ## Reactive Helpers
 
-* useUnit(unit)
-* useStoreMap({ store, keys, fn })
+- useUnit(unit)
+- useStoreMap({ store, keys, fn })
 
 ## Gate API
 
-* Gate
-* createGate()
-* useGate(GateComponent, props)
+- Gate
+- createGate()
+- useGate(GateComponent, props)
 
 ## Import Map
 
 Package `effector-solid` provides couple different entry points for different purposes:
 
-* effector-solid/scope
-
+- effector-solid/scope
 
 # effector-solid/scope
 
 ```ts
-import {} from "effector-solid/scope";
+import {} from 'effector-solid/scope';
 ```
 
 > WARNING Deprecated:
@@ -1862,17 +1860,17 @@ You can use this module in the same way as effector-solid, but it will require p
 
 ```jsx
 // main.js
-import { fork } from "effector";
-import { Provider } from "effector-solid/scope";
-import { render } from "solid-js/web";
+import { fork } from 'effector';
+import { Provider } from 'effector-solid/scope';
+import { render } from 'solid-js/web';
 
 const scope = fork();
 
 render(
-  <Provider value={scope}>
-    <Application />
-  </Provider>,
-  document.getElementById("root"),
+	<Provider value={scope}>
+		<Application />
+	</Provider>,
+	document.getElementById('root'),
 );
 ```
 
@@ -1906,11 +1904,10 @@ function MyComponent() {
 }
 ```
 
-
 # useGate
 
 ```ts
-import { useGate } from "effector-solid";
+import { useGate } from 'effector-solid';
 ```
 
 Function for passing data to .
@@ -1928,7 +1925,7 @@ useGate(Gate: Gate<Props>, props: Props): void;
 #### Arguments
 
 1. `Gate` (Gate\<Props>)
-2. `props` (*Props*)
+2. `props` (_Props_)
 
 #### Returns
 
@@ -1939,32 +1936,31 @@ useGate(Gate: Gate<Props>, props: Props): void;
 ##### Basic Usage
 
 ```jsx
-import { createGate, useGate } from "effector-solid";
-import { Route, Routes } from "solid-app-router";
+import { createGate, useGate } from 'effector-solid';
+import { Route, Routes } from 'solid-app-router';
 
-const PageGate = createGate("page");
+const PageGate = createGate('page');
 
 const Home = (props) => {
-  useGate(PageGate, props);
-  return <section>Home</section>;
+	useGate(PageGate, props);
+	return <section>Home</section>;
 };
 
 PageGate.state.watch(({ match }) => {
-  console.log(match);
+	console.log(match);
 });
 
 const App = () => (
-  <Routes>
-    <Route element={<Home />} />
-  </Routes>
+	<Routes>
+		<Route element={<Home />} />
+	</Routes>
 );
 ```
-
 
 # useStoreMap
 
 ```ts
-import { useStoreMap } from "effector-solid";
+import { useStoreMap } from 'effector-solid';
 ```
 
 ## Methods
@@ -2012,11 +2008,11 @@ useStoreMap({
 
 #### Arguments
 
-1. `params` (*Object*): Configuration object
-    * `store`: Source store
-    * `keys` (*Array*): Will be passed to `fn` selector
-    * `fn` (*(state, keys) => result*): Selector function to receive part of the source store
-    * `updateFilter` (*(newResult, oldResult) => boolean*): *Optional* function used to compare old and new updates to prevent unnecessary rerenders. Uses createStore updateFilter option under the hood
+1. `params` (_Object_): Configuration object
+    - `store`: Source store
+    - `keys` (_Array_): Will be passed to `fn` selector
+    - `fn` (_(state, keys) => result_): Selector function to receive part of the source store
+    - `updateFilter` (_(newResult, oldResult) => boolean_): _Optional_ function used to compare old and new updates to prevent unnecessary rerenders. Uses createStore updateFilter option under the hood
 
 #### Returns
 
@@ -2027,61 +2023,69 @@ useStoreMap({
 This hook is very useful for working with lists, especially large ones.
 
 ```jsx
-import { createStore } from "effector";
-import { useUnit, useStoreMap } from "effector-solid";
-import { For } from "solid-js/web";
+import { createStore } from 'effector';
+import { useUnit, useStoreMap } from 'effector-solid';
+import { For } from 'solid-js/web';
 
 const usersRaw = [
-  {
-    id: 1,
-    name: "Yung",
-  },
-  {
-    id: 2,
-    name: "Lean",
-  },
-  {
-    id: 3,
-    name: "Kyoto",
-  },
-  {
-    id: 4,
-    name: "Sesh",
-  },
+	{
+		id: 1,
+		name: 'Yung',
+	},
+	{
+		id: 2,
+		name: 'Lean',
+	},
+	{
+		id: 3,
+		name: 'Kyoto',
+	},
+	{
+		id: 4,
+		name: 'Sesh',
+	},
 ];
 
 const $users = createStore(usersRaw);
 const $ids = createStore(usersRaw.map(({ id }) => id));
 
 const User = ({ id }) => {
-  const user = useStoreMap({
-    store: $users,
-    keys: [id],
-    fn: (users, [userId]) => users.find(({ id }) => id === userId) ?? null,
-  });
+	const user = useStoreMap({
+		store: $users,
+		keys: [id],
+		fn: (users, [userId]) => users.find(({ id }) => id === userId) ?? null,
+	});
 
-  return (
-    <div>
-      <strong>[{user()?.id}]</strong> {user()?.name}
-    </div>
-  );
+	return (
+		<div>
+			<strong>[{user()?.id}]</strong> {user()?.name}
+		</div>
+	);
 };
 
 const UserList = () => {
-  const ids = useUnit($ids);
+	const ids = useUnit($ids);
 
-  return <For each={ids()}>{(id) => <User key={id} id={id} />}</For>;
+	return (
+		<For each={ids()}>
+			{(id) => (
+				<User
+					key={id}
+					id={id}
+				/>
+			)}
+		</For>
+	);
 };
 ```
-
 
 # useUnit
 
 ```ts
-import { useUnit } from "effector-solid";
+import { useUnit } from 'effector-solid';
 ```
 
-Binds effector stores to the Solid reactivity system or, in the case of events/effects – binds to current  to use in dom event handlers.
+Binds effector stores to the Solid reactivity system or, in the case of events/effects – binds to current to use in dom event handlers.
 Only `effector-solid/scope` version works this way, `useUnit` of `effector-solid` is no-op for events and does not require `Provider` with scope.
 
 ## Methods
@@ -2108,9 +2112,9 @@ useUnit(effect: Effect<Params, Done, any>): (payload: Params) => Promise<Done>;
 A basic Solid component using `useUnit` with events and stores.
 
 ```jsx
-import { render } from "solid-js/web";
-import { createEvent, createStore, fork } from "effector";
-import { useUnit, Provider } from "effector-solid";
+import { render } from 'solid-js/web';
+import { createEvent, createStore, fork } from 'effector';
+import { useUnit, Provider } from 'effector-solid';
 
 const incremented = createEvent();
 const $count = createStore(0);
@@ -2118,25 +2122,25 @@ const $count = createStore(0);
 $count.on(incremented, (count) => count + 1);
 
 const App = () => {
-  const [count, handleIncrement] = useUnit([$count, incremented]);
+	const [count, handleIncrement] = useUnit([$count, incremented]);
 
-  return (
-    <>
-      <p>Count: {count()}</p>
-      <button onClick={() => handleIncrement()}>Increment</button>
-    </>
-  );
+	return (
+		<>
+			<p>Count: {count()}</p>
+			<button onClick={() => handleIncrement()}>Increment</button>
+		</>
+	);
 };
 
 const scope = fork();
 
 render(
-  () => (
-    <Provider value={scope}>
-      <App />
-    </Provider>
-  ),
-  document.getElementById("root"),
+	() => (
+		<Provider value={scope}>
+			<App />
+		</Provider>
+	),
+	document.getElementById('root'),
 );
 ```
 
@@ -2159,27 +2163,30 @@ useUnit($store: Store<State>): Accessor<State>;
 #### Example
 
 ```jsx
-import { createStore, createApi } from "effector";
-import { useUnit } from "effector-solid";
+import { createStore, createApi } from 'effector';
+import { useUnit } from 'effector-solid';
 
 const $counter = createStore(0);
 
 const { incremented, decremented } = createApi($counter, {
-  incremented: (count) => count + 1,
-  decremented: (count) => count - 1,
+	incremented: (count) => count + 1,
+	decremented: (count) => count - 1,
 });
 
 const App = () => {
-  const counter = useUnit($counter);
-  const [handleIncrement, handleDecrement] = useUnit([incremented, decremented]);
+	const counter = useUnit($counter);
+	const [handleIncrement, handleDecrement] = useUnit([
+		incremented,
+		decremented,
+	]);
 
-  return (
-    <div>
-      {counter()}
-      <button onClick={incremented}>Increment</button>
-      <button onClick={decremented}>Decrement</button>
-    </div>
-  );
+	return (
+		<div>
+			{counter()}
+			<button onClick={incremented}>Increment</button>
+			<button onClick={decremented}>Decrement</button>
+		</div>
+	);
 };
 ```
 
@@ -2201,50 +2208,49 @@ useUnit([Store<A>, Event<B>, ... ]): [Accessor<A>, (payload: B) => B, ... ]
 
 (`Object` or `Array`):
 
-* If `EventCallable` or `Effect`: functions with the same names or keys as argument to pass to event handlers. Will trigger given unit in current scope *Note: events or effects will be bound **only** if `useUnit` is imported from `effector-solid/scope`*.
-* If `Store`: accessor signals which will subscribe to the store state.
+- If `EventCallable` or `Effect`: functions with the same names or keys as argument to pass to event handlers. Will trigger given unit in current scope _Note: events or effects will be bound **only** if `useUnit` is imported from `effector-solid/scope`_.
+- If `Store`: accessor signals which will subscribe to the store state.
 
 #### Examples
 
 ```jsx
-import { render } from "solid-js/web";
-import { createStore, createEvent, fork } from "effector";
-import { useUnit, Provider } from "effector-solid/scope";
+import { render } from 'solid-js/web';
+import { createStore, createEvent, fork } from 'effector';
+import { useUnit, Provider } from 'effector-solid/scope';
 
 const incremented = createEvent();
 const decremented = createEvent();
 
 const $count = createStore(0)
-  .on(incremented, (count) => count + 1)
-  .on(decremented, (count) => count - 1);
+	.on(incremented, (count) => count + 1)
+	.on(decremented, (count) => count - 1);
 
 const App = () => {
-  const count = useUnit($count);
-  const on = useUnit({ incremented, decremented });
-  // or
-  const [a, b] = useUnit([incremented, decremented]);
+	const count = useUnit($count);
+	const on = useUnit({ incremented, decremented });
+	// or
+	const [a, b] = useUnit([incremented, decremented]);
 
-  return (
-    <>
-      <p>Count: {count()}</p>
-      <button onClick={() => on.incremented()}>Increment</button>
-      <button onClick={() => on.decremented()}>Decrement</button>
-    </>
-  );
+	return (
+		<>
+			<p>Count: {count()}</p>
+			<button onClick={() => on.incremented()}>Increment</button>
+			<button onClick={() => on.decremented()}>Decrement</button>
+		</>
+	);
 };
 
 const scope = fork();
 
 render(
-  () => (
-    <Provider value={scope}>
-      <App />
-    </Provider>
-  ),
-  document.getElementById("root"),
+	() => (
+		<Provider value={scope}>
+			<App />
+		</Provider>
+	),
+	document.getElementById('root'),
 );
 ```
-
 
 # ComponentOptions
 
@@ -2254,57 +2260,56 @@ render(
 
 #### Returns
 
-(*`Function | Object | Store`*): `Store` or object of `Store`'s, or function which will be called with the Component instance as `this`.
+(_`Function | Object | Store`_): `Store` or object of `Store`'s, or function which will be called with the Component instance as `this`.
 
 #### Examples
 
 ##### Basic Usage
 
 ```js
-import Vue from "vue";
-import { createStore, combine } from "effector";
+import Vue from 'vue';
+import { createStore, combine } from 'effector';
 
 const counter = createStore(0);
 
 new Vue({
-  data() {
-    return {
-      foo: "bar",
-    };
-  },
-  effector() {
-    // would create `state` in template
-    return combine(
-      this.$store(() => this.foo),
-      counter,
-      (foo, counter) => `${foo} + ${counter}`,
-    );
-  },
+	data() {
+		return {
+			foo: 'bar',
+		};
+	},
+	effector() {
+		// would create `state` in template
+		return combine(
+			this.$store(() => this.foo),
+			counter,
+			(foo, counter) => `${foo} + ${counter}`,
+		);
+	},
 });
 ```
 
 ##### Using Object Syntax
 
 ```js
-import { counter } from "./stores";
+import { counter } from './stores';
 
 new Vue({
-  effector: {
-    counter, // would create `counter` in template
-  },
+	effector: {
+		counter, // would create `counter` in template
+	},
 });
 ```
 
 ##### Using Store Directly
 
 ```js
-import { counter } from "./stores";
+import { counter } from './stores';
 
 new Vue({
-  effector: counter, // would create `state` in template
+	effector: counter, // would create `state` in template
 });
 ```
-
 
 # EffectorScopePlugin
 
@@ -2324,34 +2329,33 @@ The Plugin provides a general scope which needs for read and update effector's s
 ##### Basic Usage
 
 ```js
-import { createSSRApp } from "vue";
-import { EffectorScopePlugin } from "effector-vue";
-import { fork } from "effector";
+import { createSSRApp } from 'vue';
+import { EffectorScopePlugin } from 'effector-vue';
+import { fork } from 'effector';
 
 const app = createSSRApp(AppComponent);
 const scope = fork();
 
 app.use(
-  EffectorScopePlugin({
-    scope,
-    scopeName: "app-scope-name",
-  }),
+	EffectorScopePlugin({
+		scope,
+		scopeName: 'app-scope-name',
+	}),
 );
 ```
 
-
 # Effector Vue Gate
 
-*Gate* is a hook for conditional rendering, based on current value (or values) in props. An example of a problem that Gate can solve – you can put together all required data, when component was mounted.
+_Gate_ is a hook for conditional rendering, based on current value (or values) in props. An example of a problem that Gate can solve – you can put together all required data, when component was mounted.
 
-This allows you to send props back to *Store* to create feedback loop.
+This allows you to send props back to _Store_ to create feedback loop.
 
 Gate can be used via useGate hook. Gate stores and events can be used in the application as regular units
 
 Gate can have two states:
 
-* **Open**, which means mounted
-* **Closed**, which means unmounted
+- **Open**, which means mounted
+- **Closed**, which means unmounted
 
 ## Gate Properties
 
@@ -2387,11 +2391,10 @@ Event: Event which will be called during a gate unmounting.
 
 `Store<boolean>`: Boolean DerivedStore, which show if given gate is mounted.
 
-
 # VueEffector
 
 ```ts
-import { VueEffector } from "effector-vue/options-vue3";
+import { VueEffector } from 'effector-vue/options-vue3';
 ```
 
 `effector-vue` plugin for vue 3 creates a mixin that takes a binding function from the effector option.
@@ -2402,21 +2405,21 @@ import { VueEffector } from "effector-vue/options-vue3";
 
 #### Arguments
 
-1. `app` (*instance Vue*): Vue instance
+1. `app` (_instance Vue_): Vue instance
 
 #### Returns
 
-(*`void`*)
+(_`void`_)
 
 #### Examples
 
 ##### Installation plugin
 
 ```js
-import { createApp } from "vue";
-import { VueEffector } from "effector-vue/options-vue3";
+import { createApp } from 'vue';
+import { VueEffector } from 'effector-vue/options-vue3';
 
-import App from "./App.vue";
+import App from './App.vue';
 
 const app = createApp(App);
 
@@ -2459,11 +2462,10 @@ export default {
 }
 ```
 
-
 # VueEffector
 
 ```ts
-import { VueEffector } from "effector-vue";
+import { VueEffector } from 'effector-vue';
 ```
 
 `effector-vue` plugin for vue 2
@@ -2474,24 +2476,23 @@ import { VueEffector } from "effector-vue";
 
 #### Arguments
 
-1. `Vue` (*class Vue*): Vue class
-2. `options` (*Object*): Plugin options
+1. `Vue` (_class Vue_): Vue class
+2. `options` (_Object_): Plugin options
 
-* TBD
+- TBD
 
 #### Returns
 
-(*`void`*)
+(_`void`_)
 
 #### Examples
 
 ```js
-import Vue from "vue";
-import { VueEffector } from "effector-vue";
+import Vue from 'vue';
+import { VueEffector } from 'effector-vue';
 
 Vue.use(VueEffector);
 ```
-
 
 # VueSSRPlugin
 
@@ -2515,21 +2516,20 @@ The Plugin provides a general scope which needs for read and update effector's s
 #### Basic usage
 
 ```js
-import { createSSRApp } from "vue";
-import { VueSSRPlugin } from "effector-vue/ssr";
-import { fork } from "effector";
+import { createSSRApp } from 'vue';
+import { VueSSRPlugin } from 'effector-vue/ssr';
+import { fork } from 'effector';
 
 const app = createSSRApp(AppComponent);
 const scope = fork();
 
 app.use(
-  VueSSRPlugin({
-    scope,
-    scopeName: "app-scope-name",
-  }),
+	VueSSRPlugin({
+		scope,
+		scopeName: 'app-scope-name',
+	}),
 );
 ```
-
 
 # createComponent
 
@@ -2539,12 +2539,12 @@ app.use(
 
 #### Arguments
 
-1. `options` (*Object*): component options (hooks, methods, computed properties)
-2. `store` (*Object*): Store object from effector
+1. `options` (_Object_): component options (hooks, methods, computed properties)
+2. `store` (_Object_): Store object from effector
 
 #### Returns
 
-(*`vue component`*)
+(_`vue component`_)
 
 #### Example
 
@@ -2577,10 +2577,9 @@ export default createComponent(
 );
 ```
 
-
 # createGate
 
-Creates a  to consume data from view, designed for vue 3. If `defaultState` is defined, Gate.state will be created with passed value.
+Creates a to consume data from view, designed for vue 3. If `defaultState` is defined, Gate.state will be created with passed value.
 
 ## Methods
 
@@ -2588,71 +2587,68 @@ Creates a  to consume data from view, designed for vue 3. If `defaultState` is d
 
 #### Arguments
 
-`config` (*Object*): Optional configuration object
+`config` (_Object_): Optional configuration object
 
-* `defaultState?`: Optional default state for Gate.state
-* `domain?` (): Optional domain which will be used to create gate units (Gate.open event, Gate.state store, and so on)
-* `name?` (*string*): Optional name which will be used as the name of a created Vue component
+- `defaultState?`: Optional default state for Gate.state
+- `domain?` (): Optional domain which will be used to create gate units (Gate.open event, Gate.state store, and so on)
+- `name?` (_string_): Optional name which will be used as the name of a created Vue component
 
 #### Returns
-
-
 
 #### Examples
 
 ##### Basic Usage
 
 ```js
-import { createGate, useGate } from "effector-vue/composition";
+import { createGate, useGate } from 'effector-vue/composition';
 
 const ListGate = createGate({
-  name: "Gate with required props",
+	name: 'Gate with required props',
 });
 
 const ListItem = {
-  template: `
+	template: `
     <div>
       {{id}}
     </div>
   `,
-  props: {
-    id: {
-      type: String,
-      required: true,
-    },
-  },
-  setup(props) {
-    useGate(ListGate, () => props.id);
-  },
+	props: {
+		id: {
+			type: String,
+			required: true,
+		},
+	},
+	setup(props) {
+		useGate(ListGate, () => props.id);
+	},
 };
 
 const app = {
-  template: `
+	template: `
     <div>
       <ListItem :id="id" />
     </div>
   `,
-  components: {
-    ListItem,
-  },
-  setup() {
-    const id = ref("1");
-    return { id };
-  },
+	components: {
+		ListItem,
+	},
+	setup() {
+		const id = ref('1');
+		return { id };
+	},
 };
 
 Gate.state.watch((state) => {
-  console.log("current state", state);
+	console.log('current state', state);
 });
 // => current state null
 
-app.mount("#app");
+app.mount('#app');
 // => current state 1
 
 app.unmount();
 // => current state null
 ```
-
 
 # effector-vue
 
@@ -2660,55 +2656,53 @@ Effector binginds for Vue.
 
 ## Top-Level Exports
 
-* VueEffector(Vue, options?)
-* createComponent(ComponentOptions, store?)
-* EffectorScopePlugin({scope, scopeName?})
+- VueEffector(Vue, options?)
+- createComponent(ComponentOptions, store?)
+- EffectorScopePlugin({scope, scopeName?})
 
 ## ComponentOptions API
 
-* ComponentOptions\<V>
+- ComponentOptions\<V>
 
 ## Hooks
 
-* useUnit(shape)
-* useStore(store)
-* useStoreMap({store, keys, fn})
-* useVModel(store)
+- useUnit(shape)
+- useStore(store)
+- useStoreMap({store, keys, fn})
+- useVModel(store)
 
 ## Gate API
 
-* Gate
-* createGate()
-* useGate(GateComponent, props)
+- Gate
+- createGate()
+- useGate(GateComponent, props)
 
 ## Import map
 
 Package `effector-vue` provides couple different entry points for different purposes:
 
-* effector-vue/composition
-* effector-vue/ssr
-
+- effector-vue/composition
+- effector-vue/ssr
 
 # effector-vue/composition
 
 ```ts
-import {} from "effector-vue/composition";
+import {} from 'effector-vue/composition';
 ```
 
 Provides additional API for effector-vue that allows to use [Composition API](https://v3.vuejs.org/guide/composition-api-introduction.html)
 
 ### APIs
 
-* useUnit(shape)
-* useStore($store)
-* useStoreMap({ store, keys, fn })
-* useVModel($store)
-
+- useUnit(shape)
+- useStore($store)
+- useStoreMap({ store, keys, fn })
+- useVModel($store)
 
 # effector-vue/ssr
 
 ```ts
-import {} from "effector-vue/ssr";
+import {} from 'effector-vue/ssr';
 ```
 
 > WARNING Deprecated:
@@ -2719,14 +2713,13 @@ Provides additional API for effector-vue that enforces library to use Scope
 
 ### APIs
 
-* useEvent(event)
-* VueSSRPlugin
-
+- useEvent(event)
+- VueSSRPlugin
 
 # useEvent
 
 ```ts
-import { useEvent } from "effector-vue/ssr";
+import { useEvent } from 'effector-vue/ssr';
 ```
 
 > WARNING Deprecated:
@@ -2752,8 +2745,8 @@ Bind event to current fork instance to use in dom event handlers. Used **only** 
 ##### Basic
 
 ```js
-import { createStore, createEvent } from "effector";
-import { useEvent } from "effector-vue/ssr";
+import { createStore, createEvent } from 'effector';
+import { useEvent } from 'effector-vue/ssr';
 
 const incremented = createEvent();
 const $count = createStore(0);
@@ -2761,23 +2754,22 @@ const $count = createStore(0);
 $count.on(incremented, (x) => x + 1);
 
 export default {
-  setup() {
-    const counter = useStore($count);
-    const onIncrement = useEvent(incremented);
+	setup() {
+		const counter = useStore($count);
+		const onIncrement = useEvent(incremented);
 
-    return {
-      onIncrement,
-      counter,
-    };
-  },
+		return {
+			onIncrement,
+			counter,
+		};
+	},
 };
 ```
-
 
 # useGate
 
 ```ts
-import { useGate } from "effector-vue/composition";
+import { useGate } from 'effector-vue/composition';
 ```
 
 ## Methods
@@ -2789,21 +2781,20 @@ Using a Gate to consume data from view. Designed for Vue 3
 #### Arguments
 
 1. `Gate<Props>` ()
-2. `props` (*Props*)
+2. `props` (_Props_)
 
 #### Returns
 
-(*`void`*)
+(_`void`_)
 
 #### Examples
 
 See example
 
-
 # useStore
 
 ```ts
-import { useStore } from "effector-vue/composition";
+import { useStore } from 'effector-vue/composition';
 ```
 
 A hook function, which subscribes to watcher, that observes changes in the current **readonly** store, so when recording results, the component will update automatically. You can mutate the store value **only via createEvent**. Designed for vue 3
@@ -2821,34 +2812,33 @@ A hook function, which subscribes to watcher, that observes changes in the curre
 #### Example
 
 ```js
-import { createStore, createApi } from "effector";
-import { useStore } from "effector-vue/composition";
+import { createStore, createApi } from 'effector';
+import { useStore } from 'effector-vue/composition';
 
 const $counter = createStore(0);
 
 const { incremented, decremented } = createApi($counter, {
-  incremented: (count) => count + 1,
-  decremented: (count) => count - 1,
+	incremented: (count) => count + 1,
+	decremented: (count) => count - 1,
 });
 
 export default {
-  setup() {
-    const counter = useStore($counter);
+	setup() {
+		const counter = useStore($counter);
 
-    return {
-      counter,
-      incremented,
-      decremented,
-    };
-  },
+		return {
+			counter,
+			incremented,
+			decremented,
+		};
+	},
 };
 ```
-
 
 # useStoreMap
 
 ```ts
-import { useStoreMap } from "effector-vue/composition";
+import { useStoreMap } from 'effector-vue/composition';
 ```
 
 Function, which subscribes to store and transforms its value with a given function. Signal will update only when the selector function result will change
@@ -2869,7 +2859,7 @@ useStoreMap(
 #### Arguments
 
 1. `$store`: Source Store\<State>
-2. `fn` (*(state) => result*): Selector function to receive part of source store
+2. `fn` (_(state) => result_): Selector function to receive part of source store
 
 #### Returns
 
@@ -2890,11 +2880,11 @@ useStoreMap({
 
 #### Arguments
 
-1. `params` (*Object*): Configuration object
-    * `store`: Source store
-    * `keys` (`() => Keys`): Will be passed to `fn` selector
-    * `fn` (`(state: State, keys: Keys) => Result`): Selector function to receive part of source store
-    * `defaultValue` (`Result`): Optional default value if `fn` returned `undefined`
+1. `params` (_Object_): Configuration object
+    - `store`: Source store
+    - `keys` (`() => Keys`): Will be passed to `fn` selector
+    - `fn` (`(state: State, keys: Keys) => Result`): Selector function to receive part of source store
+    - `defaultValue` (`Result`): Optional default value if `fn` returned `undefined`
 
 #### Returns
 
@@ -2907,47 +2897,47 @@ This hook is very useful for working with lists, especially with large ones
 ###### User.vue
 
 ```js
-import { createStore } from "effector";
-import { useUnit, useStoreMap } from "effector-vue/composition";
+import { createStore } from 'effector';
+import { useUnit, useStoreMap } from 'effector-vue/composition';
 
 const $users = createStore([
-  {
-    id: 1,
-    name: "Yung",
-  },
-  {
-    id: 2,
-    name: "Lean",
-  },
-  {
-    id: 3,
-    name: "Kyoto",
-  },
-  {
-    id: 4,
-    name: "Sesh",
-  },
+	{
+		id: 1,
+		name: 'Yung',
+	},
+	{
+		id: 2,
+		name: 'Lean',
+	},
+	{
+		id: 3,
+		name: 'Kyoto',
+	},
+	{
+		id: 4,
+		name: 'Sesh',
+	},
 ]);
 
 export default {
-  props: {
-    id: Number,
-  },
-  setup(props) {
-    const user = useStoreMap({
-      store: $users,
-      keys: () => props.id,
-      fn: (users, userId) => users.find(({ id }) => id === userId),
-    });
+	props: {
+		id: Number,
+	},
+	setup(props) {
+		const user = useStoreMap({
+			store: $users,
+			keys: () => props.id,
+			fn: (users, userId) => users.find(({ id }) => id === userId),
+		});
 
-    return { user };
-  },
+		return { user };
+	},
 };
 ```
 
 ```jsx
 <div>
-  <strong>[{user.id}]</strong> {user.name}
+	<strong>[{user.id}]</strong> {user.name}
 </div>
 ```
 
@@ -2957,11 +2947,11 @@ export default {
 const $ids = createStore(data.map(({ id }) => id));
 
 export default {
-  setup() {
-    const ids = useStore($ids);
+	setup() {
+		const ids = useStore($ids);
 
-    return { ids };
-  },
+		return { ids };
+	},
 };
 ```
 
@@ -2971,14 +2961,13 @@ export default {
 </div>
 ```
 
-
 # useUnit
 
 ```ts
-import { useUnit } from "effector-vue/composition";
+import { useUnit } from 'effector-vue/composition';
 ```
 
-Bind  to Vue reactivity system or, in the case of / - bind to current  to use in DOM event handlers.
+Bind to Vue reactivity system or, in the case of / - bind to current to use in DOM event handlers.
 
 **Designed for Vue 3 and Composition API exclusively.**
 
@@ -2986,8 +2975,8 @@ Bind  to Vue reactivity system or, in the case of / - bind to current  to use in
 >
 > This API can completely replace the following APIs:
 >
-> * useStore($store)
-> * useEvent(event)
+> - useStore($store)
+> - useEvent(event)
 >
 > In the future, these APIs can be deprecated and removed.
 
@@ -3009,7 +2998,7 @@ Bind  to Vue reactivity system or, in the case of / - bind to current  to use in
 
 ```js
 // model.js
-import { createEvent, createStore, fork } from "effector";
+import { createEvent, createStore, fork } from 'effector';
 
 const incremented = createEvent();
 const $count = createStore(0);
@@ -3021,15 +3010,15 @@ $count.on(incremented, (count) => count + 1);
 // App.vue
 
 <script setup>
-  import { useUnit } from "effector-vue/composition";
+	import { useUnit } from 'effector-vue/composition';
 
-  import { incremented, $count } from "./model.js";
+	import { incremented, $count } from './model.js';
 
-  const onClick = useUnit(incremented);
+	const onClick = useUnit(incremented);
 </script>
 
 <template>
-  <button @click="onClick">increment</button>
+	<button @click="onClick">increment</button>
 </template>
 ```
 
@@ -3049,7 +3038,7 @@ Reactive value of given
 
 ```js
 // model.js
-import { createEvent, createStore, fork } from "effector";
+import { createEvent, createStore, fork } from 'effector';
 
 const incremented = createEvent();
 const $count = createStore(0);
@@ -3061,15 +3050,15 @@ $count.on(incremented, (count) => count + 1);
 // App.vue
 
 <script setup>
-  import { useUnit } from "effector-vue/composition";
+	import { useUnit } from 'effector-vue/composition';
 
-  import { $count } from "./model.js";
+	import { $count } from './model.js';
 
-  const count = useUnit($count);
+	const count = useUnit($count);
 </script>
 
 <template>
-  <p>Count: {{ count }}</p>
+	<p>Count: {{ count }}</p>
 </template>
 ```
 
@@ -3077,14 +3066,14 @@ $count.on(incremented, (count) => count + 1);
 
 ##### Arguments
 
-1. `shape` Object or array of ( or  or ): Every unit will be processed by `useUnit` and returned as a reactive value in case of  or as a function to pass to event handlers in case of  or .
+1. `shape` Object or array of ( or or ): Every unit will be processed by `useUnit` and returned as a reactive value in case of or as a function to pass to event handlers in case of or .
 
 ##### Returns
 
 (Object or Array):
 
-* if  or : functions with the same names or keys as argument to pass to event handlers. Will trigger given unit in current .
-* if : reactive value of given  with the same names or keys as argument.
+- if or : functions with the same names or keys as argument to pass to event handlers. Will trigger given unit in current .
+- if : reactive value of given with the same names or keys as argument.
 
 ##### Examples
 
@@ -3092,7 +3081,7 @@ $count.on(incremented, (count) => count + 1);
 
 ```js
 // model.js
-import { createEvent, createStore, fork } from "effector";
+import { createEvent, createStore, fork } from 'effector';
 
 const incremented = createEvent();
 const $count = createStore(0);
@@ -3104,24 +3093,26 @@ $count.on(incremented, (count) => count + 1);
 // App.vue
 
 <script setup>
-  import { useUnit } from "effector-vue/composition";
+	import { useUnit } from 'effector-vue/composition';
 
-  import { $count, incremented } from "./model.js";
+	import { $count, incremented } from './model.js';
 
-  const { count, handleClick } = useUnit({ count: $count, handleClick: incremented });
+	const { count, handleClick } = useUnit({
+		count: $count,
+		handleClick: incremented,
+	});
 </script>
 
 <template>
-  <p>Count: {{ count }}</p>
-  <button @click="handleClick">increment</button>
+	<p>Count: {{ count }}</p>
+	<button @click="handleClick">increment</button>
 </template>
 ```
-
 
 # useVModel
 
 ```ts
-import { useVModel } from "effector-vue/composition";
+import { useVModel } from 'effector-vue/composition';
 ```
 
 A hook function, which subscribes to a watcher that observes changes in the current store, so when recording results, the component will automatically update. It is primarily used when working with forms (`v-model`) in Vue 3.
@@ -3152,80 +3143,115 @@ Designed for Vue 3.
 ##### Single Store
 
 ```js
-import { createStore, createApi } from "effector";
-import { useVModel } from "effector-vue/composition";
+import { createStore, createApi } from 'effector';
+import { useVModel } from 'effector-vue/composition';
 
 const $user = createStore({
-  name: "",
-  surname: "",
-  skills: ["CSS", "HTML"],
+	name: '',
+	surname: '',
+	skills: ['CSS', 'HTML'],
 });
 
 export default {
-  setup() {
-    const user = useVModel($user);
+	setup() {
+		const user = useVModel($user);
 
-    return { user };
-  },
+		return { user };
+	},
 };
 ```
 
 ```html
 <div id="app">
-  <input type="text" v-model="user.name" />
-  <input type="text" v-model="user.surname" />
+	<input
+		type="text"
+		v-model="user.name"
+	/>
+	<input
+		type="text"
+		v-model="user.surname"
+	/>
 
-  <div>
-    <input type="checkbox" v-model="user.skills" value="HTML" />
-    <input type="checkbox" v-model="user.skills" value="CSS" />
-    <input type="checkbox" v-model="user.skills" value="JS" />
-  </div>
+	<div>
+		<input
+			type="checkbox"
+			v-model="user.skills"
+			value="HTML"
+		/>
+		<input
+			type="checkbox"
+			v-model="user.skills"
+			value="CSS"
+		/>
+		<input
+			type="checkbox"
+			v-model="user.skills"
+			value="JS"
+		/>
+	</div>
 </div>
 ```
 
 ##### Store Shape
 
 ```js
-import { createStore, createApi } from "effector";
-import { useVModel } from "effector-vue/composition";
+import { createStore, createApi } from 'effector';
+import { useVModel } from 'effector-vue/composition';
 
-const $name = createStore("");
-const $surname = createStore("");
+const $name = createStore('');
+const $surname = createStore('');
 const $skills = createStore([]);
 
 const model = {
-  name: $name,
-  surname: $surname,
-  skills: $skills,
+	name: $name,
+	surname: $surname,
+	skills: $skills,
 };
 
 export default {
-  setup() {
-    const user = useVModel(model);
+	setup() {
+		const user = useVModel(model);
 
-    return { user };
-  },
+		return { user };
+	},
 };
 ```
 
 ```html
 <div id="app">
-  <input type="text" v-model="user.name" />
-  <input type="text" v-model="user.surname" />
+	<input
+		type="text"
+		v-model="user.name"
+	/>
+	<input
+		type="text"
+		v-model="user.surname"
+	/>
 
-  <div>
-    <input type="checkbox" v-model="user.skills" value="HTML" />
-    <input type="checkbox" v-model="user.skills" value="CSS" />
-    <input type="checkbox" v-model="user.skills" value="JS" />
-  </div>
+	<div>
+		<input
+			type="checkbox"
+			v-model="user.skills"
+			value="HTML"
+		/>
+		<input
+			type="checkbox"
+			v-model="user.skills"
+			value="CSS"
+		/>
+		<input
+			type="checkbox"
+			v-model="user.skills"
+			value="JS"
+		/>
+	</div>
 </div>
 ```
-
 
 # Domain
 
 ```ts
-import { type Domain } from "effector";
+import { type Domain } from 'effector';
 ```
 
 Domain is a namespace for your events, stores and effects.
@@ -3244,7 +3270,7 @@ It is useful for logging or other side effects.
 
 #### Arguments
 
-1. `name`? (*string*): event name
+1. `name`? (_string_): event name
 
 #### Returns
 
@@ -3256,7 +3282,7 @@ Creates an effect with given handler.
 
 #### Arguments
 
-1. `handler`? (*Function*): function to handle effect calls, also can be set with use(handler)
+1. `handler`? (_Function_): function to handle effect calls, also can be set with use(handler)
 
 #### Returns
 
@@ -3270,7 +3296,7 @@ Creates an effect with given handler.
 
 #### Arguments
 
-1. `name`? (*string*): effect name
+1. `name`? (_string_): effect name
 
 #### Returns
 
@@ -3280,7 +3306,7 @@ Creates an effect with given handler.
 
 #### Arguments
 
-1. `defaultState` (*State*): store default state
+1. `defaultState` (_State_): store default state
 
 #### Returns
 
@@ -3290,7 +3316,7 @@ Creates an effect with given handler.
 
 #### Arguments
 
-1. `name`? (*string*): domain name
+1. `name`? (_string_): domain name
 
 #### Returns
 
@@ -3328,10 +3354,10 @@ Contains mutable read-only sets of units inside a domain.
 
 ```ts
 interface DomainHistory {
-  stores: Set<Store<any>>;
-  events: Set<Event<any>>;
-  domains: Set<Domain>;
-  effects: Set<Effect<any, any, any>>;
+	stores: Set<Store<any>>;
+	events: Set<Event<any>>;
+	domains: Set<Domain>;
+	effects: Set<Effect<any, any, any>>;
 }
 
 const { stores, events, domains, effects } = domain.history;
@@ -3344,7 +3370,7 @@ When any kind of unit created inside a domain, it appears in a set with the name
 ##### Basic
 
 ```js
-import { createDomain } from "effector";
+import { createDomain } from 'effector';
 const domain = createDomain();
 const eventA = domain.event();
 const $storeB = domain.store(0);
@@ -3364,27 +3390,27 @@ Try it
 domain.onCreateEvent((event: Event<any>) => {});
 ```
 
-* Function passed to `onCreateEvent` called every time, as new event created in `domain`
-* Function called with `event` as first argument
-* The result of function call is ignored
+- Function passed to `onCreateEvent` called every time, as new event created in `domain`
+- Function called with `event` as first argument
+- The result of function call is ignored
 
 #### Arguments
 
-1. `callback` ([*Watcher*][_Watcher_]): A function that receives Event and will be called during every domain.createEvent call
+1. `callback` ([_Watcher_][_Watcher_]): A function that receives Event and will be called during every domain.createEvent call
 
 #### Returns
 
-[*Subscription*][_Subscription_]: Unsubscribe function.
+[_Subscription_][_Subscription_]: Unsubscribe function.
 
 #### Example
 
 ```js
-import { createDomain } from "effector";
+import { createDomain } from 'effector';
 
 const domain = createDomain();
 
 domain.onCreateEvent((event) => {
-  console.log("new event created");
+	console.log('new event created');
 });
 
 const a = domain.createEvent();
@@ -3404,27 +3430,27 @@ Try it
 domain.onCreateEffect((effect: Effect<any, any, any>) => {});
 ```
 
-* Function passed to `onCreateEffect` called every time, as new effect created in `domain`
-* Function called with `effect` as first argument
-* The result of function call is ignored
+- Function passed to `onCreateEffect` called every time, as new effect created in `domain`
+- Function called with `effect` as first argument
+- The result of function call is ignored
 
 #### Arguments
 
-1. `callback` ([*Watcher*][_Watcher_]): A function that receives Effect and will be called during every domain.createEffect call
+1. `callback` ([_Watcher_][_Watcher_]): A function that receives Effect and will be called during every domain.createEffect call
 
 #### Returns
 
-[*Subscription*][_Subscription_]: Unsubscribe function.
+[_Subscription_][_Subscription_]: Unsubscribe function.
 
 #### Example
 
 ```js
-import { createDomain } from "effector";
+import { createDomain } from 'effector';
 
 const domain = createDomain();
 
 domain.onCreateEffect((effect) => {
-  console.log("new effect created");
+	console.log('new effect created');
 });
 
 const fooFx = domain.createEffect();
@@ -3444,27 +3470,27 @@ Try it
 domain.onCreateStore(($store: Store<any>) => {});
 ```
 
-* Function passed to `onCreateStore` called every time, as new store created in `domain`
-* Function called with `$store` as first argument
-* The result of function call is ignored
+- Function passed to `onCreateStore` called every time, as new store created in `domain`
+- Function called with `$store` as first argument
+- The result of function call is ignored
 
 #### Arguments
 
-1. `callback` ([*Watcher*][_Watcher_]): A function that receives Store and will be called during every domain.createStore call
+1. `callback` ([_Watcher_][_Watcher_]): A function that receives Store and will be called during every domain.createStore call
 
 #### Returns
 
-[*Subscription*][_Subscription_]: Unsubscribe function.
+[_Subscription_][_Subscription_]: Unsubscribe function.
 
 #### Example
 
 ```js
-import { createDomain } from "effector";
+import { createDomain } from 'effector';
 
 const domain = createDomain();
 
 domain.onCreateStore((store) => {
-  console.log("new store created");
+	console.log('new store created');
 });
 
 const $a = domain.createStore(null);
@@ -3481,27 +3507,27 @@ Try it
 domain.onCreateDomain((domain) => {});
 ```
 
-* Function passed to `onCreateDomain` called every time, as subdomain created in `domain`
-* Function called with `domain` as first argument
-* The result of function call is ignored
+- Function passed to `onCreateDomain` called every time, as subdomain created in `domain`
+- Function called with `domain` as first argument
+- The result of function call is ignored
 
 #### Arguments
 
-1. `callback` ([*Watcher*][_Watcher_]): A function that receives Domain and will be called during every domain.createDomain call
+1. `callback` ([_Watcher_][_Watcher_]): A function that receives Domain and will be called during every domain.createDomain call
 
 #### Returns
 
-[*Subscription*][_Subscription_]: Unsubscribe function.
+[_Subscription_][_Subscription_]: Unsubscribe function.
 
 #### Example
 
 ```js
-import { createDomain } from "effector";
+import { createDomain } from 'effector';
 
 const domain = createDomain();
 
 domain.onCreateDomain((domain) => {
-  console.log("new domain created");
+	console.log('new domain created');
 });
 
 const a = domain.createDomain();
@@ -3514,27 +3540,24 @@ const b = domain.createDomain();
 Try it
 
 [_watcher_]: /en/explanation/glossary#watcher
-
 [_subscription_]: /en/explanation/glossary#subscription
-
 
 # Effect API
 
 [eventTypes]: /en/api/effector/Event#event-types
-
 [storeTypes]: /en/essentials/typescript#store-types
 
 ## Effect API
 
 ```ts
-import { type Effect, createEffect } from "effector";
+import { type Effect, createEffect } from 'effector';
 
 const effectFx = createEffect();
 ```
 
 An Effect is a unit designed to handle side effects, whether synchronous or asynchronous. It includes a set of pre-built events and stores that streamline common operations. It is categorized as a unit.
 
-Effects can be called like regular functions (*imperative call*) and can also be connected along with their properties to various API methods including sample and split (*declarative connection*).
+Effects can be called like regular functions (_imperative call_) and can also be connected along with their properties to various API methods including sample and split (_declarative connection_).
 
 > TIP effective effect:
 >
@@ -3585,14 +3608,14 @@ Accepts a `params` argument, which is the data with which the effect was called.
 >
 > If the effect already had an implementation at the time of call, it will be replaced with the new one.
 
-* **Formula**
+- **Formula**
 
 ```ts
 const fx: Effect<Params, Done>;
 fx.use(handler);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 effect.use(handler: (params: Params) => Promise<Done> | Done): Effect<
@@ -3602,32 +3625,32 @@ effect.use(handler: (params: Params) => Promise<Done> | Done): Effect<
 >
 ```
 
-* **Examples**
+- **Examples**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchUserReposFx = createEffect();
 
 fetchUserReposFx.use(async ({ name }) => {
-  console.log("fetchUserReposFx called for github user", name);
+	console.log('fetchUserReposFx called for github user', name);
 
-  const url = `https://api.github.com/users/${name}/repos`;
-  const req = await fetch(url);
-  return req.json();
+	const url = `https://api.github.com/users/${name}/repos`;
+	const req = await fetch(url);
+	return req.json();
 });
 
-await fetchUserReposFx({ name: "zerobias" });
+await fetchUserReposFx({ name: 'zerobias' });
 // => fetchUserReposFx called for github user zerobias
 ```
 
 Run example
 
-* **Return value**
+- **Return value**
 
 Returns the current effect.
 
-***
+---
 
 #### `.use.getCurrent()`
 
@@ -3635,24 +3658,24 @@ Method for getting the current effect implementation. Used for testing.
 
 If the effect doesn't have an implementation set yet, a default function will be returned that throws an error when called.
 
-* **Formula**
+- **Formula**
 
 ```ts
 const fx: Effect<Params, Done>;
 const handler = fx.use.getCurrent();
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 effect.use.getCurrent(): (params: Params) => Promise<Done>
 ```
 
-* **Examples**
+- **Examples**
 
 ```js
-const handlerA = () => "A";
-const handlerB = () => "B";
+const handlerA = () => 'A';
+const handlerB = () => 'B';
 
 const fx = createEffect(handlerA);
 
@@ -3666,38 +3689,38 @@ console.log(fx.use.getCurrent() === handlerB);
 
 Run example
 
-* **Return value**
+- **Return value**
 
 Returns the effect's implementation function that was set through createEffect or using the use method.
 
-***
+---
 
 #### `.watch(watcher)`
 
 Calls an additional function with side effects on each effect trigger. Shouldn't be used for logic, better to replace with sample.
 
-* **Formula**
+- **Formula**
 
 ```ts
 const fx: Effect<Params, Done>;
 const unwatch = fx.watch(watcher);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 effect.watch(watcher: (payload: Params) => any): Subscription
 ```
 
-* **Examples**
+- **Examples**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fx = createEffect((params) => params);
 
 fx.watch((params) => {
-  console.log("effect called with argument", params);
+	console.log('effect called with argument', params);
 });
 
 await fx(10);
@@ -3706,166 +3729,166 @@ await fx(10);
 
 Run example
 
-* **Return value**
+- **Return value**
 
 Subscription cancellation function, after calling it the `watcher` stops receiving updates and is removed from memory.
 
-***
+---
 
 #### `.map(fn)`
 
 The map method creates a [derived event][eventTypes]. The event is triggered at the moment the effect is executed, using the same arguments as the effect and the result returned by the `fn` function. Works similarly to Event.map(fn).
 
-* **Formula**
+- **Formula**
 
 ```ts
 const fx: Effect<Params, Done>;
 const eventB = fx.map(fn);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 effect.map<T>(fn: (params: Params) => T): Event<T>
 ```
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 interface User {
-  // ...
+	// ...
 }
 
 const saveUserFx = createEffect(async ({ id, name, email }: User) => {
-  // ...
-  return response.json();
+	// ...
+	return response.json();
 });
 
 const userNameSaving = saveUserFx.map(({ name }) => {
-  console.log("Starting user save: ", name);
-  return name;
+	console.log('Starting user save: ', name);
+	return name;
 });
 
 const savingNotification = saveUserFx.map(({ name, email }) => {
-  console.log("Save notification");
-  return `Saving user: ${name} (${email})`;
+	console.log('Save notification');
+	return `Saving user: ${name} (${email})`;
 });
 
 // When calling the effect, both derived events will trigger
-await saveUserFx({ id: 1, name: "John", email: "john@example.com" });
+await saveUserFx({ id: 1, name: 'John', email: 'john@example.com' });
 // => Starting user save: John
 // => Saving user: John (john@example.com)
 ```
 
 Run example
 
-* **Return value**
+- **Return value**
 
 Returns a new [derived event][eventTypes].
 
-***
+---
 
 #### `.prepend(fn)`
 
-Creates a new event to transform data *before* running the effect. Compared to map, it works in the opposite direction. Works similarly to Event.prepend(fn).
+Creates a new event to transform data _before_ running the effect. Compared to map, it works in the opposite direction. Works similarly to Event.prepend(fn).
 
-* **Formula**
+- **Formula**
 
 ```ts
 const fx: Effect<Params, Done>;
 const trigger = fx.prepend(fn);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 effect.prepend<Before>(fn: (_: Before) => Params): EventCallable<Before>
 ```
 
-* **Examples**
+- **Examples**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const saveFx = createEffect(async (data) => {
-  console.log("saveFx called with:", data);
-  await api.save(data);
+	console.log('saveFx called with:', data);
+	await api.save(data);
 });
 
 // create a trigger event for the effect
 const saveForm = saveFx.prepend((form) => ({
-  ...form,
-  modified: true,
+	...form,
+	modified: true,
 }));
 
-saveForm({ name: "John", email: "john@example.com" });
+saveForm({ name: 'John', email: 'john@example.com' });
 // => saveFx called with: { name: "John", email: "john@example.com", modified: true }
 ```
 
-* **Return value**
+- **Return value**
 
 Returns a new [event][eventTypes].
 
-***
+---
 
 #### `.filterMap(fn)`
 
 The `filterMap` method creates a [derived event][eventTypes]. The `fn` function computation runs simultaneously with the effect, however if the function returns `undefined`, the event doesn't trigger. Works similarly to the .map(fn) method, but with filtering by return value.
 
-* **Formula**
+- **Formula**
 
 ```ts
 const fx: Effect<Params, Done>;
 const filtered = fx.filterMap(fn);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 effect.filterMap<T>(fn: (payload: Params) => T | undefined): Event<T>
 ```
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const validateAndSaveFx = createEffect(async (userData) => {
-  if (!userData.isValid) {
-    throw new Error("Invalid data");
-  }
+	if (!userData.isValid) {
+		throw new Error('Invalid data');
+	}
 
-  return await saveToDatabase(userData);
+	return await saveToDatabase(userData);
 });
 
 // Create event only for valid data
 const validDataProcessing = validateAndSaveFx.filterMap((userData) => {
-  if (userData.isValid && userData.priority === "high") {
-    return {
-      id: userData.id,
-      timestamp: Date.now(),
-    };
-  }
-  // If data is invalid or priority is not high, the event won't trigger
+	if (userData.isValid && userData.priority === 'high') {
+		return {
+			id: userData.id,
+			timestamp: Date.now(),
+		};
+	}
+	// If data is invalid or priority is not high, the event won't trigger
 });
 
 validDataProcessing.watch(({ id, timestamp }) => {
-  console.log(`Processing high-priority data ID: ${id} at ${timestamp}`);
+	console.log(`Processing high-priority data ID: ${id} at ${timestamp}`);
 });
 
 // Example calls
 await validateAndSaveFx({
-  id: 1,
-  isValid: true,
-  priority: "high",
-  role: "user",
+	id: 1,
+	isValid: true,
+	priority: 'high',
+	role: 'user',
 });
 // => Processing high-priority data ID: 1 at 1703123456789
 ```
 
-* **Return value**
+- **Return value**
 
 Returns a new [derived event][eventTypes].
 
@@ -3875,23 +3898,23 @@ Returns a new [derived event][eventTypes].
 
 [Derived event][eventTypes] that triggers with the result of effect execution and the argument passed during the call.
 
-* **Type**
+- **Type**
 
 ```ts
 interface Effect<Params, Done> {
-  done: Event<{ params: Params; result: Done }>;
+	done: Event<{ params: Params; result: Done }>;
 }
 ```
 
-* **Examples**
+- **Examples**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fx = createEffect((value) => value + 1);
 
 fx.done.watch(({ params, result }) => {
-  console.log("Call with argument", params, "completed with value", result);
+	console.log('Call with argument', params, 'completed with value', result);
 });
 
 await fx(2);
@@ -3900,29 +3923,29 @@ await fx(2);
 
 Run example.
 
-***
+---
 
 #### `.doneData`
 
 [Derived event][eventTypes] that triggers with the result of successful effect execution.
 
-* **Type**
+- **Type**
 
 ```ts
 interface Effect<any, Done> {
-  doneData: Event<Done>;
+	doneData: Event<Done>;
 }
 ```
 
-* **Examples**
+- **Examples**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fx = createEffect((value) => value + 1);
 
 fx.doneData.watch((result) => {
-  console.log(`Effect completed successfully, returning ${result}`);
+	console.log(`Effect completed successfully, returning ${result}`);
 });
 
 await fx(2);
@@ -3931,31 +3954,36 @@ await fx(2);
 
 Run example.
 
-***
+---
 
 #### `.fail`
 
 [Derived event][eventTypes] that triggers with the error that occurred during effect execution and the argument passed during the call.
 
-* **Type**
+- **Type**
 
 ```ts
 interface Effect<Params, any, Fail> {
-  fail: Event<{ params: Params; error: Fail }>;
+	fail: Event<{ params: Params; error: Fail }>;
 }
 ```
 
-* **Examples**
+- **Examples**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fx = createEffect(async (value) => {
-  throw Error(value - 1);
+	throw Error(value - 1);
 });
 
 fx.fail.watch(({ params, error }) => {
-  console.log("Call with argument", params, "failed with error", error.message);
+	console.log(
+		'Call with argument',
+		params,
+		'failed with error',
+		error.message,
+	);
 });
 
 fx(2);
@@ -3964,31 +3992,31 @@ fx(2);
 
 Run example.
 
-***
+---
 
 #### `.failData`
 
 [Derived event][eventTypes] that triggers with the error that occurred during effect execution.
 
-* **Type**
+- **Type**
 
 ```ts
 interface Effect<any, any, Fail> {
-  failData: Event<Fail>;
+	failData: Event<Fail>;
 }
 ```
 
-* **Examples**
+- **Examples**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fx = createEffect(async (value) => {
-  throw Error(value - 1);
+	throw Error(value - 1);
 });
 
 fx.failData.watch((error) => {
-  console.log(`Call failed with error ${error.message}`);
+	console.log(`Call failed with error ${error.message}`);
 });
 
 fx(2);
@@ -3997,55 +4025,65 @@ fx(2);
 
 Run example.
 
-***
+---
 
 #### `.finally`
 
 [Derived event][eventTypes] that triggers on both success and failure of effect completion with detailed information about arguments, results, and execution status.
 
-* **Type**
+- **Type**
 
 ```ts
 interface Effect<Params, Done, Fail> {
-  finally: Event<
-    | {
-        status: "done";
-        params: Params;
-        result: Done;
-      }
-    | {
-        status: "fail";
-        params: Params;
-        error: Fail;
-      }
-  >;
+	finally: Event<
+		| {
+				status: 'done';
+				params: Params;
+				result: Done;
+		  }
+		| {
+				status: 'fail';
+				params: Params;
+				error: Fail;
+		  }
+	>;
 }
 ```
 
-* **Examples**
+- **Examples**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchApiFx = createEffect(async ({ time, ok }) => {
-  await new Promise((resolve) => setTimeout(resolve, time));
+	await new Promise((resolve) => setTimeout(resolve, time));
 
-  if (ok) {
-    return `${time} ms`;
-  }
+	if (ok) {
+		return `${time} ms`;
+	}
 
-  throw Error(`${time} ms`);
+	throw Error(`${time} ms`);
 });
 
 fetchApiFx.finally.watch((value) => {
-  switch (value.status) {
-    case "done":
-      console.log("Call with argument", value.params, "completed with value", value.result);
-      break;
-    case "fail":
-      console.log("Call with argument", value.params, "failed with error", value.error.message);
-      break;
-  }
+	switch (value.status) {
+		case 'done':
+			console.log(
+				'Call with argument',
+				value.params,
+				'completed with value',
+				value.result,
+			);
+			break;
+		case 'fail':
+			console.log(
+				'Call with argument',
+				value.params,
+				'failed with error',
+				value.error.message,
+			);
+			break;
+	}
 });
 
 await fetchApiFx({ time: 100, ok: true });
@@ -4057,48 +4095,48 @@ fetchApiFx({ time: 100, ok: false });
 
 Run example.
 
-***
+---
 
 #### `.pending`
 
 [Derived store][storeTypes] that shows whether the effect is currently executing.
 
-* **Type**
+- **Type**
 
 ```ts
 interface Effect<any, any> {
-  pending: Store<boolean>;
+	pending: Store<boolean>;
 }
 ```
 
-* **Detailed description**
+- **Detailed description**
 
 This property eliminates the need to write code like this:
 
 ```js
 const $isRequestPending = createStore(false)
-  .on(requestFx, () => true)
-  .on(requestFx.done, () => false)
-  .on(requestFx.fail, () => false);
+	.on(requestFx, () => true)
+	.on(requestFx.done, () => false)
+	.on(requestFx.fail, () => false);
 ```
 
-* **Examples**
+- **Examples**
 
 ```jsx
-import React from "react";
-import { createEffect } from "effector";
-import { useUnit } from "effector-react";
+import React from 'react';
+import { createEffect } from 'effector';
+import { useUnit } from 'effector-react';
 
 const fetchApiFx = createEffect(async (ms) => {
-  await new Promise((resolve) => setTimeout(resolve, ms));
+	await new Promise((resolve) => setTimeout(resolve, ms));
 });
 
 fetchApiFx.pending.watch(console.log);
 // => false
 
 const App = () => {
-  const loading = useUnit(fetchApiFx.pending);
-  return <div>{loading ? "Loading..." : "Loading complete"}</div>;
+	const loading = useUnit(fetchApiFx.pending);
+	return <div>{loading ? 'Loading...' : 'Loading complete'}</div>;
 };
 
 fetchApiFx(1000);
@@ -4108,42 +4146,42 @@ fetchApiFx(1000);
 
 Run example.
 
-***
+---
 
 #### `.inFlight`
 
 [Derived store][storeTypes] that shows the number of running effects that are currently executing. Can be used to limit the number of concurrent requests.
 
-* **Type**
+- **Type**
 
 ```ts
 interface Effect<any, any> {
-  inFlight: Store<number>;
+	inFlight: Store<number>;
 }
 ```
 
-* **Detailed description**
+- **Detailed description**
 
 This property eliminates the need to write code like this:
 
 ```js
 const $requestsInFlight = createStore(0)
-  .on(requestFx, (n) => n + 1)
-  .on(requestFx.done, (n) => n - 1)
-  .on(requestFx.fail, (n) => n - 1);
+	.on(requestFx, (n) => n + 1)
+	.on(requestFx.done, (n) => n - 1)
+	.on(requestFx.fail, (n) => n - 1);
 ```
 
-* **Examples**
+- **Examples**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fx = createEffect(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
+	await new Promise((resolve) => setTimeout(resolve, 500));
 });
 
 fx.inFlight.watch((amount) => {
-  console.log("requests in flight:", amount);
+	console.log('requests in flight:', amount);
 });
 // => requests in flight: 0
 
@@ -4161,56 +4199,56 @@ await Promise.all([req1, req2]);
 
 Run example.
 
-***
+---
 
 #### `.sid`
 
 Unique unit identifier. It's important to note that SID doesn't change on each application run, it's statically written into your application bundle for absolute unit identification. Set automatically through Babel plugin.
 
-* **Type**
+- **Type**
 
 ```ts
 interface Effect<any, any> {
-  sid: string | null;
+	sid: string | null;
 }
 ```
 
-***
+---
 
 #### `.shortName`
 
 String property containing the variable name in which the effect was declared. Effect name. Set either explicitly through the `name` field in createEffect, or automatically through babel plugin.
 
-* **Type**
+- **Type**
 
 ```ts
 interface Effect<any, any> {
-  shortName: string;
+	shortName: string;
 }
 ```
 
-***
+---
 
 #### `.compositeName`
 
 Composite effect name (including domain and short name) — useful for logging and tracing.
 
-* **Type**
+- **Type**
 
 ```ts
 interface Effect<any, any> {
-  compositeName: {
-    shortName: string;
-    fullName: string;
-    path: Array<string>;
-  };
+	compositeName: {
+		shortName: string;
+		fullName: string;
+		path: Array<string>;
+	};
 }
 ```
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createEffect, createDomain } from "effector";
+import { createEffect, createDomain } from 'effector';
 
 const first = createEffect();
 const domain = createDomain();
@@ -4238,17 +4276,16 @@ console.log(second.compositeName);
 
 ### Related API and Articles
 
-* **API**
-    * createEffect - Creating a new effect
-    * Event API - Description of events, their methods and properties
-    * Store API - Description of stores, their methods and properties
-    * sample - Key operator for building connections between units
-    * attach - Creates new effects based on other effects
-* **Articles**
-    * Working with effects
-    * How to type effects and other units
-    * Guide to testing effects and other units
-
+- **API**
+    - createEffect - Creating a new effect
+    - Event API - Description of events, their methods and properties
+    - Store API - Description of stores, their methods and properties
+    - sample - Key operator for building connections between units
+    - attach - Creates new effects based on other effects
+- **Articles**
+    - Working with effects
+    - How to type effects and other units
+    - Guide to testing effects and other units
 
 # Event
 
@@ -4258,7 +4295,7 @@ import TabItem from "@components/Tabs/TabItem.astro";
 ## Event API
 
 ```ts
-import { type Event, type EventCallable, createEvent } from "effector";
+import { type Event, type EventCallable, createEvent } from 'effector';
 
 const event = createEvent();
 ```
@@ -4281,17 +4318,17 @@ It’s important to understand that there are two types of events:
 
 Available methods and properties:
 
-| <div style="width:170px">Method/Property</div>                           | Description                                                                                      |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| prepend(fn) | Creates a new event, transforms the input using `fn`, and passes it to the original event.       |
-| map(fn)                                       | Creates a new derived event triggered with the result of `fn` after the original event is fired. |
-| filter({fn})                               | Creates a new derived event that fires only if `fn` returns `true`.                              |
-| filterMap(fn)                           | Creates a new derived event triggered with `fn` if it's not `undefined`.                         |
-| watch(watcher)                         | Adds a listener called on every event trigger.                                                   |
-| subscribe(observer)               | Low-level method to integrate the event with the `Observable` pattern.                           |
-| sid                                           | Unique unit identifier.                                                                          |
-| shortName                               | The variable name in which the event is declared.                                                |
-| compositeName                       | Full composite name (domain + shortName) — useful for logging and tracing.                       |
+| <div style="width:170px">Method/Property</div> | Description                                                                                      |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| prepend(fn)                                    | Creates a new event, transforms the input using `fn`, and passes it to the original event.       |
+| map(fn)                                        | Creates a new derived event triggered with the result of `fn` after the original event is fired. |
+| filter({fn})                                   | Creates a new derived event that fires only if `fn` returns `true`.                              |
+| filterMap(fn)                                  | Creates a new derived event triggered with `fn` if it's not `undefined`.                         |
+| watch(watcher)                                 | Adds a listener called on every event trigger.                                                   |
+| subscribe(observer)                            | Low-level method to integrate the event with the `Observable` pattern.                           |
+| sid                                            | Unique unit identifier.                                                                          |
+| shortName                                      | The variable name in which the event is declared.                                                |
+| compositeName                                  | Full composite name (domain + shortName) — useful for logging and tracing.                       |
 
 ### Event Methods
 
@@ -4304,13 +4341,13 @@ Available methods and properties:
 
 Creates a new `EventCallable`, which calls `fn` and passes the transformed data to the original event.
 
-* **Formula**
+- **Formula**
 
 ```ts
 const second = first.prepend(fn);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 event.prepend<Before = void>(
@@ -4318,34 +4355,34 @@ event.prepend<Before = void>(
 ): EventCallable<Before>
 ```
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 // original event
 const userPropertyChanged = createEvent();
 
 const changeName = userPropertyChanged.prepend((name) => ({
-  field: "name",
-  value: name,
+	field: 'name',
+	value: name,
 }));
 const changeRole = userPropertyChanged.prepend((role) => ({
-  field: "role",
-  value: role.toUpperCase(),
+	field: 'role',
+	value: role.toUpperCase(),
 }));
 
 userPropertyChanged.watch(({ field, value }) => {
-  console.log(`User property "${field}" changed to ${value}`);
+	console.log(`User property "${field}" changed to ${value}`);
 });
 
-changeName("john");
+changeName('john');
 // => User property "name" changed to john
 
-changeRole("admin");
+changeRole('admin');
 // => User property "role" changed to ADMIN
 
-changeName("alice");
+changeName('alice');
 // => User property "name" changed to alice
 ```
 
@@ -4354,39 +4391,39 @@ Open example
 You can treat this method as a wrapper function. Suppose you need to frequently call a function with an inconvenient API:
 
 ```ts
-import { sendAnalytics } from "./analytics";
+import { sendAnalytics } from './analytics';
 
 export function reportClick(item: string) {
-  const argument = { type: "click", container: { items: [arg] } };
-  return sendAnalytics(argument);
+	const argument = { type: 'click', container: { items: [arg] } };
+	return sendAnalytics(argument);
 }
 ```
 
 That’s exactly what `.prepend()` does:
 
 ```ts
-import { sendAnalytics } from "./analytics";
+import { sendAnalytics } from './analytics';
 
 export const reportClick = sendAnalytics.prepend((item: string) => {
-  return { type: "click", container: { items: [arg] } };
+	return { type: 'click', container: { items: [arg] } };
 });
 
-reportClick("example");
+reportClick('example');
 // reportClick triggered "example"
 // sendAnalytics triggered with { type: "click", container: { items: ["example"] } }
 ```
 
-* **Detailed description**
+- **Detailed description**
 
 Works like a reversed .map. In `.prepend`, data is transformed **before** the event is triggered. In .map, it’s transformed **after**.
 
 If the original event belongs to a domain, the new event will inherit that domain.
 
-* **Return value**
+- **Return value**
 
 Returns a new event.
 
-***
+---
 
 #### `.map(fn)`
 
@@ -4396,7 +4433,7 @@ Returns a new event.
 
 Creates a new **derived event**, which is triggered after the original event, using the result of function `fn` as its argument.
 
-* **Formula**
+- **Formula**
 
 ```ts
 // Works for any event — both regular and derived
@@ -4404,16 +4441,16 @@ const first: Event<T> | EventCallable<T>;
 const second: Event<F> = first.map(fn);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 event.map<T>(fn: (payload: Payload) => T): Event<T>
 ```
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const userUpdated = createEvent<{ name: string; role: string }>();
 
@@ -4426,22 +4463,22 @@ const userRoleUpdated = userUpdated.map((user) => user.role.toUpperCase());
 userNameUpdated.watch((name) => console.log(`User name is now [${name}]`));
 userRoleUpdated.watch((role) => console.log(`User role is now [${role}]`));
 
-userUpdated({ name: "john", role: "admin" });
+userUpdated({ name: 'john', role: 'admin' });
 // => User name is now [john]
 // => User role is now [ADMIN]
 ```
 
 Open example
 
-* **Detailed description**
+- **Detailed description**
 
 The `.map` method allows you to split and control the data flow, extract fields, or transform values within your business logic.
 
-* **Return value**
+- **Return value**
 
 Returns a new derived event.
 
-***
+---
 
 #### `.filter({ fn })`
 
@@ -4453,21 +4490,21 @@ Returns a new derived event.
 > const event = createEvent();
 >
 > const filteredEvent = sample({
->   clock: event,
->   filter: () => true,
+> 	clock: event,
+> 	filter: () => true,
 > });
 > ```
 
 `.filter` creates a **derived** event, which is triggered **only** if the function `fn` returns `true`. This is helpful for branching the data flow and reacting to specific conditions.
 
-* **Formula**
+- **Formula**
 
 ```ts
 const first: Event<T> | EventCallable<T>;
 const second: Event<T> = first.filter({ fn });
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 event.filter(config: {
@@ -4475,17 +4512,17 @@ event.filter(config: {
 }): Event<Payload>
 ```
 
-* **Examples**
+- **Examples**
 
 <Tabs>
 <TabItem label="😕 filter">
 
 ```js
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const numbers = createEvent();
 const positiveNumbers = numbers.filter({
-  fn: ({ x }) => x > 0,
+	fn: ({ x }) => x > 0,
 });
 
 const $lastPositive = createStore(0);
@@ -4493,7 +4530,7 @@ const $lastPositive = createStore(0);
 $lastPositive.on(positiveNumbers, (n, { x }) => x);
 
 $lastPositive.watch((x) => {
-  console.log("Last positive number:", x);
+	console.log('Last positive number:', x);
 });
 
 // => Last positive number: 0
@@ -4510,12 +4547,12 @@ Open example
 <TabItem label="🤩 sample + filter">
 
 ```js
-import { createEvent, createStore, sample } from "effector";
+import { createEvent, createStore, sample } from 'effector';
 
 const numbers = createEvent();
 const positiveNumbers = sample({
-  clock: numbers,
-  filter: ({ x }) => x > 0,
+	clock: numbers,
+	filter: ({ x }) => x > 0,
 });
 
 const $lastPositive = createStore(0);
@@ -4523,7 +4560,7 @@ const $lastPositive = createStore(0);
 $lastPositive.on(positiveNumbers, (n, { x }) => x);
 
 $lastPositive.watch((x) => {
-  console.log("Last positive number:", x);
+	console.log('Last positive number:', x);
 });
 
 // => Last positive number: 0
@@ -4536,11 +4573,11 @@ numbers({ x: 10 }); // => Last positive number: 10
 </TabItem>
 </Tabs>
 
-* **Return value**
+- **Return value**
 
 Returns a new derived event.
 
-***
+---
 
 #### `.filterMap(fn)`
 
@@ -4552,9 +4589,9 @@ Returns a new derived event.
 > const event = createEvent();
 >
 > const filteredAndMappedEvent = sample({
->   clock: event,
->   filter: () => true,
->   fn: () => "value",
+> 	clock: event,
+> 	filter: () => true,
+> 	fn: () => 'value',
 > });
 > ```
 
@@ -4562,35 +4599,35 @@ This method creates a derived event, which **may** be triggered if the result of
 
 Ideal for working with JavaScript APIs that sometimes return `undefined`.
 
-* **Formula**
+- **Formula**
 
 ```ts
 const first: Event<T> | EventCallable<T>;
 const second: Event<F> = first.filterMap(fn);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 event.filterMap<T>(fn: (payload: Payload) => T | undefined): Event<T>
 ```
 
-* **Examples**
+- **Examples**
 
 ```tsx
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const listReceived = createEvent<string[]>();
 
 // Array.prototype.find() returns undefined when the element isn't found
 const effectorFound = listReceived.filterMap((list) => {
-  return list.find((name) => name === "effector");
+	return list.find((name) => name === 'effector');
 });
 
-effectorFound.watch((name) => console.info("Found:", name));
+effectorFound.watch((name) => console.info('Found:', name));
 
-listReceived(["redux", "effector", "mobx"]); // => Found: effector
-listReceived(["redux", "mobx"]); // no output
+listReceived(['redux', 'effector', 'mobx']); // => Found: effector
+listReceived(['redux', 'mobx']); // no output
 ```
 
 > INFO Attention:
@@ -4599,11 +4636,11 @@ listReceived(["redux", "mobx"]); // no output
 
 Open example
 
-* **Return value**
+- **Return value**
 
 Returns a new derived event.
 
-***
+---
 
 #### `.watch(watcher)`
 
@@ -4617,40 +4654,40 @@ The `.watch` method calls the provided `watcher` callback **every time** the eve
 
 Learn more in the Events section.
 
-* **Formula**
+- **Formula**
 
 ```ts
 const event: Event<T> | EventCallable<T>;
 const unwatch: () => void = event.watch(fn);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 event.watch(watcher: (payload: Payload) => any): Subscription
 ```
 
-* **Examples**
+- **Examples**
 
 ```js
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const sayHi = createEvent();
 const unwatch = sayHi.watch((name) => console.log(`${name}, hello!`));
 
-sayHi("Peter"); // => Peter, hello!
+sayHi('Peter'); // => Peter, hello!
 unwatch();
 
-sayHi("Drew"); // => nothing happens
+sayHi('Drew'); // => nothing happens
 ```
 
 Open example
 
-* **Return value**
+- **Return value**
 
 Returns a function to cancel the subscription.
 
-***
+---
 
 #### `.subscribe(observer)`
 
@@ -4658,14 +4695,14 @@ This is a **low-level** method for integrating events with the standard `Observa
 
 Further reading:
 
-* [RxJS Observables](https://rxjs.dev/guide/observable)
-* [TC39 proposal for Observables](https://github.com/tc39/proposal-observable)
+- [RxJS Observables](https://rxjs.dev/guide/observable)
+- [TC39 proposal for Observables](https://github.com/tc39/proposal-observable)
 
 > INFO Remember:
 >
 > You don't need to use this method yourself. It's used under the hood by rendering engines and so on.
 
-* **Formula**
+- **Formula**
 
 ```ts
 const event = createEvent();
@@ -4673,32 +4710,32 @@ const event = createEvent();
 event.subscribe(observer);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 event.subscribe(observer: Observer<Payload>): Subscription
 ```
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const userLoggedIn = createEvent<string>();
 
 const subscription = userLoggedIn.subscribe({
-  next: (login) => {
-    console.log("User login:", login);
-  },
+	next: (login) => {
+		console.log('User login:', login);
+	},
 });
 
-userLoggedIn("alice"); // => User login: alice
+userLoggedIn('alice'); // => User login: alice
 
 subscription.unsubscribe();
-userLoggedIn("bob"); // => nothing happens
+userLoggedIn('bob'); // => nothing happens
 ```
 
-***
+---
 
 ### Event Properties
 
@@ -4712,22 +4749,22 @@ SID is **statically recorded** in your application bundle and doesn’t change b
 
 Example: [examples/worker-rpc](https://github.com/effector/effector/tree/master/examples/worker-rpc)
 
-* **Type**
+- **Type**
 
 ```ts
 interface Event {
-  sid: string | null;
+	sid: string | null;
 }
 ```
 
-***
+---
 
 #### `.shortName`
 
 Contains the **variable name** in which the event was declared.
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const demo = createEvent();
 // demo.shortName === 'demo'
@@ -4740,15 +4777,15 @@ const another = demo;
 // another.shortName === 'demo'
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 interface Event {
-  shortName: string;
+	shortName: string;
 }
 ```
 
-***
+---
 
 #### `.compositeName`
 
@@ -4759,7 +4796,7 @@ Contains the **full path** of the event in your app’s structure. If the event 
 > Usually, if a long name is required, it's better to pass it explicitly in the `name` field.
 
 ```ts
-import { createEvent, createDomain } from "effector";
+import { createEvent, createDomain } from 'effector';
 
 const first = createEvent();
 const domain = createDomain();
@@ -4780,15 +4817,15 @@ console.log(second.compositeName);
 // }
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 interface Event {
-  compositeName: {
-    shortName: string;
-    fullName: string;
-    path: Array<string>;
-  };
+	compositeName: {
+		shortName: string;
+		fullName: string;
+		path: Array<string>;
+	};
 }
 ```
 
@@ -4801,26 +4838,23 @@ interface Event {
 
 ### Related APIs and Articles
 
-* **API**
+- **API**
+    - createEvent — create a new event
+    - createApi — create a set of events for a store
+    - merge — merge multiple events into one
+    - sample — core operator to connect units
 
-    * createEvent — create a new event
-    * createApi — create a set of events for a store
-    * merge — merge multiple events into one
-    * sample — core operator to connect units
-
-* **Articles**
-
-    * How to work with events
-    * Thinking in Effector and why events matter
-    * TypeScript guide to events and units
-
+- **Articles**
+    - How to work with events
+    - Thinking in Effector and why events matter
+    - TypeScript guide to events and units
 
 # Scope API
 
 ## Scope API
 
 ```ts
-import { type Scope, fork } from "effector";
+import { type Scope, fork } from 'effector';
 
 const scope = fork();
 ```
@@ -4833,9 +4867,9 @@ The primary purpose of scope includes SSR (Server-Side Rendering) but is not lim
 > If you want to get deeper about scopes then check out great article about isolated scopes.<br/>
 > We also have few related guides:
 >
-> * How to fix lost scope
-> * Using scopes with SSR
-> * Writing test for units
+> - How to fix lost scope
+> - Using scopes with SSR
+> - Writing test for units
 
 ### Scope peculiarities
 
@@ -4848,7 +4882,7 @@ The primary purpose of scope includes SSR (Server-Side Rendering) but is not lim
 
 Returns the value of a store in a given scope:
 
-* **Formula**
+- **Formula**
 
 ```ts
 const scope: Scope;
@@ -4857,22 +4891,22 @@ const $value: Store<T> | StoreWritable<T>;
 const value: T = scope.getState($value);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 scope.getState<T>(store: Store<T>): T;
 ```
 
-* **Returns**
+- **Returns**
 
 The value of the store.
 
-* **Examples**
+- **Examples**
 
 Create two instances of an application, trigger events in them, and test the `$counter` store value in both instances:
 
 ```js
-import { createStore, createEvent, fork, allSettled } from "effector";
+import { createStore, createEvent, fork, allSettled } from 'effector';
 
 const inc = createEvent();
 const dec = createEvent();
@@ -4896,29 +4930,28 @@ Try it.
 
 ### Related API and Articles
 
-* **API**
-    * scopeBind – Method for binding a unit to a scope
-    * fork – Operator for creating a scope
-    * allSettled – Method for running a unit in a given scope and waiting for the entire chain of effects to complete
-    * serialize – Method for obtaining serialized store values
-    * hydrate – Method for hydrating serialized data
-* **Articles**
-    * How to lose scope and fix it
-    * Using scopes with SSR
-    * How to test units
-
+- **API**
+    - scopeBind – Method for binding a unit to a scope
+    - fork – Operator for creating a scope
+    - allSettled – Method for running a unit in a given scope and waiting for the entire chain of effects to complete
+    - serialize – Method for obtaining serialized store values
+    - hydrate – Method for hydrating serialized data
+- **Articles**
+    - How to lose scope and fix it
+    - Using scopes with SSR
+    - How to test units
 
 # Store API
 
 ## Store API
 
 ```ts
-import { type Store, type StoreWritable, createStore } from "effector";
+import { type Store, type StoreWritable, createStore } from 'effector';
 
 const $store = createStore();
 ```
 
-A *Store* is an object that holds the state value. The store updates when the new value is not strictly equal (`!==`) to the current one and is not `undefined` (unless the store is configured with `skipVoid: false`). A store is a Unit. Some stores can be derived.
+A _Store_ is an object that holds the state value. The store updates when the new value is not strictly equal (`!==`) to the current one and is not `undefined` (unless the store is configured with `skipVoid: false`). A store is a Unit. Some stores can be derived.
 
 > TIP What is a store anyway?:
 >
@@ -4928,18 +4961,18 @@ A *Store* is an object that holds the state value. The store updates when the ne
 
 Available store methods and properties:
 
-| Method/Property                                       | Description                                                  |
-| ----------------------------------------------------- | ------------------------------------------------------------ |
-| map(fn)                          | Creates a new derived store                                  |
+| Method/Property      | Description                                                  |
+| -------------------- | ------------------------------------------------------------ |
+| map(fn)              | Creates a new derived store                                  |
 | on(trigger, reducer) | Updates state via a `reducer` when the `trigger` is fired    |
-| watch(watcher)            | Calls the `watcher` function every time the store is updated |
-| reset(...triggers)       | Resets the store to its initial state                        |
-| off(trigger)                | Removes the subscription to the specified trigger            |
-| updates()                    | Event that fires when the store updates                      |
-| reinit()                      | Event to reinitialize the store                              |
-| shortName                  | ID or short name of the store                                |
-| defaultState            | Initial state of the store                                   |
-| getState()             | Returns the current state                                    |
+| watch(watcher)       | Calls the `watcher` function every time the store is updated |
+| reset(...triggers)   | Resets the store to its initial state                        |
+| off(trigger)         | Removes the subscription to the specified trigger            |
+| updates()            | Event that fires when the store updates                      |
+| reinit()             | Event to reinitialize the store                              |
+| shortName            | ID or short name of the store                                |
+| defaultState         | Initial state of the store                                   |
+| getState()           | Returns the current state                                    |
 
 ### Immutability
 
@@ -4949,10 +4982,10 @@ For example, before using array methods, you need to create a new reference to i
 
 ```ts
 $items.on(addItem, (items, newItem) => {
-  const updatedItems = [...items];
-  // ✅ .push method is called on a new array
-  updatedItems.push(newItem);
-  return updatedItems;
+	const updatedItems = [...items];
+	// ✅ .push method is called on a new array
+	updatedItems.push(newItem);
+	return updatedItems;
 });
 ```
 
@@ -4960,9 +4993,9 @@ This approach should not be used, as the store **will not be updated**:
 
 ```ts
 $items.on(addItem, (items, newItem) => {
-  // ❌ Error! The array reference remains the same, the store will not be updated
-  items.push(newItem);
-  return items;
+	// ❌ Error! The array reference remains the same, the store will not be updated
+	items.push(newItem);
+	return items;
 });
 ```
 
@@ -4976,13 +5009,13 @@ A store in effector should be as small as possible, responsible for a specific p
 
 Accepts a function `fn` and returns a derived store that automatically updates when the original store changes.
 
-* **Formulae**
+- **Formulae**
 
 ```ts
 $source.map(fn, config?);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 const $derived = $source.map<T>(
@@ -4993,27 +5026,27 @@ const $derived = $source.map<T>(
 ): Store<T>
 ```
 
-* **Examples**
+- **Examples**
 
 Basic usage:
 
 ```ts
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const changed = createEvent<string>();
 
-const $title = createStore("");
+const $title = createStore('');
 const $titleLength = $title.map((title) => title.length);
 
 $title.on(changed, (_, newTitle) => newTitle);
 
 $titleLength.watch((length) => {
-  console.log("new length", length);
+	console.log('new length', length);
 });
 
-changed("hello");
-changed("world");
-changed("hello world");
+changed('hello');
+changed('world');
+changed('hello world');
 ```
 
 Try it
@@ -5024,12 +5057,12 @@ You can pass a config object with `skipVoid: false` to allow the store to accept
 const $titleLength = $title.map((title) => title.length, { skipVoid: false });
 ```
 
-* **Detailed Description**
+- **Detailed Description**
 
 The `map` method runs the function `fn` with the current store state as input every time the original store updates.
 The return value becomes the new state of the derived store.
 
-* **Returns**
+- **Returns**
 
 Returns a new derived store.
 
@@ -5037,13 +5070,13 @@ Returns a new derived store.
 
 Updates state using a reducer when the `trigger` is fired.
 
-* **Formulae**
+- **Formulae**
 
 ```ts
 $store.on(trigger, reducer);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 $store.on<T>(
@@ -5052,10 +5085,10 @@ $store.on<T>(
 ): this
 ```
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const $counter = createStore(0);
 const incrementedBy = createEvent<number>();
@@ -5063,7 +5096,7 @@ const incrementedBy = createEvent<number>();
 $counter.on(incrementedBy, (value, incrementor) => value + incrementor);
 
 $counter.watch((value) => {
-  console.log("updated", value);
+	console.log('updated', value);
 });
 
 incrementedBy(2);
@@ -5072,7 +5105,7 @@ incrementedBy(2);
 
 Try it
 
-* **Returns**
+- **Returns**
 
 Returns the current store.
 
@@ -5080,22 +5113,22 @@ Returns the current store.
 
 Calls the `watcher` function whenever the store updates.
 
-* **Formulae**
+- **Formulae**
 
 ```ts
 const unwatch = $store.watch(watcher);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 $store.watch(watcher: (state: State) => any): Subscription
 ```
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const add = createEvent<number>();
 const $store = createStore(0);
@@ -5110,7 +5143,7 @@ add(3);
 
 Try it
 
-* **Returns**
+- **Returns**
 
 Returns a subscription cancellation function.
 
@@ -5118,31 +5151,31 @@ Returns a subscription cancellation function.
 
 Resets the store to its default value when any of the `triggers` fire.
 
-* **Formulae**
+- **Formulae**
 
 ```ts
 $store.reset(...triggers);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 $store.reset(...triggers: Array<Unit<any>>): this
 ```
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const increment = createEvent();
 const reset = createEvent();
 
 const $store = createStore(0)
-  .on(increment, (state) => state + 1)
-  .reset(reset);
+	.on(increment, (state) => state + 1)
+	.reset(reset);
 
-$store.watch((state) => console.log("changed", state));
+$store.watch((state) => console.log('changed', state));
 
 increment();
 increment();
@@ -5151,7 +5184,7 @@ reset();
 
 Try it
 
-* **Returns**
+- **Returns**
 
 Returns the current store.
 
@@ -5159,22 +5192,22 @@ Returns the current store.
 
 Removes the reducer for the specified `trigger`.
 
-* **Formulae**
+- **Formulae**
 
 ```ts
 $store.off(trigger);
 ```
 
-* **Type**
+- **Type**
 
 ```ts
 $store.off(trigger: Unit<any>): this
 ```
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createEvent, createStore, merge } from "effector";
+import { createEvent, createStore, merge } from 'effector';
 
 const changedA = createEvent();
 const changedB = createEvent();
@@ -5188,7 +5221,7 @@ $store.off(changed);
 
 Try it
 
-* **Returns**
+- **Returns**
 
 Returns the current store.
 
@@ -5198,22 +5231,22 @@ Returns the current store.
 
 An event that fires on every store update.
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createStore, is } from "effector";
+import { createStore, is } from 'effector';
 
 const $clicksAmount = createStore(0);
 is.event($clicksAmount.updates); // true
 
 $clicksAmount.updates.watch((amount) => {
-  console.log(amount);
+	console.log(amount);
 });
 ```
 
 Try it
 
-* **Returns**
+- **Returns**
 
 A derived event representing the store's updates.
 
@@ -5221,10 +5254,10 @@ A derived event representing the store's updates.
 
 Event to reinitialize the store to its default state.
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createStore, createEvent, sample, is } from "effector";
+import { createStore, createEvent, sample, is } from 'effector';
 
 const $counter = createStore(0);
 is.event($counter.reinit);
@@ -5237,7 +5270,7 @@ console.log($counter.getState());
 
 Try it
 
-* **Returns**
+- **Returns**
 
 An event that reinitializes the store.
 
@@ -5245,11 +5278,11 @@ An event that reinitializes the store.
 
 A string property containing the store's ID or short name.
 
-* **Examples**
+- **Examples**
 
 ```ts
 const $store = createStore(0, {
-  name: "someName",
+	name: 'someName',
 });
 
 console.log($store.shortName); // someName
@@ -5257,7 +5290,7 @@ console.log($store.shortName); // someName
 
 Try it
 
-* **Returns**
+- **Returns**
 
 The store’s ID or short name.
 
@@ -5265,15 +5298,15 @@ The store’s ID or short name.
 
 The store’s default state value.
 
-* **Example**
+- **Example**
 
 ```ts
-const $store = createStore("DEFAULT");
+const $store = createStore('DEFAULT');
 
-console.log($store.defaultState === "DEFAULT"); // true
+console.log($store.defaultState === 'DEFAULT'); // true
 ```
 
-* **Returns**
+- **Returns**
 
 The default state value.
 
@@ -5287,10 +5320,10 @@ Returns the current state of the store.
 >
 > Using `getState()` in business logic is not recommended — it's better to pass data through `sample`.
 
-* **Examples**
+- **Examples**
 
 ```ts
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const add = createEvent<number>();
 
@@ -5304,18 +5337,17 @@ console.log($number.getState());
 
 Try it
 
-* **Returns**
+- **Returns**
 
 The current state of the store.
 
 ### Related APIs
 
-* createStore – Creates a new store
-* combine – Combines multiple stores into a derived store
-* sample – A core operator for connecting units
-* createEvent – Creates an event
-* createEffect – Creates an effect
-
+- createStore – Creates a new store
+- combine – Combines multiple stores into a derived store
+- sample – A core operator for connecting units
+- createEvent – Creates an event
+- createEffect – Creates an effect
 
 # allSettled
 
@@ -5338,7 +5370,7 @@ allSettled<T>(unit: Store<T>, {scope: Scope, params?: T}): Promise<void>
 
 #### Arguments
 
-1. `unit`:  or  to be called
+1. `unit`: or to be called
 2. `scope`:
 3. `params`: params passed to `unit`
 
@@ -5406,11 +5438,10 @@ test('integration with externalSource', async () => {
 })
 ```
 
-
 # attach
 
 ```ts
-import { attach } from "effector";
+import { attach } from 'effector';
 ```
 
 > INFO since:
@@ -5443,12 +5474,12 @@ Create effect which will call `effect` with params as it is. That allows creatin
 const attachedFx = attach({ effect: originalFx });
 ```
 
-* When `attachedFx` is triggered, then `originalFx` is triggered too
-* When `originalFx` is finished (fail/done), then `attachedFx` must be finished with the same state.
+- When `attachedFx` is triggered, then `originalFx` is triggered too
+- When `originalFx` is finished (fail/done), then `attachedFx` must be finished with the same state.
 
 #### Arguments
 
-* `effect` (): Wrapped effect
+- `effect` (): Wrapped effect
 
 #### Returns
 
@@ -5460,7 +5491,7 @@ const attachedFx = attach({ effect: originalFx });
 const originalFx: Effect<Params, Done, Fail>;
 
 const attachedFx: Effect<Params, Done, Fail> = attach({
-  effect: originalFx,
+	effect: originalFx,
 });
 ```
 
@@ -5468,29 +5499,29 @@ In case of this simple variant of `attach`, types of `originalFx` and `attachedF
 
 #### Examples
 
-It allows to create *local* copy of the effect, to react only on triggers emitted from the current *local* code.
+It allows to create _local_ copy of the effect, to react only on triggers emitted from the current _local_ code.
 
 ```ts
-import { createEffect, attach } from "effector";
+import { createEffect, attach } from 'effector';
 
 const originalFx = createEffect((word: string) => {
-  console.info("Printed:", word);
+	console.info('Printed:', word);
 });
 
 const attachedFx = attach({ effect: originalFx });
 
-originalFx.watch(() => console.log("originalFx"));
-originalFx.done.watch(() => console.log("originalFx.done"));
+originalFx.watch(() => console.log('originalFx'));
+originalFx.done.watch(() => console.log('originalFx.done'));
 
-attachedFx.watch(() => console.log("attachedFx"));
-attachedFx.done.watch(() => console.log("attachedFx.done"));
+attachedFx.watch(() => console.log('attachedFx'));
+attachedFx.done.watch(() => console.log('attachedFx.done'));
 
-originalFx("first");
+originalFx('first');
 // => originalFx
 // => Printed: first
 // => originalFx.done
 
-attachedFx("second");
+attachedFx('second');
 // => attachedFx
 // => originalFx
 // Printed: second
@@ -5508,18 +5539,18 @@ Create effect which will trigger given one with values from `source` stores.
 
 ```ts
 const attachedFx = attach({
-  source,
-  effect: originalFx,
+	source,
+	effect: originalFx,
 });
 ```
 
-* When `attachedFx` is triggered, read data from `source`, trigger with the data `originalFx`
-* When `originalFx` is finished, pass the same resolution (done/fail) into `attachedFx` and finish it
+- When `attachedFx` is triggered, read data from `source`, trigger with the data `originalFx`
+- When `originalFx` is finished, pass the same resolution (done/fail) into `attachedFx` and finish it
 
 #### Arguments
 
-* `source` ( | `{[key: string]: Store}`): Store or object with stores, values of which will be passed to the second argument of `mapParams`
-* `effect` (): Original effect
+- `source` ( | `{[key: string]: Store}`): Store or object with stores, values of which will be passed to the second argument of `mapParams`
+- `effect` (): Original effect
 
 #### Returns
 
@@ -5534,12 +5565,14 @@ const attachedFx = attach({
 In most userland code you will write code like this, without explicit types of the `let`/`const`:
 
 ```ts
-const originalFx = createEffect<OriginalParams, SomeResult, SomeError>(async () => {});
+const originalFx = createEffect<OriginalParams, SomeResult, SomeError>(
+	async () => {},
+);
 const $store = createStore(initialValue);
 
 const attachedFx = attach({
-  source: $store,
-  effect: originalFx,
+	source: $store,
+	effect: originalFx,
 });
 ```
 
@@ -5550,8 +5583,8 @@ const originalFx: Effect<T, Done, Fail>;
 const $store: Store<T>;
 
 const attachedFx: Effect<void, Done, Fail> = attach({
-  source: $store,
-  effect: originalFx,
+	source: $store,
+	effect: originalFx,
 });
 ```
 
@@ -5568,8 +5601,8 @@ const $a: Store<A>;
 const $b: Store<B>;
 
 const attachedFx: Effect<void, Done, Fail> = attach({
-  source: { a: $a, b: $b },
-  effect: originalFx,
+	source: { a: $a, b: $b },
+	effect: originalFx,
 });
 ```
 
@@ -5580,26 +5613,28 @@ Types of the `source` object must be the same as `originalFx` params. But the `a
 #### Examples
 
 ```ts
-import { createEffect, createStore, attach } from "effector";
+import { createEffect, createStore, attach } from 'effector';
 
 const requestPageFx = createEffect<{ page: number; size: number }, string[]>(
-  async ({ page, size }) => {
-    console.log("Requested", page);
-    return page * size;
-  },
+	async ({ page, size }) => {
+		console.log('Requested', page);
+		return page * size;
+	},
 );
 
 const $page = createStore(1);
 const $size = createStore(20);
 
 const requestNextPageFx = attach({
-  source: { page: $page, size: $size },
-  effect: requestPageFx,
+	source: { page: $page, size: $size },
+	effect: requestPageFx,
 });
 
 $page.on(requestNextPageFx.done, (page) => page + 1);
 
-requestPageFx.doneData.watch((position) => console.log("requestPageFx.doneData", position));
+requestPageFx.doneData.watch((position) =>
+	console.log('requestPageFx.doneData', position),
+);
 
 await requestNextPageFx();
 // => Requested 1
@@ -5628,19 +5663,19 @@ Creates effect which will call async function with values from the `source` stor
 
 ```ts
 const attachedFx = attach({
-  source,
-  async effect(source, params) {},
+	source,
+	async effect(source, params) {},
 });
 ```
 
-* When `attachedFx` is triggered, read data from the `source`, call `effect` function.
-* When `effect` function returns resolved `Promise`, finish `attachedFx` with the data from the function as `attachedFx.done`.
-* When `effect` throws exception, or returns rejected `Promise`, finish `attachedFx` with the data from function as `attachedFx.fail`.
+- When `attachedFx` is triggered, read data from the `source`, call `effect` function.
+- When `effect` function returns resolved `Promise`, finish `attachedFx` with the data from the function as `attachedFx.done`.
+- When `effect` throws exception, or returns rejected `Promise`, finish `attachedFx` with the data from function as `attachedFx.fail`.
 
 #### Arguments
 
-* `effect` (*Function*): `(source: Source, params: Params) => Promise<Result> | Result`
-* `source` ( | `{[key: string]: Store}`): Store or object with stores, values of which will be passed to the first argument of `effect`
+- `effect` (_Function_): `(source: Source, params: Params) => Promise<Result> | Result`
+- `source` ( | `{[key: string]: Store}`): Store or object with stores, values of which will be passed to the first argument of `effect`
 
 #### Returns
 
@@ -5652,13 +5687,13 @@ Any effects called inside `async effect` function will propagate scope.
 
 ```ts
 const outerFx = createEffect((count: number) => {
-  console.log("Hit", count);
+	console.log('Hit', count);
 });
 
 const $store = createStore(0);
 const attachedFx = attach({
-  source: $store,
-  async effect(count, _: void) {},
+	source: $store,
+	async effect(count, _: void) {},
 });
 ```
 
@@ -5666,15 +5701,15 @@ const attachedFx = attach({
 
 ```ts
 const attachedFx = attach({
-  source: $store,
-  async effect(source) {
-    // Here is ok, the effect is called
-    const resultA = await anotherFx();
+	source: $store,
+	async effect(source) {
+		// Here is ok, the effect is called
+		const resultA = await anotherFx();
 
-    // Be careful:
-    const resultB = await regularFunction();
-    // Here scope is lost.
-  },
+		// Be careful:
+		const resultB = await regularFunction();
+		// Here scope is lost.
+	},
 });
 ```
 
@@ -5692,8 +5727,8 @@ const regularFunctionFx = createEffect(regularFunction);
 const $store: Store<T>;
 
 const attachedFx: Effect<Params, Done, Fail> = attach({
-  source: $store,
-  async effect(source, params: Params): Done | Promise<Done> {},
+	source: $store,
+	async effect(source, params: Params): Done | Promise<Done> {},
 });
 ```
 
@@ -5703,8 +5738,8 @@ If you want to remove any arguments from the `attachedFx` you need to just remov
 
 ```ts
 const attachedFx: Effect<void, void, Fail> = attach({
-  source: $store,
-  async effect(source) {},
+	source: $store,
+	async effect(source) {},
 });
 ```
 
@@ -5717,13 +5752,13 @@ const attachedFx: Effect<void, void, Fail> = attach({
 ```ts
 // Userland example, without explicit type declarations
 const $foo = createStore(100);
-const $bar = createStore("demo");
+const $bar = createStore('demo');
 
 const attachedFx = attach({
-  source: { foo: $foo, bar: $bar },
-  async effect({ foo, bar }, { baz }: { baz: boolean }) {
-    console.log("Hit!", { foo, bar, baz });
-  },
+	source: { foo: $foo, bar: $bar },
+	async effect({ foo, bar }, { baz }: { baz: boolean }) {
+		console.log('Hit!', { foo, bar, baz });
+	},
 });
 
 attachedFx({ baz: true });
@@ -5746,19 +5781,19 @@ Creates effect which will trigger given one by transforming params by `mapParams
 
 ```ts
 const attachedFx = attach({
-  effect: originalFx,
-  mapParams,
+	effect: originalFx,
+	mapParams,
 });
 ```
 
-* When `attachedFx` triggered, payload passed into `mapParams` function, then the result of it passed into `originalFx`
-* When `originalFx` is finished, then `attachedFx` must be finished with the same resolution (done/fail).
-* If `mapParams` throws an exception, then `attachedFx` must be finished with the error as `attachedFx.fail`. But `originalFx` will not be triggered at all.
+- When `attachedFx` triggered, payload passed into `mapParams` function, then the result of it passed into `originalFx`
+- When `originalFx` is finished, then `attachedFx` must be finished with the same resolution (done/fail).
+- If `mapParams` throws an exception, then `attachedFx` must be finished with the error as `attachedFx.fail`. But `originalFx` will not be triggered at all.
 
 #### Arguments
 
-* `effect` (): Wrapped effect
-* `mapParams` (`(newParams) => effectParams`): Function which receives new params and maps them to the params of the wrapped `effect`. Works mostly like event.prepend. Errors happened in `mapParams` function will force attached effect to fail.
+- `effect` (): Wrapped effect
+- `mapParams` (`(newParams) => effectParams`): Function which receives new params and maps them to the params of the wrapped `effect`. Works mostly like event.prepend. Errors happened in `mapParams` function will force attached effect to fail.
 
 #### Returns
 
@@ -5804,18 +5839,18 @@ const attachedFx: Effect<void, Done, Fail> = attach({
 ##### Map arguments
 
 ```ts
-import { createEffect, attach } from "effector";
+import { createEffect, attach } from 'effector';
 
 const originalFx = createEffect((a: { input: number }) => a);
 
 const attachedFx = attach({
-  effect: originalFx,
-  mapParams(a: number) {
-    return { input: a * 100 };
-  },
+	effect: originalFx,
+	mapParams(a: number) {
+		return { input: a * 100 };
+	},
 });
 
-originalFx.watch((params) => console.log("originalFx started", params));
+originalFx.watch((params) => console.log('originalFx started', params));
 
 attachedFx(1);
 // => originalFx { input: 100 }
@@ -5826,19 +5861,19 @@ Try it
 ##### Handle exceptions
 
 ```ts
-import { createEffect, attach } from "effector";
+import { createEffect, attach } from 'effector';
 
 const originalFx = createEffect((a: { a: number }) => a);
 
 const attachedFx = attach({
-  effect: originalFx,
-  mapParams(a: number) {
-    throw new Error("custom error");
-    return { a };
-  },
+	effect: originalFx,
+	mapParams(a: number) {
+		throw new Error('custom error');
+		return { a };
+	},
 });
 
-attachedFx.failData.watch((error) => console.log("attachedFx.failData", error));
+attachedFx.failData.watch((error) => console.log('attachedFx.failData', error));
 
 attachedFx(1);
 // => attachedFx.failData
@@ -5859,21 +5894,21 @@ Creates effect which will read values from `source` stores, pass them with param
 
 ```ts
 const attachedFx = attach({
-  source,
-  mapParams,
-  effect: originalFx,
+	source,
+	mapParams,
+	effect: originalFx,
 });
 ```
 
-* When `attachedFx` triggered, payload passed into `mapParams` function with value from `source` store, then the result of it passed into `originalFx`
-* When `originalFx` is finished, then `attachedFx` must be finished with the same resolution (done/fail).
-* If `mapParams` throws an exception, then `attachedFx` must be finished with the error as `attachedFx.fail`. But `originalFx` will not be triggered at all.
+- When `attachedFx` triggered, payload passed into `mapParams` function with value from `source` store, then the result of it passed into `originalFx`
+- When `originalFx` is finished, then `attachedFx` must be finished with the same resolution (done/fail).
+- If `mapParams` throws an exception, then `attachedFx` must be finished with the error as `attachedFx.fail`. But `originalFx` will not be triggered at all.
 
 #### Arguments
 
-* `source` ( | `{[key: string]: Store}`): Store or object with stores, values of which will be passed to the second argument of `mapParams`
-* `mapParams` (`(newParams, values) => effectParams`): Function which receives new params and current value of `source` and combines them to the params of the wrapped `effect`. Errors happened in `mapParams` function will force attached effect to fail
-* `effect` (): Wrapped effect
+- `source` ( | `{[key: string]: Store}`): Store or object with stores, values of which will be passed to the second argument of `mapParams`
+- `mapParams` (`(newParams, values) => effectParams`): Function which receives new params and current value of `source` and combines them to the params of the wrapped `effect`. Errors happened in `mapParams` function will force attached effect to fail
+- `effect` (): Wrapped effect
 
 #### Returns
 
@@ -5891,17 +5926,19 @@ const attachedFx = attach({
 
 ```ts
 // ./api/request.ts
-import { createEffect, createStore } from "effector";
+import { createEffect, createStore } from 'effector';
 
-export const backendRequestFx = createEffect(async ({ token, data, resource }) => {
-  return fetch(`https://example.com/api${resource}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
-});
+export const backendRequestFx = createEffect(
+	async ({ token, data, resource }) => {
+		return fetch(`https://example.com/api${resource}`, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(data),
+		});
+	},
+);
 
 export const $requestsSent = createStore(0);
 
@@ -5910,37 +5947,37 @@ $requestsSent.on(backendRequestFx, (total) => total + 1);
 
 ```ts
 // ./api/authorized.ts
-import { attach, createStore } from "effector";
+import { attach, createStore } from 'effector';
 
-const $token = createStore("guest_token");
+const $token = createStore('guest_token');
 
 export const authorizedRequestFx = attach({
-  effect: backendRequestFx,
-  source: $token,
-  mapParams: ({ data, resource }, token) => ({ data, resource, token }),
+	effect: backendRequestFx,
+	source: $token,
+	mapParams: ({ data, resource }, token) => ({ data, resource, token }),
 });
 
 export function createRequest(resource) {
-  return attach({
-    effect: authorizedRequestFx,
-    mapParams: (data) => ({ data, resource }),
-  });
+	return attach({
+		effect: authorizedRequestFx,
+		mapParams: (data) => ({ data, resource }),
+	});
 }
 ```
 
 ```ts
 // ./api/index.ts
-import { createRequest } from "./authorized";
-import { $requestsSent } from "./request";
+import { createRequest } from './authorized';
+import { $requestsSent } from './request';
 
-const getUserFx = createRequest("/user");
-const getPostsFx = createRequest("/posts");
+const getUserFx = createRequest('/user');
+const getPostsFx = createRequest('/posts');
 
 $requestsSent.watch((total) => {
-  console.log(`client analytics: sent ${total} requests`);
+	console.log(`client analytics: sent ${total} requests`);
 });
 
-const user = await getUserFx({ name: "alice" });
+const user = await getUserFx({ name: 'alice' });
 /*
 POST https://example.com/api/user
 {"name": "alice"}
@@ -5964,14 +6001,14 @@ To allow factory works correct, add a path to a `./api/authorized` into `factori
 ```json5
 // .babelrc
 {
-  plugins: [
-    [
-      "effector/babel-plugin",
-      {
-        factories: ["src/path-to-your-entity/api/authorized"],
-      },
-    ],
-  ],
+	plugins: [
+		[
+			'effector/babel-plugin',
+			{
+				factories: ['src/path-to-your-entity/api/authorized'],
+			},
+		],
+	],
 }
 ```
 
@@ -5988,14 +6025,14 @@ attach({ name: string });
 It allows us to explicitly set the name of the created attached effect:
 
 ```ts
-import { attach } from "effector";
+import { attach } from 'effector';
 
 const attachedFx = attach({
-  name: "anotherUsefulName",
-  source: $store,
-  async effect(source, params: Type) {
-    // ...
-  },
+	name: 'anotherUsefulName',
+	source: $store,
+	async effect(source, params: Type) {
+		// ...
+	},
 });
 attachedFx.shortName; // "anotherUsefulName"
 ```
@@ -6013,20 +6050,19 @@ It allows to create effect inside specified domain.
 > Note: this property can only be used with a plain function `effect`.
 
 ```ts
-import { createDomain, createStore, attach } from "effector";
+import { createDomain, createStore, attach } from 'effector';
 
 const reportErrors = createDomain();
 const $counter = createStore(0);
 
 const attachedFx = attach({
-  domain: reportErrors,
-  source: $counter,
-  async effect(counter) {
-    // ...
-  },
+	domain: reportErrors,
+	source: $counter,
+	async effect(counter) {
+		// ...
+	},
 });
 ```
-
 
 # Babel plugin
 
@@ -6037,7 +6073,7 @@ For example, in case effects without handlers, it improves error messages by
 clearly showing in which effect error happened.
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchFx = createEffect();
 
@@ -6055,7 +6091,7 @@ In the simplest case, it can be used without any configuration:
 ```json
 // .babelrc
 {
-  "plugins": ["effector/babel-plugin"]
+	"plugins": ["effector/babel-plugin"]
 }
 ```
 
@@ -6078,49 +6114,49 @@ See [example project](https://github.com/effector/effector/tree/master/examples/
 
 ```js
 // common.js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
-export const getUser = createEffect({ sid: "GET /user" });
+export const getUser = createEffect({ sid: 'GET /user' });
 console.log(getUsers.sid);
 // => GET /user
 ```
 
 ```js
 // worker.js
-import { getUsers } from "./common.js";
+import { getUsers } from './common.js';
 
 getUsers.use((userID) => fetch(userID));
 
 getUsers.done.watch(({ result }) => {
-  postMessage({ sid: getUsers.sid, result });
+	postMessage({ sid: getUsers.sid, result });
 });
 
 onmessage = async ({ data }) => {
-  if (data.sid !== getUsers.sid) return;
-  getUsers(data.userID);
+	if (data.sid !== getUsers.sid) return;
+	getUsers(data.userID);
 };
 ```
 
 ```js
 // client.js
-import { createEvent } from "effector";
-import { getUsers } from "./common.js";
+import { createEvent } from 'effector';
+import { getUsers } from './common.js';
 
 const onMessage = createEvent();
 
-const worker = new Worker("worker.js");
+const worker = new Worker('worker.js');
 worker.onmessage = onMessage;
 
 getUsers.use(
-  (userID) =>
-    new Promise((rs) => {
-      worker.postMessage({ sid: getUsers.sid, userID });
-      const unwatch = onMessage.watch(({ data }) => {
-        if (data.sid !== getUsers.sid) return;
-        unwatch();
-        rs(data.result);
-      });
-    }),
+	(userID) =>
+		new Promise((rs) => {
+			worker.postMessage({ sid: getUsers.sid, userID });
+			const unwatch = onMessage.watch(({ data }) => {
+				if (data.sid !== getUsers.sid) return;
+				unwatch();
+				rs(data.result);
+			});
+		}),
 );
 ```
 
@@ -6148,12 +6184,12 @@ Enable Hot Module Replacement (HMR) support to clean up links, subscriptions and
 ]
 ```
 
-* Type: `boolean` | `"es"` | `"cjs"`
-    * `true`: Use hmr with auto-detection of target case. Based on [supportsStaticESM](https://babeljs.io/docs/options#caller) babel feature with wide support in bundlers
-    * `"es"`: Use `import.meta.hot` HMR API in bundlers that are ESM-compliant, like Vite and Rollup
-    * `"cjs"`: Use `module.hot` HMR API in bundlers that rely on CommonJS modules, like Webpack, Next.js or React Native
-    * `false`: Disable Hot Module Replacement
-* Default: `false`
+- Type: `boolean` | `"es"` | `"cjs"`
+    - `true`: Use hmr with auto-detection of target case. Based on [supportsStaticESM](https://babeljs.io/docs/options#caller) babel feature with wide support in bundlers
+    - `"es"`: Use `import.meta.hot` HMR API in bundlers that are ESM-compliant, like Vite and Rollup
+    - `"cjs"`: Use `module.hot` HMR API in bundlers that rely on CommonJS modules, like Webpack, Next.js or React Native
+    - `false`: Disable Hot Module Replacement
+- Default: `false`
 
 > INFO In Production:
 >
@@ -6176,10 +6212,10 @@ Adds `forceScope` to all hooks from `effector-react`. This prevents mistakes whe
   }
 ```
 
-* Type: `boolean`
-    * `true`: Adds `{ forceScope: true }` to hooks like `useUnit`
-    * `false`: Do nothing
-* Default: `false`
+- Type: `boolean`
+    - `true`: Adds `{ forceScope: true }` to hooks like `useUnit`
+    - `false`: Do nothing
+- Default: `false`
 
 ### `importName`
 
@@ -6189,15 +6225,15 @@ Specifying import name or names to process by plugin. Import should be used in t
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "importName": ["effector"]
-  }
+	"effector/babel-plugin",
+	{
+		"importName": ["effector"]
+	}
 ]
 ```
 
-* Type: `string | string[]`
-* Default: `['effector', 'effector/compat']`
+- Type: `string | string[]`
+- Default: `['effector', 'effector/compat']`
 
 ### `factories`
 
@@ -6212,52 +6248,54 @@ SSR(Server Side Rendering) and it's not required for client-only application.
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "factories": ["path/here"]
-  }
+	"effector/babel-plugin",
+	{
+		"factories": ["path/here"]
+	}
 ]
 ```
 
-* Type: `string[]`
-* Factories can have any number of arguments.
-* Factories can create any number of units.
-* Factories can call any effector methods.
-* Factories can call other factories from other modules.
-* Modules with factories can export any number of functions.
-* Factories should be compiled with `effector/babel-plugin` as well as code which use them.
+- Type: `string[]`
+- Factories can have any number of arguments.
+- Factories can create any number of units.
+- Factories can call any effector methods.
+- Factories can call other factories from other modules.
+- Modules with factories can export any number of functions.
+- Factories should be compiled with `effector/babel-plugin` as well as code which use them.
 
 #### Examples
 
 ```json
 // .babelrc
 {
-  "plugins": [
-    [
-      "effector/babel-plugin",
-      {
-        "factories": ["src/createEffectStatus", "~/createCommonPending"]
-      }
-    ]
-  ]
+	"plugins": [
+		[
+			"effector/babel-plugin",
+			{
+				"factories": ["src/createEffectStatus", "~/createCommonPending"]
+			}
+		]
+	]
 }
 ```
 
 ```js
 // ./src/createEffectStatus.js
-import { rootDomain } from "./rootDomain";
+import { rootDomain } from './rootDomain';
 
 export function createEffectStatus(fx) {
-  const $status = rootDomain.createStore("init").on(fx.finally, (_, { status }) => status);
+	const $status = rootDomain
+		.createStore('init')
+		.on(fx.finally, (_, { status }) => status);
 
-  return $status;
+	return $status;
 }
 ```
 
 ```js
 // ./src/statuses.js
-import { createEffectStatus } from "./createEffectStatus";
-import { fetchUserFx, fetchFriendsFx } from "./api";
+import { createEffectStatus } from './createEffectStatus';
+import { fetchUserFx, fetchFriendsFx } from './api';
 
 export const $fetchUserStatus = createEffectStatus(fetchUserFx);
 export const $fetchFriendsStatus = createEffectStatus(fetchFriendsFx);
@@ -6280,15 +6318,15 @@ builds from the same codebase.
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "reactSsr": false
-  }
+	"effector/babel-plugin",
+	{
+		"reactSsr": false
+	}
 ]
 ```
 
-* Type: `boolean`
-* Default: `false`
+- Type: `boolean`
+- Default: `false`
 
 ### `addNames`
 
@@ -6302,15 +6340,15 @@ Adds name to units factories call. Useful for minification and obfuscation of pr
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "addNames": true
-  }
+	"effector/babel-plugin",
+	{
+		"addNames": true
+	}
 ]
 ```
 
-* Type: `boolean`
-* Default: `true`
+- Type: `boolean`
+- Default: `true`
 
 ### `addLoc`
 
@@ -6320,15 +6358,15 @@ Adds location to methods' calls. Used by devtools, for example [effector-logger]
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "addLoc": false
-  }
+	"effector/babel-plugin",
+	{
+		"addLoc": false
+	}
 ]
 ```
 
-* Type: `boolean`
-* Default: `false`
+- Type: `boolean`
+- Default: `false`
 
 ### `debugSids`
 
@@ -6338,15 +6376,15 @@ Adds a file path and variable name of a unit definition to a sid. Useful for deb
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "debugSids": false
-  }
+	"effector/babel-plugin",
+	{
+		"debugSids": false
+	}
 ]
 ```
 
-* Type: `boolean`
-* Default: `false`
+- Type: `boolean`
+- Default: `false`
 
 ### `transformLegacyDomainMethods`
 
@@ -6362,15 +6400,15 @@ The `effector/babel-plugin` may misidentify calls to unit creators because it is
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "transformLegacyDomainMethods": false
-  }
+	"effector/babel-plugin",
+	{
+		"transformLegacyDomainMethods": false
+	}
 ]
 ```
 
-* Type: `boolean`
-* Default: `true`
+- Type: `boolean`
+- Default: `true`
 
 ### `noDefaults`
 
@@ -6384,51 +6422,51 @@ Option for `effector/babel-plugin` for making custom unit factories with clean c
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "noDefaults": false
-  }
+	"effector/babel-plugin",
+	{
+		"noDefaults": false
+	}
 ]
 ```
 
-* Type: `boolean`
-* Default: `false`
+- Type: `boolean`
+- Default: `false`
 
 #### Examples
 
 ```json
 // .babelrc
 {
-  "plugins": [
-    ["effector/babel-plugin", { "addLoc": true }],
-    [
-      "effector/babel-plugin",
-      {
-        "importName": "@lib/createInputField",
-        "storeCreators": ["createInputField"],
-        "noDefaults": true
-      },
-      "createInputField"
-    ]
-  ]
+	"plugins": [
+		["effector/babel-plugin", { "addLoc": true }],
+		[
+			"effector/babel-plugin",
+			{
+				"importName": "@lib/createInputField",
+				"storeCreators": ["createInputField"],
+				"noDefaults": true
+			},
+			"createInputField"
+		]
+	]
 }
 ```
 
 ```js
 // @lib/createInputField.js
-import { createStore } from "effector";
-import { resetForm } from "./form";
+import { createStore } from 'effector';
+import { resetForm } from './form';
 
 export function createInputField(defaultState, { sid, name }) {
-  return createStore(defaultState, { sid, name }).reset(resetForm);
+	return createStore(defaultState, { sid, name }).reset(resetForm);
 }
 ```
 
 ```js
 // src/state.js
-import { createInputField } from "@lib/createInputField";
+import { createInputField } from '@lib/createInputField';
 
-const foo = createInputField("-");
+const foo = createInputField('-');
 /*
 
 will be treated as store creator and compiled to
@@ -6454,29 +6492,28 @@ To use with `effector/babel-plugin`, you have to following next steps:
 
 ```js
 // vite.config.js
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  plugins: [
-    react({
-      babel: {
-        plugins: ["effector/babel-plugin"],
-        // Use .babelrc files
-        babelrc: true,
-        // Use babel.config.js files
-        configFile: true,
-      },
-    }),
-  ],
+	plugins: [
+		react({
+			babel: {
+				plugins: ['effector/babel-plugin'],
+				// Use .babelrc files
+				babelrc: true,
+				// Use babel.config.js files
+				configFile: true,
+			},
+		}),
+	],
 });
 ```
-
 
 # clearNode
 
 ```ts
-import { clearNode } from "effector";
+import { clearNode } from 'effector';
 ```
 
 Method for destroying stores, events, effects, subscriptions, and domains.
@@ -6495,7 +6532,7 @@ clearNode(unit, config?: {deep?: boolean}): void
 
 1. `unit` (////): unit to be erased.
 2. `config: {}` (optional): config object.
-    * `deep?: boolean` (optional): erase node *and* all of its computed values.
+    - `deep?: boolean` (optional): erase node _and_ all of its computed values.
 
 #### Returns
 
@@ -6506,13 +6543,13 @@ clearNode(unit, config?: {deep?: boolean}): void
 ##### Simple
 
 ```js
-import { createStore, createEvent, clearNode } from "effector";
+import { createStore, createEvent, clearNode } from 'effector';
 
 const inc = createEvent();
 const $store = createStore(0).on(inc, (x) => x + 1);
 
-inc.watch(() => console.log("inc called"));
-$store.watch((x) => console.log("store state: ", x));
+inc.watch(() => console.log('inc called'));
+$store.watch((x) => console.log('store state: ', x));
 // => store state: 0
 inc();
 // => inc called
@@ -6527,15 +6564,15 @@ Try it
 ##### Deep clear
 
 ```js
-import { createStore, createEvent, clearNode } from "effector";
+import { createStore, createEvent, clearNode } from 'effector';
 
 const inc = createEvent();
 const trigger = inc.prepend(() => {});
 const $store = createStore(0).on(inc, (x) => x + 1);
 
-trigger.watch(() => console.log("trigger called"));
-inc.watch(() => console.log("inc called"));
-$store.watch((x) => console.log("store state: ", x));
+trigger.watch(() => console.log('trigger called'));
+inc.watch(() => console.log('inc called'));
+$store.watch((x) => console.log('store state: ', x));
 // => store state: 0
 trigger();
 // => trigger called
@@ -6551,7 +6588,6 @@ inc();
 ```
 
 Try it
-
 
 # combine
 
@@ -6609,11 +6645,11 @@ $result: Store<D> = combine(
 )
 ```
 
-* After call `combine`, state of each store is extracted and passed to function arguments, `result` of a function call will be state of store `$result`
-* Any number of stores can be passed to `combine`, but the latest argument always should be function-reducer that returns new state
-* If function returned the same `result` as previous, store `$result` will not be triggered
-* If several stores updated at the same time (during one tick) there will be single call of function and single update of `$result` store
-* Function must be&#x20;
+- After call `combine`, state of each store is extracted and passed to function arguments, `result` of a function call will be state of store `$result`
+- Any number of stores can be passed to `combine`, but the latest argument always should be function-reducer that returns new state
+- If function returned the same `result` as previous, store `$result` will not be triggered
+- If several stores updated at the same time (during one tick) there will be single call of function and single update of `$result` store
+- Function must be&#x20;
 
 #### Returns
 
@@ -6621,7 +6657,7 @@ $result: Store<D> = combine(
 
 #### Examples
 
-import demo\_combineStoresFn from "../../../../demo/combine/stores-fn.live.js?raw";
+import demo_combineStoresFn from "../../../../demo/combine/stores-fn.live.js?raw";
 
 <LiveDemo client:only="preact" demoFile={demo_combineStoresFn} />
 
@@ -6635,16 +6671,16 @@ const $b: StoreWritable<B>;
 const $c: Store<C> | StoreWritable<C>;
 
 $result: Store<D> = combine(
-  { a: $a, b: $b, c: $c },
-  ({ a, b, c }: { a: A; b: B; c: C }): D => result,
+	{ a: $a, b: $b, c: $c },
+	({ a, b, c }: { a: A; b: B; c: C }): D => result,
 );
 ```
 
-* Read state from stores `$a`, `$b`, `$c` and assign it to properties `a`, `b`, `c` accordingly, calls function with that object
-* The `result` of the function call saved in `$result` store
-* If function returned the same `result` as previous, store `$result` will not be triggered
-* If several stores updated at the same time (during one tick) there will be single call of function and single update of `$result` store
-* Function must be&#x20;
+- Read state from stores `$a`, `$b`, `$c` and assign it to properties `a`, `b`, `c` accordingly, calls function with that object
+- The `result` of the function call saved in `$result` store
+- If function returned the same `result` as previous, store `$result` will not be triggered
+- If several stores updated at the same time (during one tick) there will be single call of function and single update of `$result` store
+- Function must be&#x20;
 
 #### Returns
 
@@ -6652,7 +6688,7 @@ $result: Store<D> = combine(
 
 #### Examples
 
-import demo\_combineObjectFn from "../../../../demo/combine/object-fn.live.js?raw";
+import demo_combineObjectFn from "../../../../demo/combine/object-fn.live.js?raw";
 
 <LiveDemo client:only="preact" demoFile={demo_combineObjectFn} />
 
@@ -6668,11 +6704,11 @@ const $c: Store<C> | StoreWritable<C>;
 $result: Store<D> = combine([$a, $b, $c], ([A, B, C]): D => result);
 ```
 
-* Read state from stores `$a`, `$b`, `$c` and assign it to array with the same order as passed stores, call function with that array
-* The `result` of the function call saved in `$result` store
-* If function returned the same `result` as previous, store `$result` will not be triggered
-* If several stores updated at the same time (during one tick) there will be single call of function and single update of `$result` store
-* Function must be&#x20;
+- Read state from stores `$a`, `$b`, `$c` and assign it to array with the same order as passed stores, call function with that array
+- The `result` of the function call saved in `$result` store
+- If function returned the same `result` as previous, store `$result` will not be triggered
+- If several stores updated at the same time (during one tick) there will be single call of function and single update of `$result` store
+- Function must be&#x20;
 
 #### Returns
 
@@ -6680,7 +6716,7 @@ $result: Store<D> = combine([$a, $b, $c], ([A, B, C]): D => result);
 
 #### Examples
 
-import demo\_combineArrayFn from "../../../../demo/combine/array-fn.live.js?raw";
+import demo_combineArrayFn from "../../../../demo/combine/array-fn.live.js?raw";
 
 <LiveDemo client:only="preact" demoFile={demo_combineArrayFn} />
 
@@ -6704,9 +6740,9 @@ const $c: Store<C> | StoreWritable<C>;
 $result: Store<{ a: A; b: B; c: C }> = combine({ a: $a, b: $b, c: $c });
 ```
 
-* Read state from stores `$a`, `$b`, `$c` and assign it to properties `a`, `b`, `c` accordingly, that object will be saved to `$result` store
-* Store `$result` contain object `{a, b, c}` and will be updated on each update of passed stores
-* If several stores updated at the same time (during one tick) there will be single update of `$result` store
+- Read state from stores `$a`, `$b`, `$c` and assign it to properties `a`, `b`, `c` accordingly, that object will be saved to `$result` store
+- Store `$result` contain object `{a, b, c}` and will be updated on each update of passed stores
+- If several stores updated at the same time (during one tick) there will be single update of `$result` store
 
 #### Returns
 
@@ -6714,7 +6750,7 @@ $result: Store<{ a: A; b: B; c: C }> = combine({ a: $a, b: $b, c: $c });
 
 #### Examples
 
-import demo\_combineObject from "../../../../demo/combine/object.live.js?raw";
+import demo_combineObject from "../../../../demo/combine/object.live.js?raw";
 
 <LiveDemo client:only="preact" demoFile={demo_combineObject} />
 
@@ -6730,9 +6766,9 @@ const $c: Store<C> | StoreWritable<C>;
 $result: Store<[A, B, C]> = combine([$a, $b, $c]);
 ```
 
-* Read state from stores `$a`, `$b`, `$c` and assign it to array with the same order as passed stores, that array will be saved to `$result` store
-* Store `$result` will be updated on each update of passed stores
-* If several stores updated at the same time (during one tick) there will be single update of `$result` store
+- Read state from stores `$a`, `$b`, `$c` and assign it to array with the same order as passed stores, that array will be saved to `$result` store
+- Store `$result` will be updated on each update of passed stores
+- If several stores updated at the same time (during one tick) there will be single update of `$result` store
 
 #### Returns
 
@@ -6740,7 +6776,7 @@ $result: Store<[A, B, C]> = combine([$a, $b, $c]);
 
 #### Examples
 
-import demo\_combineArray from "../../../../demo/combine/array.live.js?raw";
+import demo_combineArray from "../../../../demo/combine/array.live.js?raw";
 
 <LiveDemo client:only="preact" demoFile={demo_combineArray} />
 
@@ -6750,7 +6786,7 @@ Primitives and objects can be used in `combine`, and `combine` will not be trigg
 
 #### Examples
 
-import demo\_combineNonStoresFn from "../../../../demo/combine/non-stores-fn.live.js?raw";
+import demo_combineNonStoresFn from "../../../../demo/combine/non-stores-fn.live.js?raw";
 
 <LiveDemo client:only="preact" demoFile={demo_combineNonStoresFn} />
 
@@ -6760,7 +6796,7 @@ All overloads of `combine` with `fn` provided are also supporting optional confi
 
 ### `.skipVoid`
 
-Flag to control how specifically store should handle `undefined` value *(since `effector 23.0.0`)*. If set to `false` - store will use `undefined` as a value. If set to `true` (deprecated), store will read `undefined` as a "skip update" command and will do nothing
+Flag to control how specifically store should handle `undefined` value _(since `effector 23.0.0`)_. If set to `false` - store will use `undefined` as a value. If set to `true` (deprecated), store will read `undefined` as a "skip update" command and will do nothing
 
 #### Formulae
 
@@ -6768,7 +6804,7 @@ Flag to control how specifically store should handle `undefined` value *(since `
 combine($a, $b, callback, { skipVoid: true });
 ```
 
-* Type: `boolean`
+- Type: `boolean`
 
 #### Examples
 
@@ -6776,14 +6812,13 @@ combine($a, $b, callback, { skipVoid: true });
 const $withFn = combine($a, $b, (a, b) => a || b, { skipVoid: false });
 ```
 
-
 # createApi
 
 ```ts
-import { createApi } from "effector";
+import { createApi } from 'effector';
 ```
 
-`createApi` is a shortcut for generating events connected to a store by supplying an object with  for these events. If the source `store` is part of a domain, then the newly created events will also be within that domain.
+`createApi` is a shortcut for generating events connected to a store by supplying an object with for these events. If the source `store` is part of a domain, then the newly created events will also be within that domain.
 
 ## Methods
 
@@ -6798,27 +6833,27 @@ createApi(store, api): objectWithEvents
 #### Arguments
 
 1. `store`
-2. `api` (*Object*) An object with
+2. `api` (_Object_) An object with
 
 #### Returns
 
-(*Object*) An object with events
+(_Object_) An object with events
 
 #### Examples
 
 ```js
-import { createStore, createApi } from "effector";
+import { createStore, createApi } from 'effector';
 
 const $playerPosition = createStore(0);
 
 // Creating events and attaching them to the store
 const api = createApi($playerPosition, {
-  moveLeft: (pos, offset) => pos - offset,
-  moveRight: (pos, offset) => pos + offset,
+	moveLeft: (pos, offset) => pos - offset,
+	moveRight: (pos, offset) => pos + offset,
 });
 
 $playerPosition.watch((pos) => {
-  console.log("position", pos);
+	console.log('position', pos);
 });
 // => position 0
 
@@ -6830,11 +6865,10 @@ api.moveLeft(5);
 
 Try it
 
-
 # createDomain
 
 ```ts
-import { createDomain, type Domain } from "effector";
+import { createDomain, type Domain } from 'effector';
 ```
 
 ## Methods
@@ -6851,7 +6885,7 @@ createDomain(name?): Domain
 
 #### Arguments
 
-1. `name`? (*string*): domain name. Useful for debugging
+1. `name`? (_string_): domain name. Useful for debugging
 
 #### Returns
 
@@ -6860,10 +6894,10 @@ createDomain(name?): Domain
 #### Examples
 
 ```js
-import { createDomain } from "effector";
+import { createDomain } from 'effector';
 
 const domain = createDomain(); // Unnamed domain
-const httpDomain = createDomain("http"); // Named domain
+const httpDomain = createDomain('http'); // Named domain
 
 const statusCodeChanged = httpDomain.createEvent();
 const downloadFx = httpDomain.createEffect();
@@ -6873,13 +6907,12 @@ const $data = httpDomain.createStore({ status: -1 });
 
 Try it
 
-
 # createEffect
 
 ## createEffect
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const effectFx = createEffect();
 ```
@@ -6896,7 +6929,7 @@ The `createEffect` method supports several ways to create effects:
 
 #### With Handler
 
-* **Type**
+- **Type**
 
 ```ts
 createEffect<Params, Done, Fail = Error>(
@@ -6904,52 +6937,52 @@ createEffect<Params, Done, Fail = Error>(
 ): Effect<Params, Done, Fail>
 ```
 
-* **Example**
+- **Example**
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchUserReposFx = createEffect(async ({ name }) => {
-  const url = `https://api.github.com/users/${name}/repos`;
-  const req = await fetch(url);
-  return req.json();
+	const url = `https://api.github.com/users/${name}/repos`;
+	const req = await fetch(url);
+	return req.json();
 });
 
 fetchUserReposFx.done.watch(({ params, result }) => {
-  console.log(result);
+	console.log(result);
 });
 
-await fetchUserReposFx({ name: "zerobias" });
+await fetchUserReposFx({ name: 'zerobias' });
 ```
 
 #### With Configuration
 
 The `name` field is used to improve error messages and debugging.
 
-* **Type**
+- **Type**
 
 ```ts
 export function createEffect<Params, Done, Fail = Error>(config: {
-  name?: string;
-  handler?: (params: Params) => Promise<Done> | Done;
+	name?: string;
+	handler?: (params: Params) => Promise<Done> | Done;
 }): Effect<Params, Done, Fail>;
 ```
 
-* **Example**
+- **Example**
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchUserReposFx = createEffect({
-  name: "fetch user repositories",
-  async handler({ name }) {
-    const url = `https://api.github.com/users/${name}/repos`;
-    const req = await fetch(url);
-    return req.json();
-  },
+	name: 'fetch user repositories',
+	async handler({ name }) {
+		const url = `https://api.github.com/users/${name}/repos`;
+		const req = await fetch(url);
+		return req.json();
+	},
 });
 
-await fetchUserReposFx({ name: "zerobias" });
+await fetchUserReposFx({ name: 'zerobias' });
 ```
 
 #### Without Handler
@@ -6960,90 +6993,90 @@ Most commonly used for testing. More detailed information.
 >
 > Try to avoid using `.use()`, as it's an anti-pattern and degrades type inference.
 
-* **Example**
+- **Example**
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchUserReposFx = createEffect();
 
 fetchUserReposFx.use(async ({ name }) => {
-  const url = `https://api.github.com/users/${name}/repos`;
-  const req = await fetch(url);
-  return req.json();
+	const url = `https://api.github.com/users/${name}/repos`;
+	const req = await fetch(url);
+	return req.json();
 });
 
-await fetchUserReposFx({ name: "zerobias" });
+await fetchUserReposFx({ name: 'zerobias' });
 ```
 
 ### Examples
 
-* **Updating state on effect completion**:
+- **Updating state on effect completion**:
 
 ```ts
-import { createStore, createEffect } from "effector";
+import { createStore, createEffect } from 'effector';
 
 interface Repo {
-  // ...
+	// ...
 }
 
 const $repos = createStore<Repo[]>([]);
 
 const fetchUserReposFx = createEffect(async (name: string) => {
-  const url = `https://api.github.com/users/${name}/repos`;
-  const req = await fetch(url);
-  return req.json();
+	const url = `https://api.github.com/users/${name}/repos`;
+	const req = await fetch(url);
+	return req.json();
 });
 
 $repos.on(fetchUserReposFx.doneData, (_, repos) => repos);
 $repos.watch((repos) => {
-  console.log(`${repos.length} repos`);
+	console.log(`${repos.length} repos`);
 });
 // => 0 repos
 
-await fetchUserReposFx("zerobias");
+await fetchUserReposFx('zerobias');
 // => 26 repos
 ```
 
 Run example
 
-* **Watching effect state**:
+- **Watching effect state**:
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchUserReposFx = createEffect(async ({ name }) => {
-  const url = `https://api.github.com/users/${name}/repos`;
-  const req = await fetch(url);
-  return req.json();
+	const url = `https://api.github.com/users/${name}/repos`;
+	const req = await fetch(url);
+	return req.json();
 });
 
 fetchUserReposFx.pending.watch((pending) => {
-  console.log(`effect is pending?: ${pending ? "yes" : "no"}`);
+	console.log(`effect is pending?: ${pending ? 'yes' : 'no'}`);
 });
 
 fetchUserReposFx.done.watch(({ params, result }) => {
-  console.log(params); // {name: 'zerobias'}
-  console.log(result); // resolved value, result
+	console.log(params); // {name: 'zerobias'}
+	console.log(result); // resolved value, result
 });
 
 fetchUserReposFx.fail.watch(({ params, error }) => {
-  console.error(params); // {name: 'zerobias'}
-  console.error(error); // rejected value, error
+	console.error(params); // {name: 'zerobias'}
+	console.error(error); // rejected value, error
 });
 
 fetchUserReposFx.finally.watch(({ params, status, result, error }) => {
-  console.log(params); // {name: 'zerobias'}
-  console.log(`handler status: ${status}`);
+	console.log(params); // {name: 'zerobias'}
+	console.log(`handler status: ${status}`);
 
-  if (error) {
-    console.log("handler rejected", error);
-  } else {
-    console.log("handler resolved", result);
-  }
+	if (error) {
+		console.log('handler rejected', error);
+	} else {
+		console.log('handler resolved', result);
+	}
 });
 
-await fetchUserReposFx({ name: "zerobias" });
+await fetchUserReposFx({ name: 'zerobias' });
 ```
 
 Run example
@@ -7052,26 +7085,25 @@ Run example
 
 Below is a list of possible errors you may encounter when working with effects:
 
-* no handler used in \[effect name]
+- no handler used in \[effect name]
 
 ### Related API and Articles
 
-* **API**
-    * Effect API - Description of effects, their methods and properties
-    * sample - Key operator for building connections between units
-    * attach - Creates new effects based on other effects
-* **Articles**
-    * Working with effects
-    * How to type effects and other units
-    * Guide to testing effects and other units
-
+- **API**
+    - Effect API - Description of effects, their methods and properties
+    - sample - Key operator for building connections between units
+    - attach - Creates new effects based on other effects
+- **Articles**
+    - Working with effects
+    - How to type effects and other units
+    - Guide to testing effects and other units
 
 # createEvent
 
 ## createEvent
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const event = createEvent();
 ```
@@ -7089,16 +7121,14 @@ createEvent<E = void>(config: {
 }): EventCallable<E>
 ```
 
-* **Arguments**
+- **Arguments**
+    - `eventName`: Optional argument. Event name for debugging.
+    - `config`: Optional argument. Configuration object.
+        - `name`: Event name.
+        - `sid`: Stable identifier for SSR.
+        - `domain`: Domain for the event.
 
-    * `eventName`: Optional argument. Event name for debugging.
-    * `config`: Optional argument. Configuration object.
-
-        * `name`: Event name.
-        * `sid`: Stable identifier for SSR.
-        * `domain`: Domain for the event.
-
-* **Return value**
+- **Return value**
 
 Returns a new callable [event][eventTypes].
 
@@ -7107,7 +7137,7 @@ Returns a new callable [event][eventTypes].
 Updating state by calling an event:
 
 ```js
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const addNumber = createEvent();
 
@@ -7116,7 +7146,7 @@ const $counter = createStore(0);
 $counter.on(addNumber, (state, number) => state + number);
 
 $counter.watch((state) => {
-  console.log("state", state);
+	console.log('state', state);
 });
 // => 0
 
@@ -7138,13 +7168,13 @@ Notice the function call `addNumber(10)`. Every time you call `addNumber(10)`, y
 Processing data with derived events:
 
 ```js
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const extractPartOfArray = createEvent();
 const array = extractPartOfArray.map((arr) => arr.slice(2));
 
 array.watch((part) => {
-  console.log(part);
+	console.log(part);
 });
 extractPartOfArray([1, 2, 3, 4, 5, 6]);
 // => [3, 4, 5, 6]
@@ -7156,44 +7186,36 @@ Run example
 
 Below is a list of possible errors you may encounter when working with events:
 
-* call of derived event is not supported, use createEvent instead
-* unit call from pure function is not supported, use operators like sample instead
+- call of derived event is not supported, use createEvent instead
+- unit call from pure function is not supported, use operators like sample instead
 
 ### Related API and Articles
 
-* **API**
-    * [`Event API`][eventApi] - Event API, its methods, properties and description
-    * [`createApi`][createApi] - Creating a set of events for a store
-    * [`merge`][merge] - Method for combining an array of units into one new event
-    * [`sample`][sample] - Connecting events with other units
-* **Articles**
-    * [How to work with events][eventGuide]
-    * [How to think in effector and why events matter][mindset]
-    * [Guide to typing events and other units][typescript]
+- **API**
+    - [`Event API`][eventApi] - Event API, its methods, properties and description
+    - [`createApi`][createApi] - Creating a set of events for a store
+    - [`merge`][merge] - Method for combining an array of units into one new event
+    - [`sample`][sample] - Connecting events with other units
+- **Articles**
+    - [How to work with events][eventGuide]
+    - [How to think in effector and why events matter][mindset]
+    - [Guide to typing events and other units][typescript]
 
 [eventApi]: /en/api/effector/Event
-
 [eventTypes]: /en/api/effector/Event#event-types
-
 [merge]: /en/api/effector/merge
-
 [eventGuide]: /en/essentials/events
-
 [mindset]: /en/resources/mindset
-
 [typescript]: /en/essentials/typescript
-
 [sample]: /en/api/effector/sample
-
 [createApi]: /en/api/effector/createApi
-
 
 # createStore
 
 ## createStore
 
 ```ts
-import { createStore } from "effector";
+import { createStore } from 'effector';
 
 const $store = createStore();
 ```
@@ -7221,28 +7243,26 @@ createStore(
 ): StoreWritable<State>
 ```
 
-* **Arguments**
+- **Arguments**
 
 1. **`defaultState`**: Initial state
 2. **`config`**: Optional configuration object
+    - **`skipVoid`**: Optional argument. Determines whether the [store][storeApi] skips `undefined` values. Default is `true`. If you pass an `undefined` value to a store with `skipVoid: true`, you'll get [an error in the console][storeUndefinedError].<br/><br/>
 
-    * **`skipVoid`**: Optional argument. Determines whether the [store][storeApi] skips `undefined` values. Default is `true`. If you pass an `undefined` value to a store with `skipVoid: true`, you'll get [an error in the console][storeUndefinedError].<br/><br/>
+    - **`name`**: Optional argument. Store name. [Babel-plugin][babel] can determine it from the store variable name if the name is not explicitly passed in the configuration.<br/><br/>
 
-    * **`name`**: Optional argument. Store name. [Babel-plugin][babel] can determine it from the store variable name if the name is not explicitly passed in the configuration.<br/><br/>
+    - **`sid`**: Optional argument. Unique store identifier. [It's used to distinguish stores between different environments][storeSid]. When using [Babel-plugin][babel], it's set automatically.<br/><br/>
 
-    * **`sid`**: Optional argument. Unique store identifier. [It's used to distinguish stores between different environments][storeSid]. When using [Babel-plugin][babel], it's set automatically.<br/><br/>
-
-    * **`updateFilter`**:
+    - **`updateFilter`**:
       Optional argument. A [pure function][pureFn] that prevents store updates if it returns `false`. Should be used when the standard update prevention (if the value to be written to the store equals `undefined` or the current store value) is insufficient.
 
-      <br/>
+        <br/>
 
-    * **`serialize`**: Optional argument responsible for store serialization.
+    - **`serialize`**: Optional argument responsible for store serialization.
+        - `'ignore'`: excludes the store from serialization when calling [serialize][serialize].
+        - Object with `write` and `read` methods for custom serialization. `write` is called when serialize is invoked and converts the store state to a JSON value – a primitive or simple object/array. `read` is called during fork if the provided `values` are the result of calling [serialize][serialize].
 
-        * `'ignore'`: excludes the store from serialization when calling [serialize][serialize].
-        * Object with `write` and `read` methods for custom serialization. `write` is called when serialize is invoked and converts the store state to a JSON value – a primitive or simple object/array. `read` is called during fork if the provided `values` are the result of calling [serialize][serialize].
-
-* **Return value**
+- **Return value**
 
 Returns a new [store][storeApi].
 
@@ -7251,21 +7271,21 @@ Returns a new [store][storeApi].
 Basic store usage:
 
 ```js
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const addTodo = createEvent();
 const clearTodos = createEvent();
 
 const $todos = createStore([])
-  .on(addTodo, (todos, newTodo) => [...todos, newTodo])
-  .reset(clearTodos);
+	.on(addTodo, (todos, newTodo) => [...todos, newTodo])
+	.reset(clearTodos);
 
 const $selectedTodos = $todos.map((todos) => {
-  return todos.filter((todo) => !!todo.selected);
+	return todos.filter((todo) => !!todo.selected);
 });
 
 $todos.watch((todos) => {
-  console.log("todos", todos);
+	console.log('todos', todos);
 });
 ```
 
@@ -7274,19 +7294,27 @@ Run example
 Example with custom `serialize` configuration:
 
 ```ts
-import { createEvent, createStore, serialize, fork, allSettled } from "effector";
+import {
+	createEvent,
+	createStore,
+	serialize,
+	fork,
+	allSettled,
+} from 'effector';
 
 const saveDate = createEvent();
 const $date = createStore<null | Date>(null, {
-  // Date objects are automatically converted to ISO date strings when calling JSON.stringify
-  // but are not converted back to Date when calling JSON.parse – the result will be the same ISO date string
-  // This will cause state mismatch when hydrating state on the client during server-side rendering
-  //
-  // Custom `serialize` configuration solves this problem
-  serialize: {
-    write: (dateOrNull) => (dateOrNull ? dateOrNull.toISOString() : dateOrNull),
-    read: (isoStringOrNull) => (isoStringOrNull ? new Date(isoStringOrNull) : isoStringOrNull),
-  },
+	// Date objects are automatically converted to ISO date strings when calling JSON.stringify
+	// but are not converted back to Date when calling JSON.parse – the result will be the same ISO date string
+	// This will cause state mismatch when hydrating state on the client during server-side rendering
+	//
+	// Custom `serialize` configuration solves this problem
+	serialize: {
+		write: (dateOrNull) =>
+			dateOrNull ? dateOrNull.toISOString() : dateOrNull,
+		read: (isoStringOrNull) =>
+			isoStringOrNull ? new Date(isoStringOrNull) : isoStringOrNull,
+	},
 }).on(saveDate, (_, p) => p);
 
 const serverScope = fork();
@@ -7315,56 +7343,42 @@ Run example
 
 Below is a list of possible errors you may encounter when working with stores:
 
-* [`store: undefined is used to skip updates. To allow undefined as a value provide explicit { skipVoid: false } option`][storeUndefinedError].
-* [`serialize: One or more stores dont have sids, their values are omitted`][serializeError].
-* [`unit call from pure function is not supported, use operators like sample instead`][unitCallError].
+- [`store: undefined is used to skip updates. To allow undefined as a value provide explicit { skipVoid: false } option`][storeUndefinedError].
+- [`serialize: One or more stores dont have sids, their values are omitted`][serializeError].
+- [`unit call from pure function is not supported, use operators like sample instead`][unitCallError].
 
 ### Related API and Articles
 
-* **API**
-    * [`Store API`][storeApi] - Store API, its methods, properties and description
-    * [`createApi`][createApi] - Creating a set of events for a store
-    * [`combine`][combine] - Creating a new store based on other stores
-    * [`sample`][sample] - Connecting stores with other units
-* **Articles**
-    * [How to manage state][storeGuide]
-    * [Guide to working with SSR][ssr]
-    * [What is SID and why stores need them][storeSid]
-    * [How to type stores and other units][typescript]
+- **API**
+    - [`Store API`][storeApi] - Store API, its methods, properties and description
+    - [`createApi`][createApi] - Creating a set of events for a store
+    - [`combine`][combine] - Creating a new store based on other stores
+    - [`sample`][sample] - Connecting stores with other units
+- **Articles**
+    - [How to manage state][storeGuide]
+    - [Guide to working with SSR][ssr]
+    - [What is SID and why stores need them][storeSid]
+    - [How to type stores and other units][typescript]
 
 [storeApi]: /en/api/effector/Store
-
 [storeUndefinedError]: /en/guides/troubleshooting#store-undefined
-
 [storeSid]: /en/explanation/sids
-
 [ssr]: /en/guides/server-side-rendering
-
 [storeGuide]: /en/essentials/manage-states
-
 [combine]: /en/api/effector/combine
-
 [sample]: /en/api/effector/sample
-
 [createApi]: /en/api/effector/createApi
-
 [serialize]: /en/api/effector/serialize
-
 [typescript]: /en/essentials/typescript
-
 [babel]: /en/api/effector/babel-plugin
-
 [pureFn]: /en/explanation/glossary/#purity
-
 [unitCallError]: /en/guides/troubleshooting#unit-call-from-pure-not-supported
-
 [serializeError]: /en/guides/troubleshooting/#store-without-sid
-
 
 # createWatch
 
 ```ts
-import { createWatch } from "effector";
+import { createWatch } from 'effector';
 ```
 
 ## Methods
@@ -7385,10 +7399,10 @@ createWatch<T>(config: {
 
 #### Arguments
 
-1. `config` (*Object*): Configuration
-    * `unit` (*Unit*): Target unit (store, event of effect) that will be watched
-    * `fn` (*Function*): Function that will be called when the unit is triggered. Accepts the unit's payload as the first argument.
-    * `scope` (): An optional scope object (forked instance) to restrict watcher calls on particular scope.
+1. `config` (_Object_): Configuration
+    - `unit` (_Unit_): Target unit (store, event of effect) that will be watched
+    - `fn` (_Function_): Function that will be called when the unit is triggered. Accepts the unit's payload as the first argument.
+    - `scope` (): An optional scope object (forked instance) to restrict watcher calls on particular scope.
 
 #### Returns
 
@@ -7399,7 +7413,7 @@ createWatch<T>(config: {
 ##### With scope
 
 ```js
-import { createWatch, createEvent, fork, allSettled } from "effector";
+import { createWatch, createEvent, fork, allSettled } from 'effector';
 
 const changeName = createEvent();
 
@@ -7407,14 +7421,14 @@ const scope = fork();
 
 const unwatch = createWatch({ unit: changeName, scope, fn: console.log });
 
-await allSettled(changeName, { scope, params: "John" }); // output: John
-changeName("John"); // no output
+await allSettled(changeName, { scope, params: 'John' }); // output: John
+changeName('John'); // no output
 ```
 
 ##### Without scope
 
 ```js
-import { createWatch, createEvent, fork, allSettled } from "effector";
+import { createWatch, createEvent, fork, allSettled } from 'effector';
 
 const changeName = createEvent();
 
@@ -7422,15 +7436,14 @@ const scope = fork();
 
 const unwatch = createWatch({ unit: changeName, fn: console.log });
 
-await allSettled(changeName, { scope, params: "John" }); // output: John
-changeName("John"); // output: John
+await allSettled(changeName, { scope, params: 'John' }); // output: John
+changeName('John'); // output: John
 ```
-
 
 # debug traces
 
 ```ts
-import "effector/enable_debug_traces";
+import 'effector/enable_debug_traces';
 ```
 
 A special import that enables detailed traces for difficult-to-debug errors, such as a Store missing a proper SID during Scope serialization.
@@ -7448,7 +7461,7 @@ To enable debug traces, add `import "effector/enable_debug_traces"` to the entry
 
 ```ts
 // src/index.ts
-import "effector/enable_debug_traces";
+import 'effector/enable_debug_traces';
 
 // ...rest of your code
 ```
@@ -7459,11 +7472,10 @@ If you encounter an error that can be diagnosed with this API, you will see a re
 
 Don't forget to remove this import once the issue has been resolved.
 
-
 # fork
 
 ```ts
-import { fork, type Scope } from "effector";
+import { fork, type Scope } from 'effector';
 ```
 
 ## Methods
@@ -7492,7 +7504,7 @@ fork(): Scope
 ##### Create two instances with independent counter state
 
 ```js
-import { createStore, createEvent, fork, allSettled } from "effector";
+import { createStore, createEvent, fork, allSettled } from 'effector';
 
 const inc = createEvent();
 const dec = createEvent();
@@ -7542,10 +7554,10 @@ Can be used in three ways:
 
 ```ts
 fork({
-  values: [
-    [$user, "alice"],
-    [$age, 21],
-  ],
+	values: [
+		[$user, 'alice'],
+		[$age, 21],
+	],
 });
 ```
 
@@ -7553,7 +7565,7 @@ fork({
 
 ```ts
 fork({
-  values: new Map().set($user, "alice").set($age, 21),
+	values: new Map().set($user, 'alice').set($age, 21),
 });
 ```
 
@@ -7561,10 +7573,10 @@ fork({
 
 ```ts
 fork({
-  values: {
-    [$user.sid]: "alice",
-    [$age.sid]: 21,
-  },
+	values: {
+		[$user.sid]: 'alice',
+		[$age.sid]: 21,
+	},
 });
 ```
 
@@ -7584,10 +7596,10 @@ Can be used in different ways:
 
 ```ts
 fork({
-  handlers: [
-    [getMessageFx, (params) => ({ id: 0, text: "message" })],
-    [getUserFx, async (params) => ({ name: "alice", age: 21 })],
-  ],
+	handlers: [
+		[getMessageFx, (params) => ({ id: 0, text: 'message' })],
+		[getUserFx, async (params) => ({ name: 'alice', age: 21 })],
+	],
 });
 ```
 
@@ -7595,9 +7607,9 @@ fork({
 
 ```ts
 fork({
-  handlers: new Map()
-    .set(getMessageFx, (params) => ({ id: 0, text: "message" }))
-    .set(getUserFx, async (params) => ({ name: "alice", age: 21 })),
+	handlers: new Map()
+		.set(getMessageFx, (params) => ({ id: 0, text: 'message' }))
+		.set(getUserFx, async (params) => ({ name: 'alice', age: 21 })),
 });
 ```
 
@@ -7605,10 +7617,10 @@ fork({
 
 ```ts
 fork({
-  handlers: {
-    [getMessageFx.sid]: (params) => ({ id: 0, text: "message" }),
-    [getUserFx.sid]: async (params) => ({ name: "alice", age: 21 }),
-  },
+	handlers: {
+		[getMessageFx.sid]: (params) => ({ id: 0, text: 'message' }),
+		[getUserFx.sid]: async (params) => ({ name: 'alice', age: 21 }),
+	},
 });
 ```
 
@@ -7629,26 +7641,28 @@ fork({
 This is an example of test, which ensures that after a request to the server, the value of `$friends` is filled.
 
 ```ts
-import { createEffect, createStore, fork, allSettled } from "effector";
+import { createEffect, createStore, fork, allSettled } from 'effector';
 
-const fetchFriendsFx = createEffect<{ limit: number }, string[]>(async ({ limit }) => {
-  /* some client-side data fetching */
-  return [];
-});
-const $user = createStore("guest");
+const fetchFriendsFx = createEffect<{ limit: number }, string[]>(
+	async ({ limit }) => {
+		/* some client-side data fetching */
+		return [];
+	},
+);
+const $user = createStore('guest');
 const $friends = createStore([]);
 
 $friends.on(fetchFriendsFx.doneData, (_, result) => result);
 
 const testScope = fork({
-  values: [[$user, "alice"]],
-  handlers: [[fetchFriendsFx, () => ["bob", "carol"]]],
+	values: [[$user, 'alice']],
+	handlers: [[fetchFriendsFx, () => ['bob', 'carol']]],
 });
 
 /* trigger computations in scope and await all called effects */
 await allSettled(fetchFriendsFx, {
-  scope: testScope,
-  params: { limit: 10 },
+	scope: testScope,
+	params: { limit: 10 },
 });
 
 /* check value of store in scope */
@@ -7689,11 +7703,10 @@ fork(domain: Domain, options?: { values?, handlers? }): Scope
 
 TBD
 
-
 # forward
 
 ```ts
-import { forward, type Subscription } from "effector";
+import { forward, type Subscription } from 'effector';
 ```
 
 Method to create connection between units in a declarative way. Send updates from one set of units to another.
@@ -7720,17 +7733,16 @@ forward({
 #### Arguments
 
 1. `from` (Unit | Unit\[]): Source of updates. Forward will listen for changes of these units
-
-    * if an [*Event*][_Event_] is passed, `to` will be triggered on each event trigger and receives event argument
-    * if a [*Store*][_Store_] is passed, `to` will be triggered on each store **change** and receives new value of the store
-    * if an [*Effect*][_Effect_] is passed, `to` will be triggered on each effect call and receives effect parameter
-    * if an array of units is passed, `to` will be triggered when any unit in `from` array is triggered
+    - if an [_Event_][_Event_] is passed, `to` will be triggered on each event trigger and receives event argument
+    - if a [_Store_][_Store_] is passed, `to` will be triggered on each store **change** and receives new value of the store
+    - if an [_Effect_][_Effect_] is passed, `to` will be triggered on each effect call and receives effect parameter
+    - if an array of units is passed, `to` will be triggered when any unit in `from` array is triggered
 
 2. `to` (Unit | Unit\[]): Target for updates. `forward` will trigger these units with data from `from`
-    * if passed an [*Event*][_Event_], it will be triggered with data from `from` unit
-    * if passed a [*Store*][_Store_], data from `from` unit will be written to store and **trigger its update**
-    * if passed an [*Effect*][_Effect_], it will be called with data from `from` unit as parameter
-    * if `to` is an array of units, each unit in that array will be triggered
+    - if passed an [_Event_][_Event_], it will be triggered with data from `from` unit
+    - if passed a [_Store_][_Store_], data from `from` unit will be written to store and **trigger its update**
+    - if passed an [_Effect_][_Effect_], it will be called with data from `from` unit as parameter
+    - if `to` is an array of units, each unit in that array will be triggered
 
 #### Returns
 
@@ -7745,17 +7757,17 @@ Subscription: Unsubscribe function. It breaks connection between `from` and `to`
 ##### Send store updates to another store
 
 ```js
-import { createStore, createEvent, forward } from "effector";
+import { createStore, createEvent, forward } from 'effector';
 
 const $store = createStore(1);
 const event = createEvent();
 
 forward({
-  from: event,
-  to: $store,
+	from: event,
+	to: $store,
 });
 
-$store.watch((state) => console.log("store changed: ", state));
+$store.watch((state) => console.log('store changed: ', state));
 // => store changed: 1
 
 event(200);
@@ -7767,7 +7779,7 @@ Try it
 ##### Forward between arrays of units
 
 ```js
-import { createEvent, forward } from "effector";
+import { createEvent, forward } from 'effector';
 
 const firstSource = createEvent();
 const secondSource = createEvent();
@@ -7776,17 +7788,17 @@ const firstTarget = createEvent();
 const secondTarget = createEvent();
 
 forward({
-  from: [firstSource, secondSource],
-  to: [firstTarget, secondTarget],
+	from: [firstSource, secondSource],
+	to: [firstTarget, secondTarget],
 });
 
-firstTarget.watch((e) => console.log("first target", e));
-secondTarget.watch((e) => console.log("second target", e));
+firstTarget.watch((e) => console.log('first target', e));
+secondTarget.watch((e) => console.log('second target', e));
 
-firstSource("A");
+firstSource('A');
 // => first target A
 // => second target A
-secondSource("B");
+secondSource('B');
 // => first target B
 // => second target B
 ```
@@ -7794,16 +7806,13 @@ secondSource("B");
 Try it
 
 [_effect_]: /en/api/effector/Effect
-
 [_store_]: /en/api/effector/Store
-
 [_event_]: /en/api/effector/Event
-
 
 # fromObservable
 
 ```ts
-import { fromObservable, type Observable } from "effector";
+import { fromObservable, type Observable } from 'effector';
 ```
 
 ## Methods
@@ -7820,7 +7829,7 @@ fromObservable<T>(source: Observable<T>): Event<T>
 
 #### Arguments
 
-1. `observable` (*Observable*)
+1. `observable` (_Observable_)
 
 #### Returns
 
@@ -7831,8 +7840,8 @@ fromObservable<T>(source: Observable<T>): Event<T>
 ##### Basic use case
 
 ```js
-import { interval } from "rxjs";
-import { fromObservable } from "effector";
+import { interval } from 'rxjs';
+import { fromObservable } from 'effector';
 
 //emit value in sequence every 1 second
 const source = interval(1000);
@@ -7843,11 +7852,10 @@ const event = fromObservable(source);
 event.watch(console.log);
 ```
 
-
 # guard
 
 ```ts
-import { guard } from "effector";
+import { guard } from 'effector';
 ```
 
 > WARNING Deprecated:
@@ -7875,11 +7883,11 @@ guard({ clock?, source?, filter, target? }): target
 
 When `clock` is triggered, check `filter` for [truthy] and call `target` with data from `source` if `true`.
 
-* If `clock` is not passed, `guard` will be triggered on every `source` update
-* If `source` is not passed, call `target` with data from `clock`
-* If `target` is not passed, create  with type of `source` and return it from `guard()`
-* If `filter` is , check it value for [truthy]
-* If `filter` is `Function`, call it with data from `source` and check result for [truthy]
+- If `clock` is not passed, `guard` will be triggered on every `source` update
+- If `source` is not passed, call `target` with data from `clock`
+- If `target` is not passed, create with type of `source` and return it from `guard()`
+- If `filter` is , check it value for [truthy]
+- If `filter` is `Function`, call it with data from `source` and check result for [truthy]
 
 [truthy]: https://developer.mozilla.org/en-US/docs/Glossary/Truthy
 
@@ -7891,7 +7899,7 @@ When `clock` is triggered, check `filter` for [truthy] and call `target` with da
 
 #### Arguments
 
-1. `params` (*Object*): Configuration object
+1. `params` (_Object_): Configuration object
 
 #### Returns
 
@@ -7902,10 +7910,12 @@ When `clock` is triggered, check `filter` for [truthy] and call `target` with da
 ##### Basic
 
 ```js
-import { createStore, createEffect, createEvent, guard } from "effector";
+import { createStore, createEffect, createEvent, guard } from 'effector';
 
 const clickRequest = createEvent();
-const fetchRequest = createEffect((n) => new Promise((rs) => setTimeout(rs, 2500, n)));
+const fetchRequest = createEffect(
+	(n) => new Promise((rs) => setTimeout(rs, 2500, n)),
+);
 
 const $clicks = createStore(0).on(clickRequest, (x) => x + 1);
 const $requestsCount = createStore(0).on(fetchRequest, (x) => x + 1);
@@ -7919,10 +7929,10 @@ const $isIdle = fetchRequest.pending.map((pending) => !pending);
 4. and call fetchRequest with it
 */
 guard({
-  clock: clickRequest /* 1 */,
-  filter: $isIdle /* 2 */,
-  source: $clicks /* 3 */,
-  target: fetchRequest /* 4 */,
+	clock: clickRequest /* 1 */,
+	filter: $isIdle /* 2 */,
+	source: $clicks /* 3 */,
+	target: fetchRequest /* 4 */,
 });
 ```
 
@@ -7931,19 +7941,19 @@ See ui visualization
 ##### Function predicate
 
 ```js
-import { createEffect, createEvent, guard } from "effector";
+import { createEffect, createEvent, guard } from 'effector';
 
 const submitForm = createEvent();
 const searchUser = createEffect();
 
 guard({
-  source: submitForm,
-  filter: (user) => user.length > 0,
-  target: searchUser,
+	source: submitForm,
+	filter: (user) => user.length > 0,
+	target: searchUser,
 });
 
-submitForm(""); // nothing happens
-submitForm("alice"); // ~> searchUser('alice')
+submitForm(''); // nothing happens
+submitForm('alice'); // ~> searchUser('alice')
 ```
 
 Try it
@@ -7960,26 +7970,26 @@ Try it
 ##### Store filter
 
 ```js
-import { createEvent, createStore, createApi, guard } from "effector";
+import { createEvent, createStore, createApi, guard } from 'effector';
 
 const trigger = createEvent();
 const $unlocked = createStore(true);
 
 const { lock, unlock } = createApi($unlocked, {
-  lock: () => false,
-  unlock: () => true,
+	lock: () => false,
+	unlock: () => true,
 });
 
 const target = guard(trigger, {
-  filter: $unlocked,
+	filter: $unlocked,
 });
 
 target.watch(console.log);
-trigger("A");
+trigger('A');
 lock();
-trigger("B"); // nothing happens
+trigger('B'); // nothing happens
 unlock();
-trigger("C");
+trigger('C');
 ```
 
 Try it
@@ -7989,22 +7999,22 @@ Try it
 #### Arguments
 
 1. `source` (//): Source unit. Will trigger given `guard` on updates
-2. `filter` (*(payload) => Boolean*): Predicate function, should be&#x20;
+2. `filter` (_(payload) => Boolean_): Predicate function, should be&#x20;
 
 #### Examples
 
 ##### Predicate function
 
 ```js
-import { createEvent, guard } from "effector";
+import { createEvent, guard } from 'effector';
 
 const source = createEvent();
 const target = guard(source, {
-  filter: (x) => x > 0,
+	filter: (x) => x > 0,
 });
 
 target.watch(() => {
-  console.log("target called");
+	console.log('target called');
 });
 
 source(0);
@@ -8015,11 +8025,10 @@ source(1);
 
 Try it
 
-
 # hydrate
 
 ```ts
-import { hydrate } from "effector";
+import { hydrate } from 'effector';
 ```
 
 A companion method for . Hydrates provided values into corresponding stores within a provided domain or scope. The main purpose is an application state hydration on the client side after SSR.
@@ -8052,15 +8061,15 @@ hydrate(domainOrScope: Domain | Scope, { values: Map<Store<any>, any> | {[sid: s
 Populate store with a predefined value
 
 ```js
-import { createStore, createDomain, fork, serialize, hydrate } from "effector";
+import { createStore, createDomain, fork, serialize, hydrate } from 'effector';
 
 const domain = createDomain();
 const $store = domain.createStore(0);
 
 hydrate(domain, {
-  values: {
-    [$store.sid]: 42,
-  },
+	values: {
+		[$store.sid]: 42,
+	},
 });
 
 console.log($store.getState()); // 42
@@ -8068,78 +8077,76 @@ console.log($store.getState()); // 42
 
 Try it
 
-
 # effector
 
 Effector API reference:
 
 ### Unit Definitions
 
-* Event\<T>
-* Effect\<Params, Done, Fail>
-* Store\<T>
-* Domain
-* Scope
+- Event\<T>
+- Effect\<Params, Done, Fail>
+- Store\<T>
+- Domain
+- Scope
 
 ### Unit Creators
 
-* createEvent()
-* createStore(default)
-* createEffect(handler)
-* createDomain()
+- createEvent()
+- createStore(default)
+- createEffect(handler)
+- createDomain()
 
 ### Common Methods
 
-* combine(...stores, f)
-* attach({effect, mapParams, source})
-* sample({clock, source, fn, target})
-* merge(\[eventA, eventB])
-* split(event, cases)
-* createApi(store, api)
+- combine(...stores, f)
+- attach({effect, mapParams, source})
+- sample({clock, source, fn, target})
+- merge(\[eventA, eventB])
+- split(event, cases)
+- createApi(store, api)
 
 ### Fork API
 
-* fork()
-* serialize(scope)
-* allSettled(unit, { scope })
-* scopeBind(event)
-* hydrate(domain)
+- fork()
+- serialize(scope)
+- allSettled(unit, { scope })
+- scopeBind(event)
+- hydrate(domain)
 
 ### Plugins
 
-* effector/babel-plugin
-* @effector-swc-plugin
+- effector/babel-plugin
+- @effector-swc-plugin
 
 ### Utilities
 
-* is
-* fromObservable(observable)
+- is
+- fromObservable(observable)
 
 ### Low Level API
 
-* clearNode()
-* withRegion()
-* launch()
-* inspect()
+- clearNode()
+- withRegion()
+- launch()
+- inspect()
 
 ### Import Map
 
 Package `effector` provides couple different entry points for different purposes:
 
-* effector/compat
-* effector/inspect
-* effector/babel-plugin
+- effector/compat
+- effector/inspect
+- effector/babel-plugin
 
 ### Deprecated Methods
 
-* forward({from, to})
-* guard({source, filter, target})
-
+- forward({from, to})
+- guard({source, filter, target})
 
 # inspect
 
 ```ts
-import { inspect } from "effector/inspect";
+import { inspect } from 'effector/inspect';
 ```
 
 Special API methods designed to handle debugging and monitoring use cases without giving too much access to internals of your actual app.
@@ -8155,20 +8162,20 @@ Allows us to track any computations that have happened in the effector's kernel.
 #### Example
 
 ```ts
-import { inspect, type Message } from "effector/inspect";
+import { inspect, type Message } from 'effector/inspect';
 
-import { someEvent } from "./app-code";
+import { someEvent } from './app-code';
 
 function logInspectMessage(m: Message) {
-  const { name, value, kind } = m;
+	const { name, value, kind } = m;
 
-  return console.log(`[${kind}] ${name} ${value}`);
+	return console.log(`[${kind}] ${name} ${value}`);
 }
 
 inspect({
-  fn: (m) => {
-    logInspectMessage(m);
-  },
+	fn: (m) => {
+		logInspectMessage(m);
+	},
 });
 
 someEvent(42);
@@ -8184,24 +8191,24 @@ someEvent(42);
 Scope limits the extent to which computations can be tracked. If no scope is provided - default out-of-scope mode computations will be tracked.
 
 ```ts
-import { fork, allSettled } from "effector";
-import { inspect, type Message } from "effector/inspect";
+import { fork, allSettled } from 'effector';
+import { inspect, type Message } from 'effector/inspect';
 
-import { someEvent } from "./app-code";
+import { someEvent } from './app-code';
 
 function logInspectMessage(m: Message) {
-  const { name, value, kind } = m;
+	const { name, value, kind } = m;
 
-  return console.log(`[${kind}] ${name} ${value}`);
+	return console.log(`[${kind}] ${name} ${value}`);
 }
 
 const myScope = fork();
 
 inspect({
-  scope: myScope,
-  fn: (m) => {
-    logInspectMessage(m);
-  },
+	scope: myScope,
+	fn: (m) => {
+		logInspectMessage(m);
+	},
 });
 
 someEvent(42);
@@ -8220,30 +8227,30 @@ Adding `trace: true` setting allows looking up previous computations, that led t
 #### Example
 
 ```ts
-import { fork, allSettled } from "effector";
-import { inspect, type Message } from "effector/inspect";
+import { fork, allSettled } from 'effector';
+import { inspect, type Message } from 'effector/inspect';
 
-import { someEvent, $count } from "./app-code";
+import { someEvent, $count } from './app-code';
 
 function logInspectMessage(m: Message) {
-  const { name, value, kind } = m;
+	const { name, value, kind } = m;
 
-  return console.log(`[${kind}] ${name} ${value}`);
+	return console.log(`[${kind}] ${name} ${value}`);
 }
 
 const myScope = fork();
 
 inspect({
-  scope: myScope,
-  trace: true, // <- explicit setting is needed
-  fn: (m) => {
-    if (m.kind === "store" && m.sid === $count.sid) {
-      m.trace.forEach((tracedMessage) => {
-        logInspectMessage(tracedMessage);
-        // ☝️ here we are logging the trace of specific store update
-      });
-    }
-  },
+	scope: myScope,
+	trace: true, // <- explicit setting is needed
+	fn: (m) => {
+		if (m.kind === 'store' && m.sid === $count.sid) {
+			m.trace.forEach((tracedMessage) => {
+				logInspectMessage(tracedMessage);
+				// ☝️ here we are logging the trace of specific store update
+			});
+		}
+	},
 });
 
 allSettled(someEvent, { scope: myScope, params: 42 });
@@ -8260,12 +8267,14 @@ Effector does not allow exceptions in pure functions. In such case, branch compu
 
 ```ts
 inspect({
-  fn: (m) => {
-    if (m.type === "error") {
-      // do something about it
-      console.log(`${m.kind} ${m.name} computation has failed with ${m.error}`);
-    }
-  },
+	fn: (m) => {
+		if (m.type === 'error') {
+			// do something about it
+			console.log(
+				`${m.kind} ${m.name} computation has failed with ${m.error}`,
+			);
+		}
+	},
 });
 ```
 
@@ -8276,17 +8285,17 @@ Allows us to track declarations of units, factories, and regions.
 ### Example
 
 ```ts
-import { createStore } from "effector";
-import { inspectGraph, type Declaration } from "effector/inspect";
+import { createStore } from 'effector';
+import { inspectGraph, type Declaration } from 'effector/inspect';
 
 function printDeclaration(d: Declaration) {
-  console.log(`${d.kind} ${d.name}`);
+	console.log(`${d.kind} ${d.name}`);
 }
 
 inspectGraph({
-  fn: (d) => {
-    printDeclaration(d);
-  },
+	fn: (d) => {
+		printDeclaration(d);
+	},
 });
 
 const $count = createStore(0);
@@ -8300,33 +8309,32 @@ Meta-data provided via region's root node is available on declaration.
 #### Example
 
 ```ts
-import { createNode, withRegion, createStore } from "effector";
-import { inspectGraph, type Declaration } from "effector/inspect";
+import { createNode, withRegion, createStore } from 'effector';
+import { inspectGraph, type Declaration } from 'effector/inspect';
 
 function createCustomSomething(config) {
-  const $something = createStore(0);
+	const $something = createStore(0);
 
-  withRegion(createNode({ meta: { hello: "world" } }), () => {
-    // some code
-  });
+	withRegion(createNode({ meta: { hello: 'world' } }), () => {
+		// some code
+	});
 
-  return $something;
+	return $something;
 }
 inspectGraph({
-  fn: (d) => {
-    if (d.type === "region") console.log(d.meta.hello);
-  },
+	fn: (d) => {
+		if (d.type === 'region') console.log(d.meta.hello);
+	},
 });
 
 const $some = createCustomSomething({});
 // logs "world"
 ```
 
-
 # is
 
 ```ts
-import { is, type Unit } from "effector";
+import { is, type Unit } from 'effector';
 ```
 
 Namespace for unit validators.
@@ -8344,7 +8352,13 @@ Checks if given value is
 #### Examples
 
 ```js
-import { is, createStore, createEvent, createEffect, createDomain } from "effector";
+import {
+	is,
+	createStore,
+	createEvent,
+	createEffect,
+	createDomain,
+} from 'effector';
 
 const $store = createStore(null);
 const event = createEvent();
@@ -8388,7 +8402,13 @@ Checks if given value is
 #### Examples
 
 ```js
-import { is, createStore, createEvent, createEffect, createDomain } from "effector";
+import {
+	is,
+	createStore,
+	createEvent,
+	createEffect,
+	createDomain,
+} from 'effector';
 
 const $store = createStore(null);
 const event = createEvent();
@@ -8432,7 +8452,13 @@ Checks if given value is
 #### Examples
 
 ```js
-import { is, createStore, createEvent, createEffect, createDomain } from "effector";
+import {
+	is,
+	createStore,
+	createEvent,
+	createEffect,
+	createDomain,
+} from 'effector';
 
 const $store = createStore(null);
 const event = createEvent();
@@ -8467,7 +8493,7 @@ Checks if given value can be used in operators target (or be called as a functio
 #### Examples
 
 ```js
-import { is, createStore, createEvent, createEffect } from "effector";
+import { is, createStore, createEvent, createEffect } from 'effector';
 
 const $store = createStore(null);
 const $mapped = $store.map((x) => x);
@@ -8502,7 +8528,13 @@ Checks if given value is
 #### Examples
 
 ```js
-import { is, createStore, createEvent, createEffect, createDomain } from "effector";
+import {
+	is,
+	createStore,
+	createEvent,
+	createEffect,
+	createDomain,
+} from 'effector';
 
 const $store = createStore(null);
 const event = createEvent();
@@ -8532,7 +8564,7 @@ Try it
 >
 > [effector 22.0.0](https://changelog.effector.dev/#effector-22-0-0)
 
-Checks if given value is  since [effector 22.0.0](https://changelog.effector.dev/#effector-22-0-0).
+Checks if given value is since [effector 22.0.0](https://changelog.effector.dev/#effector-22-0-0).
 
 #### Returns
 
@@ -8541,7 +8573,7 @@ Checks if given value is  since [effector 22.0.0](https://changelog.effector.dev
 #### Examples
 
 ```js
-import { fork } from "effector";
+import { fork } from 'effector';
 
 const $store = createStore(null);
 const event = createEvent();
@@ -8580,7 +8612,14 @@ Checks if given value is Unit: Store, Event, Effect, Domain or Scope
 #### Examples
 
 ```js
-import { is, createStore, createEvent, createEffect, createDomain, fork } from "effector";
+import {
+	is,
+	createStore,
+	createEvent,
+	createEffect,
+	createDomain,
+	fork,
+} from 'effector';
 
 const $store = createStore(null);
 const event = createEvent();
@@ -8623,7 +8662,7 @@ Try it
 >
 > [effector 22.4.0](https://changelog.effector.dev/#effector-22-4-0)
 
-Checks if given value is  created via  method. If passed not an effect, returns `false`.
+Checks if given value is created via method. If passed not an effect, returns `false`.
 
 #### Returns
 
@@ -8635,30 +8674,34 @@ Sometimes you need to add an error log on effects failures, but only on effects 
 If you leave `onCreateEffect` as it is, without checks, the error log will be duplicated, because it will happen on the parent and the child effect.
 
 ```js
-import { createDomain, attach, is } from "effector";
+import { createDomain, attach, is } from 'effector';
 
 const logFailuresDomain = createDomain();
 
 logFailuresDomain.onCreateEffect((effect) => {
-  if (is.attached(effect)) {
-    effect.fail.watch(({ params, error }) => {
-      console.warn(`Effect "${effect.compositeName.fullName}" failed`, params, error);
-    });
-  }
+	if (is.attached(effect)) {
+		effect.fail.watch(({ params, error }) => {
+			console.warn(
+				`Effect "${effect.compositeName.fullName}" failed`,
+				params,
+				error,
+			);
+		});
+	}
 });
 
 const baseRequestFx = logFailuresDomain.createEffect((path) => {
-  throw new Error(`path ${path}`);
+	throw new Error(`path ${path}`);
 });
 
 const loadDataFx = attach({
-  mapParams: () => "/data",
-  effect: baseRequestFx,
+	mapParams: () => '/data',
+	effect: baseRequestFx,
 });
 
 const loadListFx = attach({
-  mapParams: () => "/list",
-  effect: baseRequestFx,
+	mapParams: () => '/list',
+	effect: baseRequestFx,
 });
 
 loadDataFx();
@@ -8670,14 +8713,21 @@ Try it
 #### Examples
 
 ```js
-import { is, createStore, createEvent, createEffect, createDomain, attach } from "effector";
+import {
+	is,
+	createStore,
+	createEvent,
+	createEffect,
+	createDomain,
+	attach,
+} from 'effector';
 
 const $store = createStore(null);
 const event = createEvent();
 const fx = createEffect();
 
 const childFx = attach({
-  effect: fx,
+	effect: fx,
 });
 
 is.attached(childFx);
@@ -8701,11 +8751,10 @@ is.attached(null);
 
 Try it
 
-
 # launch
 
 ```ts
-import { launch, type Unit, type Node } from "effector";
+import { launch, type Unit, type Node } from 'effector';
 ```
 
 > INFO since:
@@ -8751,11 +8800,10 @@ launch(unit: Unit | Node, params: T): void
 
 `void`
 
-
 # merge
 
 ```ts
-import { merge, type Unit } from "effector";
+import { merge, type Unit } from 'effector';
 ```
 
 ## Methods
@@ -8793,12 +8841,12 @@ TBD
 ##### Basic Usage
 
 ```js
-import { createEvent, merge } from "effector";
+import { createEvent, merge } from 'effector';
 
 const foo = createEvent();
 const bar = createEvent();
 const baz = merge([foo, bar]);
-baz.watch((v) => console.log("merged event triggered: ", v));
+baz.watch((v) => console.log('merged event triggered: ', v));
 
 foo(1);
 // => merged event triggered: 1
@@ -8811,7 +8859,7 @@ Try it
 ##### Working with Stores
 
 ```js
-import { createEvent, createStore, merge } from "effector";
+import { createEvent, createStore, merge } from 'effector';
 
 const setFoo = createEvent();
 const setBar = createEvent();
@@ -8831,7 +8879,7 @@ Try it
 ##### Merging a Store and an Event
 
 ```js
-import { createEvent, createStore, merge } from "effector";
+import { createEvent, createStore, merge } from 'effector';
 
 const setFoo = createEvent();
 const otherEvent = createEvent();
@@ -8844,12 +8892,11 @@ merged.watch((v) => console.log(`merged event payload: ${v}`));
 setFoo(999);
 // => merged event payload: 999
 
-otherEvent("bar");
+otherEvent('bar');
 // => merged event payload: bar
 ```
 
 Try it
-
 
 # effector/babel-plugin
 
@@ -8859,11 +8906,10 @@ Since Effector allows to automate many common tasks (like setting Stable IDentif
 
 Please refer to the Babel plugin documentation for usage examples.
 
-
 # effector/compat
 
 ```ts
-import {} from "effector/compat";
+import {} from 'effector/compat';
 ```
 
 The library provides a separate module with compatibility up to IE11 and Chrome 47 (browser for Smart TV devices).
@@ -8878,11 +8924,11 @@ The library provides a separate module with compatibility up to IE11 and Chrome 
 
 You need to install polyfills for these objects:
 
-* `Promise`
-* `Object.assign`
-* `Array.prototype.flat`
-* `Map`
-* `Set`
+- `Promise`
+- `Object.assign`
+- `Array.prototype.flat`
+- `Map`
+- `Set`
 
 In most cases, a bundler can automatically add polyfills.
 
@@ -8892,15 +8938,21 @@ In most cases, a bundler can automatically add polyfills.
 <summary>Vite Configuration Example</summary>
 
 ```js
-import { defineConfig } from "vite";
-import legacy from "@vitejs/plugin-legacy";
+import { defineConfig } from 'vite';
+import legacy from '@vitejs/plugin-legacy';
 
 export default defineConfig({
-  plugins: [
-    legacy({
-      polyfills: ["es.promise", "es.object.assign", "es.array.flat", "es.map", "es.set"],
-    }),
-  ],
+	plugins: [
+		legacy({
+			polyfills: [
+				'es.promise',
+				'es.object.assign',
+				'es.array.flat',
+				'es.map',
+				'es.set',
+			],
+		}),
+	],
 });
 ```
 
@@ -8928,11 +8980,11 @@ However, you can set up your bundler to automatically replace `effector` with `e
 
 ```js
 module.exports = {
-  resolve: {
-    alias: {
-      effector: "effector/compat",
-    },
-  },
+	resolve: {
+		alias: {
+			effector: 'effector/compat',
+		},
+	},
 };
 ```
 
@@ -8944,19 +8996,18 @@ module.exports = {
 <summary>Vite Configuration Example</summary>
 
 ```js
-import { defineConfig } from "vite";
+import { defineConfig } from 'vite';
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      effector: "effector/compat",
-    },
-  },
+	resolve: {
+		alias: {
+			effector: 'effector/compat',
+		},
+	},
 });
 ```
 
 </details>
-
 
 # effector/inspect
 
@@ -8970,18 +9021,17 @@ Inspect API is designed to be disposable. By design, any feature that uses Inspe
 
 Please refer to Inspect API docs for usage examples.
 
-
 # restore
 
 ```ts
-import { restore } from "effector";
+import { restore } from 'effector';
 ```
 
 ## Methods
 
 ### `restore(event, defaultState)`
 
-Creates a  from an . It works like a shortcut for `createStore(defaultState).on(event, (_, payload) => payload)`
+Creates a from an . It works like a shortcut for `createStore(defaultState).on(event, (_, payload) => payload)`
 
 > WARNING It is not a derived store:
 >
@@ -8996,7 +9046,7 @@ restore(event: Event<T>, defaultState: T): StoreWritable<T>
 #### Arguments
 
 1. `event`
-2. `defaultState` (*Payload*)
+2. `defaultState` (_Payload_)
 
 #### Returns
 
@@ -9007,15 +9057,15 @@ restore(event: Event<T>, defaultState: T): StoreWritable<T>
 ##### Basic
 
 ```js
-import { createEvent, restore } from "effector";
+import { createEvent, restore } from 'effector';
 
 const event = createEvent();
-const $store = restore(event, "default");
+const $store = restore(event, 'default');
 
-$store.watch((state) => console.log("state: ", state));
+$store.watch((state) => console.log('state: ', state));
 // state: default
 
-event("foo");
+event('foo');
 // state: foo
 ```
 
@@ -9023,7 +9073,7 @@ Try it
 
 ### `restore(effect, defaultState)`
 
-Creates a  out of successful results of an . It works like a shortcut for `createStore(defaultState).on(effect.done, (_, {result}) => result)`
+Creates a out of successful results of an . It works like a shortcut for `createStore(defaultState).on(effect.done, (_, {result}) => result)`
 
 #### Formulae
 
@@ -9034,7 +9084,7 @@ restore(effect: Effect<Params, Done, Fail>, defaultState: Done): StoreWritable<D
 #### Arguments
 
 1. `effect`
-2. `defaultState` (*Done*)
+2. `defaultState` (_Done_)
 
 #### Returns
 
@@ -9049,12 +9099,12 @@ Store will have the same type as `Done` from `Effect<Params, Done, Fail>`. Also,
 ##### Effect
 
 ```js
-import { createEffect, restore } from "effector";
+import { createEffect, restore } from 'effector';
 
-const fx = createEffect(() => "foo");
-const $store = restore(fx, "default");
+const fx = createEffect(() => 'foo');
+const $store = restore(fx, 'default');
 
-$store.watch((state) => console.log("state: ", state));
+$store.watch((state) => console.log('state: ', state));
 // => state: default
 
 await fx();
@@ -9073,7 +9123,7 @@ TBD
 
 #### Arguments
 
-1. `shape` (*State*)
+1. `shape` (_State_)
 
 #### Returns
 
@@ -9084,42 +9134,37 @@ TBD
 ##### Object
 
 ```js
-import { restore } from "effector";
+import { restore } from 'effector';
 
 const { foo: $foo, bar: $bar } = restore({
-  foo: "foo",
-  bar: 0,
+	foo: 'foo',
+	bar: 0,
 });
 
 $foo.watch((foo) => {
-  console.log("foo", foo);
+	console.log('foo', foo);
 });
 // => foo 'foo'
 $bar.watch((bar) => {
-  console.log("bar", bar);
+	console.log('bar', bar);
 });
 // => bar 0
 ```
 
 Try it
 
-
 # sample API
 
 [units]: /en/explanation/glossary#common-unit
-
 [eventApi]: /en/api/effector/Event
-
 [storeApi]: /en/api/effector/Store
-
 [effectApi]: /en/api/effector/Effect
-
 [purity]: /en/explanation/glossary/#purity
 
 ## `sample` API
 
 ```ts
-import { sample } from "effector";
+import { sample } from 'effector';
 ```
 
 The `sample` method is used to connect units. Its main purpose is to take data from one place `source` and send it to another `target` when a certain trigger `clock` occurs.
@@ -9132,25 +9177,25 @@ A common use case is when you need to process an event using data from a store. 
 
 ### How it works
 
-* When `clock` triggers, the value from `source` is read.
-* If a `filter` is specified and returns `true`, or if it's a store with `true` value, processing continues.
-* If a `fn` is provided, data is transformed.
-* Data is then passed to the `target`.
+- When `clock` triggers, the value from `source` is read.
+- If a `filter` is specified and returns `true`, or if it's a store with `true` value, processing continues.
+- If a `fn` is provided, data is transformed.
+- Data is then passed to the `target`.
 
 ### Special behavior of `sample`
 
-* If `clock` is not provided, `sample` will trigger on every update of `source`.
-* If `target` is not provided, `sample` will create and return a new derived [unit][units].
+- If `clock` is not provided, `sample` will trigger on every update of `source`.
+- If `target` is not provided, `sample` will create and return a new derived [unit][units].
 
 ### Returned unit and value
 
 If `target` is not provided, it will be created at runtime. The type of unit returned depends on this table:
 
-| clock \ source                      |  |  |  |
-| ----------------------------------- | --------------------------------- | --------------------------------- | ----------------------------------- |
-|    | `Store`                           | `Event`                           | `Event`                             |
-|    | `Event`                           | `Event`                           | `Event`                             |
-|  | `Event`                           | `Event`                           | `Event`                             |
+| clock \ source |         |         |         |
+| -------------- | ------- | ------- | ------- |
+|                | `Store` | `Event` | `Event` |
+|                | `Event` | `Event` | `Event` |
+|                | `Event` | `Event` | `Event` |
 
 How to use this table:
 
@@ -9168,21 +9213,21 @@ const $store = createStore();
 const $secondStore = createStore();
 
 const $derivedStore = sample({
-  clock: $store,
-  source: $secondStore,
+	clock: $store,
+	source: $secondStore,
 });
 // Returns a derived store because both clock and source are stores
 
 const derivedEvent = sample({
-  clock: event,
-  source: $store,
+	clock: event,
+	source: $store,
 });
 // Returns a derived event because the clock is an event
 ```
 
 ### Full form
 
-* **Formula**
+- **Formula**
 
 ```ts
 sample({
@@ -9201,7 +9246,7 @@ sample({
 A trigger unit that determines when to sample the source.<br/>
 Optional.
 
-* **Type**
+- **Type**
 
 ```ts
 sample({
@@ -9211,10 +9256,10 @@ sample({
 
 Can be:
 
-* [`Event<T>`][eventApi] — triggers on event call
-* [`Store<T>`][storeApi] — triggers on store update
-* [`Effect<T, Done, Fail>`][effectApi] — triggers on effect execution
-* `Unit<T>[]` — triggers when any unit in the array is triggered
+- [`Event<T>`][eventApi] — triggers on event call
+- [`Store<T>`][storeApi] — triggers on store update
+- [`Effect<T, Done, Fail>`][effectApi] — triggers on effect execution
+- `Unit<T>[]` — triggers when any unit in the array is triggered
 
 > INFO either clock or source required:
 >
@@ -9226,22 +9271,22 @@ const $store = createStore(0);
 const fetchFx = createEffect();
 
 sample({
-  source: $data,
-  clock: clicked,
+	source: $data,
+	clock: clicked,
 });
 
 sample({
-  source: $data,
-  clock: $store,
+	source: $data,
+	clock: $store,
 });
 
 sample({
-  source: $data,
-  clock: [clicked, fetchFx.done],
+	source: $data,
+	clock: [clicked, fetchFx.done],
 });
 ```
 
-***
+---
 
 #### `source`
 
@@ -9249,7 +9294,7 @@ The data source to be read when the `clock` unit triggers.
 If `clock` is not provided, then `source` is used as the `clock`.
 Optional.
 
-* **Type**
+- **Type**
 
 ```ts
 sample({
@@ -9259,24 +9304,24 @@ sample({
 
 Can be:
 
-* [`Store<T>`][storeApi] — reads the current value of the store
-* [`Event<T>`][eventApi] — takes the most recent payload from the event
-* [`Effect<T, Done, Fail>`][effectApi] — takes the most recent payload from the effect call
-* Object of [units][units] — for combining multiple sources
-* Array of [units][units] — for combining multiple sources
+- [`Store<T>`][storeApi] — reads the current value of the store
+- [`Event<T>`][eventApi] — takes the most recent payload from the event
+- [`Effect<T, Done, Fail>`][effectApi] — takes the most recent payload from the effect call
+- Object of [units][units] — for combining multiple sources
+- Array of [units][units] — for combining multiple sources
 
 > INFO either source or clock required:
 >
 > Although the `source` argument is optional, when using the `sample` method you must provide either `source` or clock.
 
-***
+---
 
 #### `filter`
 
 A predicate function or store used to filter the data. If it returns `false` (or is a store that holds `false`), the data will not be passed to `target`.
 Optional.
 
-* **Type**
+- **Type**
 
 ```ts
 sample({
@@ -9286,28 +9331,28 @@ sample({
 
 Can be:
 
-* [`Store<boolean>`][storeApi] — a boolean store (either base or derived)
-* Predicate function — returns a `boolean` value
+- [`Store<boolean>`][storeApi] — a boolean store (either base or derived)
+- Predicate function — returns a `boolean` value
 
 ```ts
 const $isUserActive = createStore(false);
 
 sample({
-  clock: checkScore,
-  source: $score,
-  filter: (score) => score > 100,
-  target: showWinnerFx,
+	clock: checkScore,
+	source: $score,
+	filter: (score) => score > 100,
+	target: showWinnerFx,
 });
 
 sample({
-  clock: action,
-  source: $user,
-  filter: $isUserActive,
-  target: adminActionFx,
+	clock: action,
+	source: $user,
+	filter: $isUserActive,
+	target: adminActionFx,
 });
 ```
 
-***
+---
 
 #### `fn`
 
@@ -9315,7 +9360,7 @@ A function used to transform the data before passing it to the `target`.
 The function **must be pure**.
 Optional.
 
-* **Type**
+- **Type**
 
 ```ts
 sample({
@@ -9330,32 +9375,32 @@ sample({
 ```ts
 const $user = createStore<User>({});
 const saveUserFx = createEffect((user: User) => {
-  // ...
+	// ...
 });
 
 sample({
-  clock: updateProfile,
-  source: $user,
-  fn: (user, updates) => ({ ...user, ...updates }),
-  target: saveUserFx,
+	clock: updateProfile,
+	source: $user,
+	fn: (user, updates) => ({ ...user, ...updates }),
+	target: saveUserFx,
 });
 
 sample({
-  clock: submit,
-  source: $form,
-  fn: (form) => form.email,
-  target: sendEmailFx,
+	clock: submit,
+	source: $form,
+	fn: (form) => form.email,
+	target: sendEmailFx,
 });
 ```
 
-***
+---
 
 #### `target`
 
 The destination unit that will receive the data and be triggered.
 Optional.
 
-* **Type**
+- **Type**
 
 ```ts
 sample({
@@ -9365,10 +9410,10 @@ sample({
 
 Can be:
 
-* EventCallable\<T> — a regular event (not derived) that will be called
-* [`Effect<T, Done, Fail>`][effectApi] — an effect that will be triggered
-* StoreWritable\<T> — a writable store that will be updated
-* `Unit<T>[]` — all units in the array will be called
+- EventCallable\<T> — a regular event (not derived) that will be called
+- [`Effect<T, Done, Fail>`][effectApi] — an effect that will be triggered
+- StoreWritable\<T> — a writable store that will be updated
+- `Unit<T>[]` — all units in the array will be called
 
 > INFO target without target:
 >
@@ -9377,31 +9422,31 @@ Can be:
 ```ts
 const targetEvent = createEvent<string>();
 const targetFx = createEffect<string, void>();
-const $targetStore = createStore("");
+const $targetStore = createStore('');
 
 // Event as target
 sample({
-  source: $store,
-  clock: trigger,
-  target: targetEvent,
+	source: $store,
+	clock: trigger,
+	target: targetEvent,
 });
 
 // Effect as target
 sample({
-  source: $store,
-  clock: trigger,
-  target: targetFx,
+	source: $store,
+	clock: trigger,
+	target: targetFx,
 });
 
 // Store as target
 sample({
-  source: $store,
-  clock: trigger,
-  target: $targetStore,
+	source: $store,
+	clock: trigger,
+	target: $targetStore,
 });
 ```
 
-***
+---
 
 #### `greedy`
 
@@ -9411,14 +9456,14 @@ sample({
 >
 > Use `batch` instead of `greedy`.
 
-***
+---
 
 #### `batch`
 
 Enables batching of updates for better performance. Default is `true`.
 Optional.
 
-* **Type**
+- **Type**
 
 ```ts
 sample({
@@ -9426,14 +9471,14 @@ sample({
 })
 ```
 
-***
+---
 
 #### `name`
 
 The `name` field allows you to assign a debug-friendly name to the created unit.
 Optional.
 
-* **Type**
+- **Type**
 
 ```ts
 sample({
@@ -9443,7 +9488,7 @@ sample({
 
 ### Short Form
 
-* **Formula**
+- **Formula**
 
 ```ts
 sample(source, clock, fn?): Unit
@@ -9458,18 +9503,18 @@ It supports multiple patterns:
 3. `source` and `fn`: `sample(source, fn)` — no `clock`, so `source` acts as the trigger
 4. One argument: `sample(source)` — only `source`, which acts as the trigger and the source
 
-* **Return value**
+- **Return value**
 
 The return type depends on the combination of units used and the return type of fn, if present. Otherwise, it falls back to the `source`.
 
-***
+---
 
 #### `source`
 
 Acts as the data source when the `clock` triggers.
 If no `clock` is provided, `source` is used as the trigger.
 
-* **Type**
+- **Type**
 
 ```ts
 sample(source?: Unit<T> | Unit<T>[])
@@ -9477,23 +9522,23 @@ sample(source?: Unit<T> | Unit<T>[])
 
 Can be:
 
-* [`Store<T>`][storeApi] — current value of the store
-* [`Event<T>`][eventApi] — last triggered payload
-* [`Effect<T, Done, Fail>`][effectApi] — last payload sent to the effect
-* `Unit<T>[]` — array of [units][units] that triggers when any unit is activated
+- [`Store<T>`][storeApi] — current value of the store
+- [`Event<T>`][eventApi] — last triggered payload
+- [`Effect<T, Done, Fail>`][effectApi] — last payload sent to the effect
+- `Unit<T>[]` — array of [units][units] that triggers when any unit is activated
 
 > INFO behavior without clock:
 >
 > If `clock` is not specified, then `source` behaves as `clock` - that is, it acts as the trigger.
 
-***
+---
 
 #### `clock`
 
 The unit that acts as the trigger to read from source.
 Optional.
 
-* **Type**
+- **Type**
 
 ```ts
 sample(clock?: Unit<T> | Unit<T>[])
@@ -9501,10 +9546,10 @@ sample(clock?: Unit<T> | Unit<T>[])
 
 Can be:
 
-* [`Event<T>`][eventApi] — triggered on event call
-* [`Store<T>`][storeApi] — triggered on store update
-* [`Effect<T, Done, Fail>`][effectApi] — triggered on effect execution
-* `Unit<T>[]` — triggers on any unit in the array
+- [`Event<T>`][eventApi] — triggered on event call
+- [`Store<T>`][storeApi] — triggered on store update
+- [`Effect<T, Done, Fail>`][effectApi] — triggered on effect execution
+- `Unit<T>[]` — triggers on any unit in the array
 
 ```ts
 const clicked = createEvent();
@@ -9516,7 +9561,7 @@ sample($data, clicked);
 sample($data, $store);
 ```
 
-***
+---
 
 #### `fn`
 
@@ -9524,23 +9569,23 @@ A transformation function to be applied before sending the result to the implici
 The function must be [**pure**][purity].
 Optional.
 
-* **Type**
+- **Type**
 
 ```ts
 sample(fn: (source: Source, clock: Clock) => result)
 ```
 
-* **Example**
+- **Example**
 
 ```ts
-const $userName = createStore("john");
+const $userName = createStore('john');
 
 const submitForm = createEvent();
 
 const sampleUnit = sample(
-  $userName /* 2 */,
-  submitForm /* 1 */,
-  (name, password) => ({ name, password }) /* 3 */,
+	$userName /* 2 */,
+	submitForm /* 1 */,
+	(name, password) => ({ name, password }) /* 3 */,
 );
 
 submitForm(12345678);
@@ -9550,27 +9595,24 @@ submitForm(12345678);
 // 3. The values are transformed and passed to sampleUnit
 ```
 
-***
+---
 
 ### Related APIs and Articles
 
-* **API**
+- **API**
+    - merge — Combines updates from an array of units
+    - Store — Store description with methods and properties
+    - Event — Event description with methods and properties
+    - Effect — Effect description with methods and properties
 
-    * merge — Combines updates from an array of units
-    * Store — Store description with methods and properties
-    * Event — Event description with methods and properties
-    * Effect — Effect description with methods and properties
-
-* **Articles**
-
-    * Typing units and methods
-    * Unit composition and working with&#x20;
-
+- **Articles**
+    - Typing units and methods
+    - Unit composition and working with&#x20;
 
 # scopeBind
 
 ```ts
-import { scopeBind } from "effector";
+import { scopeBind } from 'effector';
 ```
 
 `scopeBind` is a method to bind a unit (an Event or Effect) to a Scope to be called later. Effector supports imperative calling of events within watchers, however, there are instances where you must explicitly bind events to the scope, such as when triggering events from within `setTimeout` or `setInterval` callbacks.
@@ -9588,10 +9630,10 @@ scopeBind<T>(event: EventCallable<T>, options?: {scope?: Scope, safe?: boolean})
 
 #### Arguments
 
-1. `event`  or  to be bound to the scope.
-2. `options` (*Object*): Optional configuration.
-    * `scope` (*Scope*): Scope to bind event to.
-    * `safe` (*Boolean*): Flag for exception suppression if there is no scope.
+1. `event` or to be bound to the scope.
+2. `options` (_Object_): Optional configuration.
+    - `scope` (_Scope_): Scope to bind event to.
+    - `safe` (_Boolean_): Flag for exception suppression if there is no scope.
 
 #### Returns
 
@@ -9604,26 +9646,26 @@ scopeBind<T>(event: EventCallable<T>, options?: {scope?: Scope, safe?: boolean})
 We are going to call `changeLocation` inside `history.listen` callback so there is no way for effector to associate event with corresponding scope, and we should explicitly bind event to scope using `scopeBind`.
 
 ```ts
-import { createStore, createEvent, attach, scopeBind } from "effector";
+import { createStore, createEvent, attach, scopeBind } from 'effector';
 
 const $history = createStore(history);
 const initHistory = createEvent();
 const changeLocation = createEvent<string>();
 
 const installHistoryFx = attach({
-  source: $history,
-  effect: (history) => {
-    const locationUpdate = scopeBind(changeLocation);
+	source: $history,
+	effect: (history) => {
+		const locationUpdate = scopeBind(changeLocation);
 
-    history.listen((location) => {
-      locationUpdate(location);
-    });
-  },
+		history.listen((location) => {
+			locationUpdate(location);
+		});
+	},
 });
 
 sample({
-  clock: initHistory,
-  target: installHistoryFx,
+	clock: initHistory,
+	target: installHistoryFx,
 });
 ```
 
@@ -9642,8 +9684,8 @@ Binds arbitrary callback to a scope to be called later. The bound version of the
 >
 > To be compatible with the Fork API, callbacks **must** adhere to the same rules as `Effect` handlers:
 >
-> * Synchronous functions can be used as they are.
-> * Asynchronous functions must follow the rules described in "Imperative Effect calls with scope".
+> - Synchronous functions can be used as they are.
+> - Asynchronous functions must follow the rules described in "Imperative Effect calls with scope".
 
 #### Formulae
 
@@ -9653,10 +9695,10 @@ scopeBind(callback: (...args: Args) => T, options?: { scope?: Scope; safe?: bool
 
 #### Arguments
 
-1. `callback` (*Function*): Any function to be bound to the scope.
-2. `options` (*Object*): Optional configuration.
-    * `scope` (*Scope*): Scope to bind the event to.
-    * `safe` (*Boolean*): Flag for exception suppression if there is no scope.
+1. `callback` (_Function_): Any function to be bound to the scope.
+2. `options` (_Object_): Optional configuration.
+    - `scope` (_Scope_): Scope to bind the event to.
+    - `safe` (_Boolean_): Flag for exception suppression if there is no scope.
 
 #### Returns
 
@@ -9665,28 +9707,27 @@ scopeBind(callback: (...args: Args) => T, options?: { scope?: Scope; safe?: bool
 #### Examples
 
 ```ts
-import { createEvent, createStore, attach, scopeBind } from "effector";
+import { createEvent, createStore, attach, scopeBind } from 'effector';
 
 const $history = createStore(history);
 const locationChanged = createEvent();
 
 const listenToHistoryFx = attach({
-  source: $history,
-  effect: (history) => {
-    return history.listen(
-      scopeBind((location) => {
-        locationChanged(location);
-      }),
-    );
-  },
+	source: $history,
+	effect: (history) => {
+		return history.listen(
+			scopeBind((location) => {
+				locationChanged(location);
+			}),
+		);
+	},
 });
 ```
-
 
 # serialize
 
 ```ts
-import { serialize, type Scope } from "effector";
+import { serialize, type Scope } from 'effector';
 ```
 
 ## Methods
@@ -9697,7 +9738,7 @@ A companion method for . It allows us to get a serialized value for all the stor
 
 > WARNING Requirements:
 >
->  or  is required for using this method, as these plugins provide the SIDs for stores, which are required for stable state serialization.
+> or is required for using this method, as these plugins provide the SIDs for stores, which are required for stable state serialization.
 >
 > You can find deep-dive explanation here
 
@@ -9710,7 +9751,7 @@ serialize(scope: Scope, { ignore?: Array<Store<any>>; onlyChanges?: boolean }): 
 #### Arguments
 
 1. `scope` : a scope object (forked instance)
-2. `ignore` Optional array of  to be omitted during serialization (added 20.14.0)
+2. `ignore` Optional array of to be omitted during serialization (added 20.14.0)
 3. `onlyChanges` Optional boolean flag to ignore stores which didn't change in fork (prevent default values from being carried over network)
 
 > WARNING Deprecated:
@@ -9730,7 +9771,13 @@ An object with store values using sids as a keys
 ##### Serialize forked instance state
 
 ```js
-import { createStore, createEvent, allSettled, fork, serialize } from "effector";
+import {
+	createStore,
+	createEvent,
+	allSettled,
+	fork,
+	serialize,
+} from 'effector';
 
 const inc = createEvent();
 const $store = createStore(42);
@@ -9751,27 +9798,27 @@ With `onlyChanges`, this method will serialize only stores which were changed by
 This allows us to hydrate client state several times, for example, during route changes in next.js
 
 ```js
-import { createDomain, fork, serialize, hydrate } from "effector";
+import { createDomain, fork, serialize, hydrate } from 'effector';
 
 const app = createDomain();
 
 /** store which we want to hydrate by server */
-const $title = app.createStore("dashboard");
+const $title = app.createStore('dashboard');
 
 /** store which is not used by server */
-const $clientTheme = app.createStore("light");
+const $clientTheme = app.createStore('light');
 
 /** scope in client app */
 const clientScope = fork(app, {
-  values: new Map([
-    [$clientTheme, "dark"],
-    [$title, "profile"],
-  ]),
+	values: new Map([
+		[$clientTheme, 'dark'],
+		[$title, 'profile'],
+	]),
 });
 
 /** server side scope of chats page created for each request */
 const chatsPageScope = fork(app, {
-  values: new Map([[$title, "chats"]]),
+	values: new Map([[$title, 'chats']]),
 });
 
 /** this object will contain only $title data
@@ -9789,11 +9836,10 @@ console.log(clientScope.getState($clientTheme));
 
 Try it
 
-
 # split
 
 ```ts
-import { split } from "effector";
+import { split } from 'effector';
 ```
 
 Choose one of cases by given conditions. It "splits" source unit into several events, which fires when payload matches their conditions. Works like pattern matching for payload values and external stores
@@ -9806,8 +9852,8 @@ Mode in which target case is selected by the name of its field. Case could be se
 
 **See also**:
 
-* case store
-* case function
+- case store
+- case function
 
 ### Matching mode
 
@@ -9816,8 +9862,8 @@ If one of the fields got `true` from store value or return of function, then the
 
 **See also**:
 
-* matcher store
-* matcher function
+- matcher store
+- matcher function
 
 ### Case store
 
@@ -9950,9 +9996,9 @@ split({
 
 #### Arguments
 
-* `source`: Unit which will trigger computation in `split`
-* `match`: Single store with string, single function which returns string or object with boolean stores and functions which returns boolean
-* `cases`: Object with units or arrays of units to which data will be passed from `source` after case selection
+- `source`: Unit which will trigger computation in `split`
+- `match`: Single store with string, single function which returns string or object with boolean stores and functions which returns boolean
+- `cases`: Object with units or arrays of units to which data will be passed from `source` after case selection
 
 #### Returns
 
@@ -9963,39 +10009,39 @@ split({
 ##### Basic
 
 ```js
-import { split, createEffect, createEvent } from "effector";
+import { split, createEffect, createEvent } from 'effector';
 const messageReceived = createEvent();
 const showTextPopup = createEvent();
 const playAudio = createEvent();
 const reportUnknownMessageTypeFx = createEffect(({ type }) => {
-  console.log("unknown message:", type);
+	console.log('unknown message:', type);
 });
 
 split({
-  source: messageReceived,
-  match: {
-    text: (msg) => msg.type === "text",
-    audio: (msg) => msg.type === "audio",
-  },
-  cases: {
-    text: showTextPopup,
-    audio: playAudio,
-    __: reportUnknownMessageTypeFx,
-  },
+	source: messageReceived,
+	match: {
+		text: (msg) => msg.type === 'text',
+		audio: (msg) => msg.type === 'audio',
+	},
+	cases: {
+		text: showTextPopup,
+		audio: playAudio,
+		__: reportUnknownMessageTypeFx,
+	},
 });
 
 showTextPopup.watch(({ value }) => {
-  console.log("new message:", value);
+	console.log('new message:', value);
 });
 
 messageReceived({
-  type: "text",
-  value: "Hello",
+	type: 'text',
+	value: 'Hello',
 });
 // => new message: Hello
 messageReceived({
-  type: "image",
-  imageUrl: "...",
+	type: 'image',
+	imageUrl: '...',
 });
 // => unknown message: image
 ```
@@ -10007,42 +10053,42 @@ Try it
 You can match directly to store api as well:
 
 ```js
-import { split, createStore, createEvent, createApi } from "effector";
+import { split, createStore, createEvent, createApi } from 'effector';
 
 const messageReceived = createEvent();
 
 const $textContent = createStore([]);
 
 split({
-  source: messageReceived,
-  match: {
-    text: (msg) => msg.type === "text",
-    audio: (msg) => msg.type === "audio",
-  },
-  cases: createApi($textContent, {
-    text: (list, { value }) => [...list, value],
-    audio: (list, { duration }) => [...list, `audio ${duration} ms`],
-    __: (list) => [...list, "unknown message"],
-  }),
+	source: messageReceived,
+	match: {
+		text: (msg) => msg.type === 'text',
+		audio: (msg) => msg.type === 'audio',
+	},
+	cases: createApi($textContent, {
+		text: (list, { value }) => [...list, value],
+		audio: (list, { duration }) => [...list, `audio ${duration} ms`],
+		__: (list) => [...list, 'unknown message'],
+	}),
 });
 
 $textContent.watch((messages) => {
-  console.log(messages);
+	console.log(messages);
 });
 
 messageReceived({
-  type: "text",
-  value: "Hello",
+	type: 'text',
+	value: 'Hello',
 });
 // => ['Hello']
 messageReceived({
-  type: "image",
-  imageUrl: "...",
+	type: 'image',
+	imageUrl: '...',
 });
 // => ['Hello', 'unknown message']
 messageReceived({
-  type: "audio",
-  duration: 500,
+	type: 'audio',
+	duration: 500,
 });
 // => ['Hello', 'unknown message', 'audio 500 ms']
 ```
@@ -10052,36 +10098,45 @@ Try it
 ##### Cases with arrays of units
 
 ```js
-import { createEffect, createEvent, createStore, sample, split } from "effector";
+import {
+	createEffect,
+	createEvent,
+	createStore,
+	sample,
+	split,
+} from 'effector';
 
-const $verificationCode = createStore("12345");
-const $error = createStore("");
+const $verificationCode = createStore('12345');
+const $error = createStore('');
 
 const modalToInputUsername = createEvent();
 const modalToAuthorizationMethod = createEvent();
 
 const checkVerificationCodeFx = createEffect((code) => {
-  throw "500";
+	throw '500';
 });
 
 sample({
-  clock: verificationCodeSubmitted,
-  source: $verificationCode,
-  target: checkVerificationCodeFx,
+	clock: verificationCodeSubmitted,
+	source: $verificationCode,
+	target: checkVerificationCodeFx,
 });
 
 split({
-  source: checkVerificationCodeFx.failData,
-  match: (value) => (["400", "410"].includes(value) ? "verificationCodeError" : "serverError"),
-  cases: {
-    verificationCodeError: $verificationCodeError,
-    serverError: [$error, modalToAuthorizationMethod],
-  },
+	source: checkVerificationCodeFx.failData,
+	match: (value) =>
+		['400', '410'].includes(value) ?
+			'verificationCodeError'
+		:	'serverError',
+	cases: {
+		verificationCodeError: $verificationCodeError,
+		serverError: [$error, modalToAuthorizationMethod],
+	},
 });
 
-$error.updates.watch((value) => console.log("ERROR: " + value));
+$error.updates.watch((value) => console.log('ERROR: ' + value));
 modalToAuthorizationMethod.watch(() =>
-  console.log("Modal window to the authorization method content."),
+	console.log('Modal window to the authorization method content.'),
 );
 // => ERROR: 500
 // => Modal window to the authorization method content.
@@ -10102,7 +10157,7 @@ split(source, match);
 #### Arguments
 
 1. `source`: Unit which will trigger computation in `split`
-2. `match` (*Object*): Schema of cases, which uses names of resulting events as keys, and matching function\*((value) => Boolean)\*
+2. `match` (_Object_): Schema of cases, which uses names of resulting events as keys, and matching function\*((value) => Boolean)\*
 
 #### Returns
 
@@ -10113,32 +10168,32 @@ split(source, match);
 ##### Basic
 
 ```js
-import { createEvent, split } from "effector";
+import { createEvent, split } from 'effector';
 
 const message = createEvent();
 
 const messageByAuthor = split(message, {
-  bob: ({ user }) => user === "bob",
-  alice: ({ user }) => user === "alice",
+	bob: ({ user }) => user === 'bob',
+	alice: ({ user }) => user === 'alice',
 });
 messageByAuthor.bob.watch(({ text }) => {
-  console.log("[bob]: ", text);
+	console.log('[bob]: ', text);
 });
 messageByAuthor.alice.watch(({ text }) => {
-  console.log("[alice]: ", text);
+	console.log('[alice]: ', text);
 });
 
-message({ user: "bob", text: "Hello" });
+message({ user: 'bob', text: 'Hello' });
 // => [bob]: Hello
-message({ user: "alice", text: "Hi bob" });
+message({ user: 'alice', text: 'Hi bob' });
 // => [alice]: Hi bob
 
 /* default case, triggered if no one condition met */
 const { __: guest } = messageByAuthor;
 guest.watch(({ text }) => {
-  console.log("[guest]: ", text);
+	console.log('[guest]: ', text);
 });
-message({ user: "unregistered", text: "hi" });
+message({ user: 'unregistered', text: 'hi' });
 // => [guest]: hi
 ```
 
@@ -10151,24 +10206,24 @@ Try it
 ##### Another
 
 ```js
-import { createEvent, split } from "effector";
+import { createEvent, split } from 'effector';
 
 const message = createEvent();
 
 const { short, long, medium } = split(message, {
-  short: (m) => m.length <= 5,
-  medium: (m) => m.length > 5 && m.length <= 10,
-  long: (m) => m.length > 10,
+	short: (m) => m.length <= 5,
+	medium: (m) => m.length > 5 && m.length <= 10,
+	long: (m) => m.length > 10,
 });
 
 short.watch((m) => console.log(`short message '${m}'`));
 medium.watch((m) => console.log(`medium message '${m}'`));
 long.watch((m) => console.log(`long message '${m}'`));
 
-message("Hello, Bob!");
+message('Hello, Bob!');
 // => long message 'Hello, Bob!'
 
-message("Hi!");
+message('Hi!');
 // => short message 'Hi!'
 ```
 
@@ -10195,35 +10250,40 @@ TBD
 #### Examples
 
 ```js
-import { createStore, createEvent, createEffect, split } from "effector";
+import { createStore, createEvent, createEffect, split } from 'effector';
 
-const options = ["save", "delete", "forward"];
-const $message = createStore({ id: 1, text: "Bring me a cup of coffee, please!" });
-const $mode = createStore("");
+const options = ['save', 'delete', 'forward'];
+const $message = createStore({
+	id: 1,
+	text: 'Bring me a cup of coffee, please!',
+});
+const $mode = createStore('');
 const selectedMessageOption = createEvent();
-const saveMessageFx = createEffect(() => "save");
-const forwardMessageFx = createEffect(() => "forward");
-const deleteMessageFx = createEffect(() => "delete");
+const saveMessageFx = createEffect(() => 'save');
+const forwardMessageFx = createEffect(() => 'forward');
+const deleteMessageFx = createEffect(() => 'delete');
 
-$mode.on(selectedMessageOption, (mode, opt) => options.find((item) => item === opt) ?? mode);
+$mode.on(
+	selectedMessageOption,
+	(mode, opt) => options.find((item) => item === opt) ?? mode,
+);
 
 split({
-  source: $message,
-  clock: selectedMessageOption,
-  match: $mode,
-  cases: {
-    save: saveMessageFx,
-    delete: deleteMessageFx,
-    forward: forwardMessageFx,
-  },
+	source: $message,
+	clock: selectedMessageOption,
+	match: $mode,
+	cases: {
+		save: saveMessageFx,
+		delete: deleteMessageFx,
+		forward: forwardMessageFx,
+	},
 });
 
-selectedMessageOption("delet"); // nothing happens
-selectedMessageOption("delete");
+selectedMessageOption('delet'); // nothing happens
+selectedMessageOption('delete');
 ```
 
 Try it
-
 
 # SWC plugin
 
@@ -10278,10 +10338,10 @@ If you're using the [Next.js Compiler](https://nextjs.org/docs/architecture/next
 
 ```js
 const nextConfig = {
-  experimental: {
-    // even if empty, pass an options object `{}` to the plugin
-    swcPlugins: [["@effector/swc-plugin", {}]],
-  },
+	experimental: {
+		// even if empty, pass an options object `{}` to the plugin
+		swcPlugins: [['@effector/swc-plugin', {}]],
+	},
 };
 ```
 
@@ -10297,12 +10357,12 @@ Add a new entry to `jsc.experimental.plugins` option in your `.swcrc`.
 
 ```json
 {
-  "$schema": "https://json.schemastore.org/swcrc",
-  "jsc": {
-    "experimental": {
-      "plugins": [["@effector/swc-plugin", {}]]
-    }
-  }
+	"$schema": "https://json.schemastore.org/swcrc",
+	"jsc": {
+		"experimental": {
+			"plugins": [["@effector/swc-plugin", {}]]
+		}
+	}
 }
 ```
 
@@ -10319,11 +10379,14 @@ Specify an array of module names or files to treat as custom factories. When usi
 #### Formulae
 
 ```json
-["@effector/swc-plugin", { "factories": ["./path/to/factory", "factory-package"] }]
+[
+	"@effector/swc-plugin",
+	{ "factories": ["./path/to/factory", "factory-package"] }
+]
 ```
 
-* Type: `string[]`
-* Default: `[]`
+- Type: `string[]`
+- Default: `[]`
 
 If you provide a relative path (starting with `./`), the plugin treats it as a local factory relative to your project's root directory. These factories can only be imported using relative imports within your code.
 
@@ -10336,14 +10399,14 @@ Otherwise, if you specify a package name or TypeScript alias, it's interpreted a
 ```
 
 ```ts title="/src/factory.ts"
-import { createStore } from "effector";
+import { createStore } from 'effector';
 
 /* createBooleanStore is a factory */
 export const createBooleanStore = () => createStore(true);
 ```
 
 ```ts title="/src/widget/user.ts"
-import { createBooleanStore } from "../factory";
+import { createBooleanStore } from '../factory';
 
 const $boolean = createBooleanStore(); /* Treated as a factory! */
 ```
@@ -10358,8 +10421,8 @@ Append the full file path and Unit name to generated `SID`s for easier debugging
 ["@effector/swc-plugin", { "debugSids": false }]
 ```
 
-* Type: `boolean`
-* Default: `false`
+- Type: `boolean`
+- Default: `false`
 
 ### `hmr`
 
@@ -10379,11 +10442,11 @@ Enable Hot Module Replacement (HMR) support to clean up links, subscriptions and
 ["@effector/swc-plugin", { "hmr": "es" }]
 ```
 
-* Type: `"es"` | `"cjs"` | `false`
-    * `"es"`: Use `import.meta.hot` HMR API in bundlers that are ESM-compliant, like Vite and Rollup
-    * `"cjs"`: Use `module.hot` HMR API in bundlers that rely on CommonJS modules, like Webpack, Next.js or Metro (React Native)
-    * `false`: Disable Hot Module Replacement
-* Default: `false`
+- Type: `"es"` | `"cjs"` | `false`
+    - `"es"`: Use `import.meta.hot` HMR API in bundlers that are ESM-compliant, like Vite and Rollup
+    - `"cjs"`: Use `module.hot` HMR API in bundlers that rely on CommonJS modules, like Webpack, Next.js or Metro (React Native)
+    - `false`: Disable Hot Module Replacement
+- Default: `false`
 
 > INFO In Production:
 >
@@ -10399,8 +10462,8 @@ Add names to Units when calling factories (like `createStore` or `createDomain`)
 ["@effector/swc-plugin", { "addNames": true }]
 ```
 
-* Type: `boolean`
-* Default: `true`
+- Type: `boolean`
+- Default: `true`
 
 ### `addLoc`
 
@@ -10412,8 +10475,8 @@ Include location information (file paths and line numbers) for Units and factori
 ["@effector/swc-plugin", { "addLoc": true }]
 ```
 
-* Type: `boolean`
-* Default: `false`
+- Type: `boolean`
+- Default: `false`
 
 ### `forceScope`
 
@@ -10427,15 +10490,15 @@ Inject `forceScope: true` into all hooks or `@effector/reflect` calls to ensure 
 
 ```json
 [
-  "@effector/swc-plugin",
-  {
-    "forceScope": { "hooks": true, "reflect": false }
-  }
+	"@effector/swc-plugin",
+	{
+		"forceScope": { "hooks": true, "reflect": false }
+	}
 ]
 ```
 
-* Type: `boolean | { hooks: boolean, reflect: boolean }`
-* Default: `false`
+- Type: `boolean | { hooks: boolean, reflect: boolean }`
+- Default: `false`
 
 ##### `hooks`
 
@@ -10465,14 +10528,13 @@ Disabling this option will **stop** adding SIDs and other debug information to t
 ["@effector/swc-plugin", { "transformLegacyDomainMethods": false }]
 ```
 
-* Type: `boolean`
-* Default: `true`
-
+- Type: `boolean`
+- Default: `true`
 
 # withRegion
 
 ```ts
-import { withRegion } from "effector";
+import { withRegion } from 'effector';
 ```
 
 The method is based on the idea of region-based memory management (see [Region-based memory management](https://en.wikipedia.org/wiki/Region-based_memory_management) for reference).
@@ -10495,38 +10557,43 @@ withRegion(unit: Unit<T> | Node, callback: () => void): void
 
 #### Arguments
 
-1. `unit`: *Unit* | *Node* — which will serve as "local area" or "region" owning all the units created within the provided callback. Usually a node created by low level `createNode` method is optimal for this case.
+1. `unit`: _Unit_ | _Node_ — which will serve as "local area" or "region" owning all the units created within the provided callback. Usually a node created by low level `createNode` method is optimal for this case.
 2. `callback`: `() => void` — The callback where all the relevant units should be defined.
 
 #### Examples
 
 ```js
-import { createNode, createEvent, restore, withRegion, clearNode } from "effector";
+import {
+	createNode,
+	createEvent,
+	restore,
+	withRegion,
+	clearNode,
+} from 'effector';
 
 const first = createEvent();
 const second = createEvent();
-const $store = restore(first, "");
+const $store = restore(first, '');
 const region = createNode();
 
 withRegion(region, () => {
-  // Following links created with `sample` are owned by the provided unit `region`
-  // and will be disposed as soon as `clearNode` is called on `region`.
-  sample({
-    clock: second,
-    target: first,
-  });
+	// Following links created with `sample` are owned by the provided unit `region`
+	// and will be disposed as soon as `clearNode` is called on `region`.
+	sample({
+		clock: second,
+		target: first,
+	});
 });
 
 $store.watch(console.log);
 
-first("hello");
-second("world");
+first('hello');
+second('world');
 
 clearNode(region);
 
-second("will not trigger updates of `$store`");
+second('will not trigger updates of `$store`');
 ```
-
 
 # API Reference
 
@@ -10537,12 +10604,11 @@ import IconSolid from "@icons/Solid.astro";
 import IconEffector from "@icons/Effector.astro";
 import IconNextJs from "@icons/NextJs.astro";
 import MostUsefulMethods from "@components/MostUsefulMethods.astro";
-import { MOST\_USEFUL } from "src/navigation";
+import { MOST_USEFUL } from "src/navigation";
 
 Short overview of most useful methods and packages provided by Effector.
 
 <MostUsefulMethods items={MOST_USEFUL} />
-
 
 # Protocol @@unitShape
 
@@ -10584,30 +10650,29 @@ It is possible with the `@@unitShape` protocol. It allows defining the shape of 
 
 ```ts
 function createRoute(/* ... */) {
-  const $params = createStore(/* ... */);
+	const $params = createStore(/* ... */);
 
-  return {
-    "@@unitShape": () => ({
-      params: $params,
-    }),
-  };
+	return {
+		'@@unitShape': () => ({
+			params: $params,
+		}),
+	};
 }
 ```
 
 ### FAQ
 
-***
+---
 
 **Q**: How frequently `@@unitShape`-function is called?
 
 **A**: As many times as `useUnit` itself is called – it depends on a UI-library. For example, `effector-react` calls it as any other hook – once per component render, but `effector-solid` calls `useUnit` once per component mount.
 
-***
+---
 
 **Q**: How can I know what UI-library is used for particular `@@unitShape` call?
 
 **A**: You cannot. `@@unitShape` has to be universal for all UI-libraries either has to check what UI-library is used inside by UI-library methods (like `Context` in React or Solid).
-
 
 # Events in effector
 
@@ -10630,7 +10695,7 @@ There are two ways to trigger event: imperative and declarative.
 The **imperative** method involves invoking the event as if it were a function:
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const callHappened = createEvent<void>();
 
@@ -10640,14 +10705,14 @@ callHappened(); // event triggered
 The **declarative** approach utilizes the event as a target for operators, such as `sample`, or as an argument when passed into factory functions:
 
 ```ts
-import { createEvent, sample } from "effector";
+import { createEvent, sample } from 'effector';
 
 const firstTriggered = createEvent<void>();
 const secondTriggered = createEvent<void>();
 
 sample({
-  clock: firstTriggered,
-  target: secondTriggered,
+	clock: firstTriggered,
+	target: secondTriggered,
 });
 ```
 
@@ -10666,11 +10731,11 @@ This approach enables the argument to be accessed in any situation without addin
 If multiple arguments need to be passed, encapsulate them within an object:
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const requestReceived = createEvent<{ id: number; title: string }>();
 
-requestReceived({ id: 1, title: "example" });
+requestReceived({ id: 1, title: 'example' });
 ```
 
 This rule also contributes to the clarity of each argument's meaning, both at the call side and subscription side. It promotes clean and organized code, making it easier to understand and maintain.
@@ -10680,15 +10745,15 @@ This rule also contributes to the clarity of each argument's meaning, both at th
 To ascertain when an event is called, effector and its ecosystem offer various methods with distinct capabilities. Debugging is the primary use case for this purpose, and we highly recommend using [`patronum/debug`](https://patronum.effector.dev/operators/debug/) to display when an event is triggered and the argument it carries.
 
 ```ts
-import { createEvent, sample } from "effector";
-import { debug } from "patronum";
+import { createEvent, sample } from 'effector';
+import { debug } from 'patronum';
 
 const firstTriggered = createEvent<void>();
 const secondTriggered = createEvent<void>();
 
 sample({
-  clock: firstTriggered,
-  target: secondTriggered,
+	clock: firstTriggered,
+	target: secondTriggered,
 });
 
 debug(firstTriggered, secondTriggered);
@@ -10700,26 +10765,26 @@ firstTriggered();
 
 However, if your environment does not permit the addition of further dependencies, you may use the `createWatch` method, which accepts object in params with properties:
 
-* `unit` — unit or array of units, that you want to start watch
-* `fn` — function, that will be called when the unit is triggered. Accepts the unit’s payload as the first argument.
-* `scope` — scope, instance of fork to restrict watcher calls on particular scope
+- `unit` — unit or array of units, that you want to start watch
+- `fn` — function, that will be called when the unit is triggered. Accepts the unit’s payload as the first argument.
+- `scope` — scope, instance of fork to restrict watcher calls on particular scope
 
 ```ts
-import { createEvent, sample, createWatch } from "effector";
+import { createEvent, sample, createWatch } from 'effector';
 
 const firstTriggered = createEvent<void>();
 const secondTriggered = createEvent<void>();
 
 sample({
-  clock: firstTriggered,
-  target: secondTriggered,
+	clock: firstTriggered,
+	target: secondTriggered,
 });
 
 const unwatch = createWatch({
-  unit: [firstTriggered, secondTriggered],
-  fn: (payload) => {
-    console.log("[event] triggered");
-  },
+	unit: [firstTriggered, secondTriggered],
+	fn: (payload) => {
+		console.log('[event] triggered');
+	},
 });
 
 firstTriggered();
@@ -10740,17 +10805,17 @@ When an event is invoked, TypeScript will verify that the type of the argument p
 This is also works for operators like sample or `split`:
 
 ```ts
-import { sample, createEvent } from "effector";
+import { sample, createEvent } from 'effector';
 
 const someHappened = createEvent<number>();
 const anotherHappened = createEvent<string>();
 
 sample({
-  // @ts-expect-error error:
-  // "clock should extend target type";
-  // targets: { clockType: number; targetType: string; }
-  clock: someHappened,
-  target: anotherHappened,
+	// @ts-expect-error error:
+	// "clock should extend target type";
+	// targets: { clockType: number; targetType: string; }
+	clock: someHappened,
+	target: anotherHappened,
 });
 ```
 
@@ -10763,15 +10828,15 @@ Events in effector can be combined in various ways to create more complex logic.
 You can create a new event based on an existing one using the `map` method, which will be fired after original event:
 
 ```ts mark={5}
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const userClicked = createEvent<{ id: number; name: string }>();
 // Creating an event that will trigger only with the user's name
 const userNameSelected = userClicked.map(({ name }) => name);
-const $userName = createStore("").on(userNameSelected, (_, newName) => newName);
+const $userName = createStore('').on(userNameSelected, (_, newName) => newName);
 
 // Usage
-userClicked({ id: 1, name: "John" });
+userClicked({ id: 1, name: 'John' });
 // userNameSelected will get 'John'
 ```
 
@@ -10784,23 +10849,23 @@ userClicked({ id: 1, name: "John" });
 If you wanna create a new event that triggers only when a certain condition is met, you can use `sample` method and `filter` param:
 
 ```ts
-import { sample, createEvent } from "effector";
+import { sample, createEvent } from 'effector';
 
-type User = { id: number; role: "admin" | "user" };
-type Admin = { id: number; role: "admin" };
+type User = { id: number; role: 'admin' | 'user' };
+type Admin = { id: number; role: 'admin' };
 
 const userClicked = createEvent<User>();
 
 // Event will trigger only for admins
 const adminClicked = sample({
-  clock: userClicked,
-  filter: ({ role }) => role === "admin",
+	clock: userClicked,
+	filter: ({ role }) => role === 'admin',
 });
 
 // Creating type-safe event
 const typeSafeAdminClicked = sample({
-  clock: userClicked,
-  filter: (user): user is Admin => user.role === "admin",
+	clock: userClicked,
+	filter: (user): user is Admin => user.role === 'admin',
 });
 ```
 
@@ -10818,8 +10883,8 @@ const iconClicked = createEvent();
 const anyClicked = merge([buttonClicked, linkClicked, iconClicked]);
 
 sample({
-  clock: anyClicked,
-  target: someActionHappened,
+	clock: anyClicked,
+	target: someActionHappened,
 });
 ```
 
@@ -10832,8 +10897,8 @@ const iconClicked = createEvent();
 
 // Any of these events will trigger someActionHappened
 sample({
-  clock: [buttonClicked, linkClicked, iconClicked],
-  target: someActionHappened,
+	clock: [buttonClicked, linkClicked, iconClicked],
+	target: someActionHappened,
 });
 ```
 
@@ -10844,27 +10909,29 @@ sample({
 Let's say your application encounters different errors with different structures, but the error handling should happen centrally:
 
 ```ts wrap
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 // Main error handling event
 const showError = createEvent<string>();
 
 // Subscribe to error displays
 sample({
-  clock: showError,
-  target: processErrorFx, // we'll skip the effect implementation
+	clock: showError,
+	target: processErrorFx, // we'll skip the effect implementation
 });
 
 // Create special events for different types of errors
-const showNetworkError = showError.prepend((code: number) => `Network error: ${code}`);
+const showNetworkError = showError.prepend(
+	(code: number) => `Network error: ${code}`,
+);
 
 const showValidationError = showError.prepend(
-  (field: string) => `Field ${field} is filled incorrectly`,
+	(field: string) => `Field ${field} is filled incorrectly`,
 );
 
 // Usage
 showNetworkError(404); // 🔴 Error: Network error: 404
-showValidationError("email"); // 🔴 Error: Field email is filled incorrectly
+showValidationError('email'); // 🔴 Error: Field email is filled incorrectly
 ```
 
 In this example:
@@ -10872,9 +10939,9 @@ In this example:
 1. We have a main showError event that accepts a string
 2. Using `prepend` we create two new events, each of which:
 
-* Accepts its own data type
-* Transforms this data into a string
-* Passes the result to the main showError event
+- Accepts its own data type
+- Transforms this data into a string
+- Passes the result to the main showError event
 
 #### Conditional event triggering
 
@@ -10886,9 +10953,9 @@ const $isEnabled = createStore(true);
 
 // Event will trigger only if $isEnabled is true
 sample({
-  clock: buttonClicked,
-  filter: $isEnabled,
-  target: actionExecuted,
+	clock: buttonClicked,
+	filter: $isEnabled,
+	target: actionExecuted,
 });
 ```
 
@@ -10897,7 +10964,6 @@ sample({
 > Combining events through `sample` is preferred over directly calling events inside `watch` or other handlers, as it makes the data flow more explicit and predictable.
 
 API reference for Event.
-
 
 # Splitting Data Streams with split
 
@@ -10911,8 +10977,8 @@ import ThemeImage from "@components/ThemeImage.astro";
 The `split` method is designed to divide logic into multiple data streams.
 For example, you might need to route data differently depending on its content, much like a railway switch that directs trains to different tracks:
 
-* If a form is filled incorrectly — display an error.
-* If everything is correct — send a request.
+- If a form is filled incorrectly — display an error.
+- If everything is correct — send a request.
 
 > INFO Condition Checking Order:
 >
@@ -10923,15 +10989,18 @@ For example, you might need to route data differently depending on its content, 
 Let's look at a simple example — processing messages of different types:
 
 ```ts
-import { createEvent, split } from "effector";
+import { createEvent, split } from 'effector';
 
 const updateUserStatus = createEvent();
 
-const { activeUserUpdated, idleUserUpdated, inactiveUserUpdated } = split(updateUserStatus, {
-  activeUserUpdated: (userStatus) => userStatus === "active",
-  idleUserUpdated: (userStatus) => userStatus === "idle",
-  inactiveUserUpdated: (userStatus) => userStatus === "inactive",
-});
+const { activeUserUpdated, idleUserUpdated, inactiveUserUpdated } = split(
+	updateUserStatus,
+	{
+		activeUserUpdated: (userStatus) => userStatus === 'active',
+		idleUserUpdated: (userStatus) => userStatus === 'idle',
+		inactiveUserUpdated: (userStatus) => userStatus === 'inactive',
+	},
+);
 ```
 
 The logic here is straightforward. When the `updateUserStatus` event is triggered, it enters `split`, which evaluates each condition from top to bottom until a match is found, then triggers the corresponding event in `effector`.
@@ -10951,22 +11020,27 @@ When using `split`, there might be situations where no conditions match. For suc
 Here's the same example as before, now including a default case:
 
 ```ts
-import { createEvent, split } from "effector";
+import { createEvent, split } from 'effector';
 
 const updateUserStatus = createEvent();
 
-const { activeUserUpdated, idleUserUpdated, inactiveUserUpdated, __ } = split(updateUserStatus, {
-  activeUserUpdated: (userStatus) => userStatus === "active",
-  idleUserUpdated: (userStatus) => userStatus === "idle",
-  inactiveUserUpdated: (userStatus) => userStatus === "inactive",
-});
+const { activeUserUpdated, idleUserUpdated, inactiveUserUpdated, __ } = split(
+	updateUserStatus,
+	{
+		activeUserUpdated: (userStatus) => userStatus === 'active',
+		idleUserUpdated: (userStatus) => userStatus === 'idle',
+		inactiveUserUpdated: (userStatus) => userStatus === 'inactive',
+	},
+);
 
-__.watch((defaultStatus) => console.log("default case with status:", defaultStatus));
-activeUserUpdated.watch(() => console.log("active user"));
+__.watch((defaultStatus) =>
+	console.log('default case with status:', defaultStatus),
+);
+activeUserUpdated.watch(() => console.log('active user'));
 
-updateUserStatus("whatever");
-updateUserStatus("active");
-updateUserStatus("default case");
+updateUserStatus('whatever');
+updateUserStatus('active');
+updateUserStatus('default case');
 
 // Console output:
 // default case with status: whatever
@@ -10995,31 +11069,33 @@ width={650}
 />
 
 ```ts
-import { createStore, createEvent, split } from "effector";
+import { createStore, createEvent, split } from 'effector';
 
 type Repo = {
-  // ... other properties
-  isStarred: boolean;
-  isWatched: boolean;
+	// ... other properties
+	isStarred: boolean;
+	isWatched: boolean;
 };
 
 const toggleStar = createEvent<string>();
 const toggleWatch = createEvent<string>();
 
 const $repo = createStore<null | Repo>(null)
-  .on(toggleStar, (repo) => ({
-    ...repo,
-    isStarred: !repo.isStarred,
-  }))
-  .on(toggleWatch, (repo) => ({ ...repo, isWatched: !repo.isWatched }));
+	.on(toggleStar, (repo) => ({
+		...repo,
+		isStarred: !repo.isStarred,
+	}))
+	.on(toggleWatch, (repo) => ({ ...repo, isWatched: !repo.isWatched }));
 
 const { starredRepo, unstarredRepo, __ } = split($repo, {
-  starredRepo: (repo) => repo.isStarred,
-  unstarredRepo: (repo) => !repo.isStarred,
+	starredRepo: (repo) => repo.isStarred,
+	unstarredRepo: (repo) => !repo.isStarred,
 });
 
 // Debug default case
-__.watch((repo) => console.log("[split toggleStar] Default case triggered with value ", repo));
+__.watch((repo) =>
+	console.log('[split toggleStar] Default case triggered with value ', repo),
+);
 
 // Somewhere in the app
 toggleStar();
@@ -11031,8 +11107,8 @@ This usage returns an object with derived events, which can trigger reactive cha
 >
 > Use this pattern when:
 >
-> * There are no dependencies on external data (e.g., stores).
-> * You need simple, readable code.
+> - There are no dependencies on external data (e.g., stores).
+> - You need simple, readable code.
 
 ### Expanded Form
 
@@ -11045,7 +11121,7 @@ Using the `split` method in this variation doesn't return any value but provides
 For example, imagine a scenario where your application has two modes: `user` and `admin`. When an event is triggered, different actions occur depending on whether the mode is `user` or `admin`:
 
 ```ts
-import { createStore, createEvent, createEffect, split } from "effector";
+import { createStore, createEvent, createEffect, split } from 'effector';
 
 const adminActionFx = createEffect();
 const secondAdminActionFx = createEffect();
@@ -11055,17 +11131,17 @@ const defaultActionFx = createEffect();
 const buttonClicked = createEvent();
 
 // Current application mode
-const $appMode = createStore<"admin" | "user">("user");
+const $appMode = createStore<'admin' | 'user'>('user');
 
 // Different actions for different modes
 split({
-  source: buttonClicked,
-  match: $appMode, // Logic depends on the current mode
-  cases: {
-    admin: [adminActionFx, secondAdminActionFx],
-    user: userActionFx,
-    __: defaultActionFx,
-  },
+	source: buttonClicked,
+	match: $appMode, // Logic depends on the current mode
+	cases: {
+		admin: [adminActionFx, secondAdminActionFx],
+		user: userActionFx,
+		__: defaultActionFx,
+	},
 });
 
 // Clicking the same button performs different actions
@@ -11081,30 +11157,30 @@ Additionally, you can include a `clock` property that works like in sample, acti
 // Extending the previous code
 
 const adminActionFx = createEffect((currentUser) => {
-  // ...
+	// ...
 });
 const secondAdminActionFx = createEffect((currentUser) => {
-  // ...
+	// ...
 });
 
 // Adding a new store
 const $currentUser = createStore({
-  id: 1,
-  name: "Donald",
+	id: 1,
+	name: 'Donald',
 });
 
-const $appMode = createStore<"admin" | "user">("user");
+const $appMode = createStore<'admin' | 'user'>('user');
 
 split({
-  clock: buttonClicked,
-  // Passing the new store as a data source
-  source: $currentUser,
-  match: $appMode,
-  cases: {
-    admin: [adminActionFx, secondAdminActionFx],
-    user: userActionFx,
-    __: defaultActionFx,
-  },
+	clock: buttonClicked,
+	// Passing the new store as a data source
+	source: $currentUser,
+	match: $appMode,
+	cases: {
+		admin: [adminActionFx, secondAdminActionFx],
+		user: userActionFx,
+		__: defaultActionFx,
+	},
 });
 ```
 
@@ -11118,26 +11194,26 @@ In this scenario, the logic for handling cases is determined at runtime based on
 >
 > When using `match`, it can accept units, functions, or objects with specific constraints:
 >
-> * **Store**: If using a store, **it must store a string value**.
-> * **Function**: If passing a function, **it must return a string value and be pure**.
-> * **Object with stores**: If passing an object of stores, **each store must hold a boolean value**.
-> * **Object with functions**: If passing an object of functions, **each function must return a boolean value and be pure**.
+> - **Store**: If using a store, **it must store a string value**.
+> - **Function**: If passing a function, **it must return a string value and be pure**.
+> - **Object with stores**: If passing an object of stores, **each store must hold a boolean value**.
+> - **Object with functions**: If passing an object of functions, **each function must return a boolean value and be pure**.
 
 #### `match` as a Store
 
 When `match` is a store, the value in the store is used as a key to select the corresponding case:
 
 ```ts
-const $currentTab = createStore("home");
+const $currentTab = createStore('home');
 
 split({
-  source: pageNavigated,
-  match: $currentTab,
-  cases: {
-    home: loadHomeDataFx,
-    profile: loadProfileDataFx,
-    settings: loadSettingsDataFx,
-  },
+	source: pageNavigated,
+	match: $currentTab,
+	cases: {
+		home: loadHomeDataFx,
+		profile: loadProfileDataFx,
+		settings: loadSettingsDataFx,
+	},
 });
 ```
 
@@ -11149,13 +11225,13 @@ When using a function for `match`, it must return a string to be used as the cas
 const userActionRequested = createEvent<{ type: string; payload: any }>();
 
 split({
-  source: userActionRequested,
-  match: (action) => action.type, // The function returns a string
-  cases: {
-    update: updateUserDataFx,
-    delete: deleteUserDataFx,
-    create: createUserDataFx,
-  },
+	source: userActionRequested,
+	match: (action) => action.type, // The function returns a string
+	cases: {
+		update: updateUserDataFx,
+		delete: deleteUserDataFx,
+		create: createUserDataFx,
+	},
 });
 ```
 
@@ -11168,16 +11244,16 @@ const $isAdmin = createStore(false);
 const $isModerator = createStore(false);
 
 split({
-  source: postCreated,
-  match: {
-    admin: $isAdmin,
-    moderator: $isModerator,
-  },
-  cases: {
-    admin: createAdminPostFx,
-    moderator: createModeratorPostFx,
-    __: createUserPostFx,
-  },
+	source: postCreated,
+	match: {
+		admin: $isAdmin,
+		moderator: $isModerator,
+	},
+	cases: {
+		admin: createAdminPostFx,
+		moderator: createModeratorPostFx,
+		__: createUserPostFx,
+	},
 });
 ```
 
@@ -11187,17 +11263,17 @@ If using an object of functions, each function must return a boolean. The first 
 
 ```ts
 split({
-  source: paymentReceived,
-  match: {
-    lowAmount: ({ amount }) => amount < 100,
-    mediumAmount: ({ amount }) => amount >= 100 && amount < 1000,
-    highAmount: ({ amount }) => amount >= 1000,
-  },
-  cases: {
-    lowAmount: processLowPaymentFx,
-    mediumAmount: processMediumPaymentFx,
-    highAmount: processHighPaymentFx,
-  },
+	source: paymentReceived,
+	match: {
+		lowAmount: ({ amount }) => amount < 100,
+		mediumAmount: ({ amount }) => amount >= 100 && amount < 1000,
+		highAmount: ({ amount }) => amount >= 1000,
+	},
+	cases: {
+		lowAmount: processLowPaymentFx,
+		mediumAmount: processMediumPaymentFx,
+		highAmount: processHighPaymentFx,
+	},
 });
 ```
 
@@ -11211,48 +11287,49 @@ split({
 
 ```ts
 const showFormErrorsFx = createEffect(() => {
-  // Logic to display errors
+	// Logic to display errors
 });
 const submitFormFx = createEffect(() => {
-  // Logic to submit the form
+	// Logic to submit the form
 });
 
 const submitForm = createEvent();
 
 const $form = createStore({
-  name: "",
-  email: "",
-  age: 0,
+	name: '',
+	email: '',
+	age: 0,
 }).on(submitForm, (_, submittedForm) => ({ ...submittedForm }));
 // Separate store for errors
 const $formErrors = createStore({
-  name: "",
-  email: "",
-  age: "",
+	name: '',
+	email: '',
+	age: '',
 }).reset(submitForm);
 
 // Validate fields and collect errors
 sample({
-  clock: submitForm,
-  source: $form,
-  fn: (form) => ({
-    name: !form.name.trim() ? "Name is required" : "",
-    email: !isValidEmail(form.email) ? "Invalid email" : "",
-    age: form.age < 18 ? "Age must be 18+" : "",
-  }),
-  target: $formErrors,
+	clock: submitForm,
+	source: $form,
+	fn: (form) => ({
+		name: !form.name.trim() ? 'Name is required' : '',
+		email: !isValidEmail(form.email) ? 'Invalid email' : '',
+		age: form.age < 18 ? 'Age must be 18+' : '',
+	}),
+	target: $formErrors,
 });
 
 // Use split for routing based on validation results
 split({
-  source: $formErrors,
-  match: {
-    hasErrors: (errors) => Object.values(errors).some((error) => error !== ""),
-  },
-  cases: {
-    hasErrors: showFormErrorsFx,
-    __: submitFormFx,
-  },
+	source: $formErrors,
+	match: {
+		hasErrors: (errors) =>
+			Object.values(errors).some((error) => error !== ''),
+	},
+	cases: {
+		hasErrors: showFormErrorsFx,
+		__: submitFormFx,
+	},
 });
 ```
 
@@ -11268,9 +11345,8 @@ On form submission `submitForm`, two things happen:
 
 The `split` method determines the next step:
 
-* If any field has an error – ❌ display the errors.
-* If all fields are valid – ✅ submit the form.
-
+- If any field has an error – ❌ display the errors.
+- If all fields are valid – ✅ submit the form.
 
 # State Management in effector
 
@@ -11298,8 +11374,8 @@ State in effector is managed through stores - special objects that hold values a
 >
 > //update object
 > $user.on(nameChanged, (user, newName) => ({
->   ...user,
->   name: newName,
+> 	...user,
+> 	name: newName,
 > }));
 > ```
 >
@@ -11312,14 +11388,14 @@ State in effector is managed through stores - special objects that hold values a
 >
 > // update array
 > $users.on(userAdded, (users, newUser) => {
->   users.push(newUser); // mutation!
->   return users;
+> 	users.push(newUser); // mutation!
+> 	return users;
 > });
 >
 > // update object
 > $user.on(nameChanged, (user, newName) => {
->   user.name = newName; // mutation!
->   return user;
+> 	user.name = newName; // mutation!
+> 	return user;
 > });
 > ```
 >
@@ -11332,12 +11408,12 @@ State in effector is managed through stores - special objects that hold values a
 You can create new store via createStore:
 
 ```ts
-import { createStore } from "effector";
+import { createStore } from 'effector';
 
 // Create store with initial value
 const $counter = createStore(0);
 // with explicit typing
-const $user = createStore<{ name: "Bob"; age: 25 } | null>(null);
+const $user = createStore<{ name: 'Bob'; age: 25 } | null>(null);
 const $posts = createStore<Post[]>([]);
 ```
 
@@ -11370,9 +11446,9 @@ const Counter = () => {
 
 ```html
 <script setup>
-  import { useUnit } from "effector-vue/composition";
-  import { $counter } from "./model.js";
-  const counter = useUnit($counter);
+	import { useUnit } from 'effector-vue/composition';
+	import { $counter } from './model.js';
+	const counter = useUnit($counter);
 </script>
 ```
 
@@ -11397,7 +11473,7 @@ const Counter = () => {
 
 ```ts
 $counter.watch((counter) => {
-  console.log("Counter changed:", counter);
+	console.log('Counter changed:', counter);
 });
 ```
 
@@ -11420,19 +11496,19 @@ In effector, state updates are done via events. You can change the state by subs
 The simplest and correct way to update a store is to bind it to an event:
 
 ```ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const incremented = createEvent();
 const decremented = createEvent();
 const resetCounter = createEvent();
 
 const $counter = createStore(0)
-  // Increase value by 1 each time the event is called
-  .on(incremented, (counterValue) => counterValue + 1)
-  // Decrease value by 1 each time the event is called
-  .on(decremented, (counterValue) => counterValue - 1)
-  // Reset value to 0
-  .reset(resetCounter);
+	// Increase value by 1 each time the event is called
+	.on(incremented, (counterValue) => counterValue + 1)
+	// Decrease value by 1 each time the event is called
+	.on(decremented, (counterValue) => counterValue - 1)
+	// Reset value to 0
+	.reset(resetCounter);
 
 $counter.watch((counterValue) => console.log(counterValue));
 
@@ -11460,18 +11536,18 @@ resetCounter();
 You can update a store using event parameters by passing data to the event like a regular function and using it in the handler:
 
 ```ts mark={12}
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const userUpdated = createEvent<{ name: string }>();
 
-const $user = createStore({ name: "Bob" });
+const $user = createStore({ name: 'Bob' });
 
 $user.on(userUpdated, (user, changedUser) => ({
-  ...user,
-  ...changedUser,
+	...user,
+	...changedUser,
 }));
 
-userUpdated({ name: "Alice" });
+userUpdated({ name: 'Alice' });
 ```
 
 #### Complex Update Logic
@@ -11480,34 +11556,34 @@ Using the `on` method, we can update store state for simple cases when an event 
 
 However, this doesn't always cover all needs. For more complex state update logic, we can use the sample method, which helps us when:
 
-* We need to control store updates using an event
-* We need to update a store based on values from other stores
-* We need data transformation before updating the store with access to current values of other stores
+- We need to control store updates using an event
+- We need to update a store based on values from other stores
+- We need data transformation before updating the store with access to current values of other stores
 
 For example:
 
 ```ts
-import { createEvent, createStore, sample } from "effector";
+import { createEvent, createStore, sample } from 'effector';
 
 const updateItems = createEvent();
 
 const $items = createStore([1, 2, 3]);
 const $filteredItems = createStore([]);
-const $filter = createStore("even");
+const $filter = createStore('even');
 
 // sample automatically provides access to current values
 // of all connected stores at the moment the event triggers
 sample({
-  clock: updateItems,
-  source: { items: $items, filter: $filter },
-  fn: ({ items, filter }) => {
-    if (filter === "even") {
-      return items.filter((n) => n % 2 === 0);
-    }
+	clock: updateItems,
+	source: { items: $items, filter: $filter },
+	fn: ({ items, filter }) => {
+		if (filter === 'even') {
+			return items.filter((n) => n % 2 === 0);
+		}
 
-    return items.filter((n) => n % 2 === 1);
-  },
-  target: $filteredItems,
+		return items.filter((n) => n % 2 === 1);
+	},
+	target: $filteredItems,
 });
 ```
 
@@ -11528,21 +11604,21 @@ Advantages of using `sample` for state updates:
 If your store work involves replacing the old state with a new one when an event is called, you can use the restore method:
 
 ```ts mark={5}
-import { restore, createEvent } from "effector";
+import { restore, createEvent } from 'effector';
 
 const nameChanged = createEvent<string>();
 
-const $counter = restore(nameChanged, "");
+const $counter = restore(nameChanged, '');
 ```
 
 The code above is equivalent to the code below:
 
 ```ts mark={5}
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const nameChanged = createEvent<string>();
 
-const $counter = createStore("").on(nameChanged, (_, newName) => newName);
+const $counter = createStore('').on(nameChanged, (_, newName) => newName);
 ```
 
 You can also use `restore` method with an effect. In this case, the store will receive data from the effect's doneData event, and the default store value should match the return value type:
@@ -11552,23 +11628,23 @@ You can also use `restore` method with an effect. In this case, the store will r
 > If you are not familiar with `createEffect` and effects, you will learn how to work with them on this page.
 
 ```ts
-import { restore, createEffect } from "effector";
+import { restore, createEffect } from 'effector';
 
 // omit type realization
 const createUserFx = createEffect<string, User>((id) => {
-  // effect logic
+	// effect logic
 
-  return {
-    id: 4,
-    name: "Bob",
-    age: 18,
-  };
+	return {
+		id: 4,
+		name: 'Bob',
+		age: 18,
+	};
 });
 
 const $newUser = restore(createUserFx, {
-  id: 0,
-  name: "",
-  age: -1,
+	id: 0,
+	name: '',
+	age: -1,
 });
 
 createUserFx();
@@ -11593,20 +11669,20 @@ const filtersReset = createEvent();
 
 const $lastUsedFilter = createStore<string | null>(null);
 const $filters = createStore({
-  category: "all",
-  searchQuery: "",
+	category: 'all',
+	searchQuery: '',
 });
 
 // subscribe two different stores to the same event
 $lastUsedFilter.on(categoryChanged, (_, category) => category);
 $filters.on(categoryChanged, (filters, category) => ({
-  ...filters,
-  category,
+	...filters,
+	category,
 }));
 
 $filters.on(searchQueryChanged, (filters, searchQuery) => ({
-  ...filters,
-  searchQuery,
+	...filters,
+	searchQuery,
 }));
 
 $filters.reset(filtersReset);
@@ -11626,14 +11702,14 @@ The following code examples are equivalent:
 ```ts wrap data-height="full"
 // with  createApi
 
-import { createStore, createApi } from "effector";
+import { createStore, createApi } from 'effector';
 
 const $counter = createStore(0);
 
 const { increment, decrement, reset } = createApi($counter, {
-  increment: (state) => state + 1,
-  decrement: (state) => state - 1,
-  reset: () => 0,
+	increment: (state) => state + 1,
+	decrement: (state) => state - 1,
+	reset: () => 0,
 });
 
 // usage
@@ -11648,7 +11724,7 @@ reset(); // 0
 ```ts wrap data-height="full"
 // basic usage
 
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const $counter = createStore(0);
 
@@ -11657,9 +11733,9 @@ const decrementClicked = createEvent();
 const resetClicked = createEvent();
 
 $counter
-  .on(incrementClicked, (state) => state + 1)
-  .on(decrementClicked, (state) => state - 1)
-  .reset(resetClicked);
+	.on(incrementClicked, (state) => state + 1)
+	.on(decrementClicked, (state) => state - 1)
+	.reset(resetClicked);
 
 // usage
 increment(); // 1
@@ -11675,11 +11751,11 @@ reset(); // 0
 Often you need to create a store whose value depends on other stores. For this, the map method is used:
 
 ```ts
-import { createStore, combine } from "effector";
+import { createStore, combine } from 'effector';
 
 const $currentUser = createStore({
-  id: 1,
-  name: "Winnie Pooh",
+	id: 1,
+	name: 'Winnie Pooh',
 });
 const $users = createStore<User[]>([]);
 
@@ -11692,7 +11768,7 @@ const $activeUsersCount = $activeUsers.map((users) => users.length);
 
 // Combining multiple stores
 const $friendsList = combine($users, $currentUser, (users, currentUser) =>
-  users.filter((user) => user.friendIds.includes(currentUser.id)),
+	users.filter((user) => user.friendIds.includes(currentUser.id)),
 );
 ```
 
@@ -11700,21 +11776,21 @@ We also used the combine method here, which allows us to combine values from mul
 You can also combine stores into an object:
 
 ```ts
-import { combine } from "effector";
+import { combine } from 'effector';
 
 const $form = combine({
-  name: $name,
-  age: $age,
-  city: $city,
+	name: $name,
+	age: $age,
+	city: $city,
 });
 
 // or with additional transformation
 const $formValidation = combine($name, $age, (name, age) => ({
-  isValid: name.length > 0 && age >= 18,
-  errors: {
-    name: name.length === 0 ? "Required" : null,
-    age: age < 18 ? "Must be 18+" : null,
-  },
+	isValid: name.length > 0 && age >= 18,
+	errors: {
+		name: name.length === 0 ? 'Required' : null,
+		age: age < 18 ? 'Must be 18+' : null,
+	},
 }));
 ```
 
@@ -11730,11 +11806,11 @@ You can reset store to default state via `reset` method:
 const formSubmitted = createEvent();
 const formReset = createEvent();
 
-const $form = createStore({ email: "", password: "" })
-  // Clear form on submit and on explicit reset too
-  .reset(formSubmitted, formReset)
-  // or
-  .reset([formSubmitted, formReset]);
+const $form = createStore({ email: '', password: '' })
+	// Clear form on submit and on explicit reset too
+	.reset(formSubmitted, formReset)
+	// or
+	.reset([formSubmitted, formReset]);
 ```
 
 ### `undefined` Values
@@ -11743,11 +11819,11 @@ By default, effector skips updates with undefined value. This is done so that yo
 
 ```ts
 const $store = createStore(0).on(event, (_, newValue) => {
-  if (newValue % 2 === 0) {
-    return;
-  }
+	if (newValue % 2 === 0) {
+		return;
+	}
 
-  return newValue;
+	return newValue;
 });
 ```
 
@@ -11759,7 +11835,7 @@ const $store = createStore(0).on(event, (_, newValue) => {
 If you need to use `undefined` as a valid value, you need to explicitly specify it using `skipVoid: false` when creating the store:
 
 ```ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const setVoidValue = createEvent<number>();
 
@@ -11768,7 +11844,7 @@ const $store = createStore(13).on(setVoidValue, (_, voidValue) => voidValue);
 
 // ✅ undefined allowed as values
 const $store = createStore(13, {
-  skipVoid: false,
+	skipVoid: false,
 }).on(setVoidValue, (_, voidValue) => voidValue);
 
 setVoidValue(null);
@@ -11779,7 +11855,6 @@ setVoidValue(null);
 > You can use `null` instead of `undefined` for missing values.
 
 Full API reference for store
-
 
 # TypeScript in Effector
 
@@ -11795,7 +11870,7 @@ Effector provides first-class TypeScript support out of the box, giving you reli
 Events in Effector can be typed by passing a type to the generic function. However, if nothing is passed, the event will have the type `EventCallable<void>`:
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 // Event without parameters
 const clicked = createEvent();
@@ -11807,8 +11882,8 @@ const userNameChanged = createEvent<string>();
 
 // Event with complex parameter
 const formSubmitted = createEvent<{
-  username: string;
-  password: string;
+	username: string;
+	password: string;
 }>();
 // EventCallable<{ username: string; password: string; }>
 ```
@@ -11817,8 +11892,8 @@ const formSubmitted = createEvent<{
 
 In Effector, events can have several types, where `T` is the stored value type:
 
-* `EventCallable<T>` - an event that can be called.
-* `Event<T>` - a derived event that cannot be called manually.
+- `EventCallable<T>` - an event that can be called.
+- `Event<T>` - a derived event that cannot be called manually.
 
 #### Typing Event Methods
 
@@ -11841,7 +11916,7 @@ const warningMessage = message.prepend<string>((warnMessage) => warnMessage);
 Stores can also be typed by passing a type to the generic function, or by specifying a default value during initialization, then TypeScript will infer the type from this value:
 
 ```ts
-import { createStore } from "effector";
+import { createStore } from 'effector';
 
 // Basic store with primitive value
 // StoreWritable<number>
@@ -11849,28 +11924,30 @@ const $counter = createStore(0);
 
 // Store with complex object type
 interface User {
-  id: number;
-  name: string;
-  role: "admin" | "user";
+	id: number;
+	name: string;
+	role: 'admin' | 'user';
 }
 
 // StoreWritable<User>
 const $user = createStore<User>({
-  id: 1,
-  name: "Bob",
-  role: "user",
+	id: 1,
+	name: 'Bob',
+	role: 'user',
 });
 
 // Store<string>
-const $userNameAndRole = $user.map((user) => `User name and role: ${user.name} and ${user.role}`);
+const $userNameAndRole = $user.map(
+	(user) => `User name and role: ${user.name} and ${user.role}`,
+);
 ```
 
 #### Store Types
 
 In Effector, there are two types of stores, where T is the stored value type:
 
-* `Store<T>` - derived store type that cannot have new data written to it.
-* `StoreWritable<T>` - store type that can have new data written using on or sample.
+- `Store<T>` - derived store type that cannot have new data written to it.
+- `StoreWritable<T>` - store type that can have new data written using on or sample.
 
 ### Typing Effects
 
@@ -11881,15 +11958,15 @@ However, `createEffect` supports typing of input parameters, return result, and 
   <TabItem label="Common usage">
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 // Base effect
 // Effect<string, User, Error>
 const fetchUserFx = createEffect(async (userId: string) => {
-  const response = await fetch(`/api/users/${userId}`);
-  const result = await response.json();
+	const response = await fetch(`/api/users/${userId}`);
+	const result = await response.json();
 
-  return result as User;
+	return result as User;
 });
 ```
 
@@ -11898,15 +11975,15 @@ const fetchUserFx = createEffect(async (userId: string) => {
   <TabItem label="With generics">
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 // Base effect
 // Effect<string, User, Error>
 const fetchUserFx = createEffect<string, User>(async (userId) => {
-  const response = await fetch(`/api/users/${userId}`);
-  const result = await response.json();
+	const response = await fetch(`/api/users/${userId}`);
+	const result = await response.json();
 
-  return result;
+	return result;
 });
 ```
 
@@ -11919,8 +11996,8 @@ If the handler function is defined outside the effect, you'll need to pass that 
 
 ```ts
 const sendMessage = async (params: { text: string }) => {
-  // ...
-  return "ok";
+	// ...
+	return 'ok';
 };
 
 const sendMessageFx = createEffect<typeof sendMessage, AxiosError>(sendMessage);
@@ -11934,22 +12011,22 @@ Some code may only throw certain types of exceptions. In effects, the third gene
 ```ts
 // Define API error types
 interface ApiError {
-  code: number;
-  message: string;
+	code: number;
+	message: string;
 }
 
 // Create typed effect
 const fetchUserFx = createEffect<string, User, ApiError>(async (userId) => {
-  const response = await fetch(`/api/users/${userId}`);
+	const response = await fetch(`/api/users/${userId}`);
 
-  if (!response.ok) {
-    throw {
-      code: response.status,
-      message: "Failed to fetch user",
-    } as ApiError;
-  }
+	if (!response.ok) {
+		throw {
+			code: response.status,
+			message: 'Failed to fetch user',
+		} as ApiError;
+	}
 
-  return response.json();
+	return response.json();
 });
 ```
 
@@ -11962,28 +12039,28 @@ const fetchUserFx = createEffect<string, User, ApiError>(async (userId) => {
 If you need to get a specific type, you'll need to manually specify the expected type, which can be done using [type predicates](https://www.typescriptlang.org/docs/handbook/advanced-types.html#using-type-predicates):
 
 ```ts
-type UserMessage = { kind: "user"; text: string };
-type WarnMessage = { kind: "warn"; warn: string };
+type UserMessage = { kind: 'user'; text: string };
+type WarnMessage = { kind: 'warn'; warn: string };
 
 const message = createEvent<UserMessage | WarnMessage>();
 const userMessage = createEvent<UserMessage>();
 
 sample({
-  clock: message,
-  filter: (msg): msg is UserMessage => msg.kind === "user",
-  target: userMessage,
+	clock: message,
+	filter: (msg): msg is UserMessage => msg.kind === 'user',
+	target: userMessage,
 });
 ```
 
 If you need to check for data existence in `filter`, you can simply pass `Boolean`:
 
 ```ts
-import { createEvent, createStore, sample } from "effector";
+import { createEvent, createStore, sample } from 'effector';
 
 interface User {
-  id: string;
-  name: string;
-  email: string;
+	id: string;
+	name: string;
+	email: string;
 }
 
 // Events
@@ -11995,10 +12072,10 @@ const $currentUser = createStore<User | null>(null);
 
 // On form submit, send data only if user exists
 sample({
-  clock: formSubmitted,
-  source: $currentUser,
-  filter: Boolean, // filter out null
-  target: userDataSaved,
+	clock: formSubmitted,
+	source: $currentUser,
+	filter: Boolean, // filter out null
+	target: userDataSaved,
 });
 
 // Now userDataSaved will only receive existing user data
@@ -12010,18 +12087,18 @@ As mentioned above, using type predicates in `filter` will work correctly and th
 However, this mechanism won't work as needed when using `filter` and `fn` together. In this case, you'll need to manually specify the data type of `filter` parameters and add type predicates. This happens because TypeScript cannot correctly infer the type in `fn` after `filter` if the type isn't explicitly specified. This is a limitation of TypeScript's type system.
 
 ```ts
-type UserMessage = { kind: "user"; text: string };
-type WarnMessage = { kind: "warn"; warn: string };
+type UserMessage = { kind: 'user'; text: string };
+type WarnMessage = { kind: 'warn'; warn: string };
 type Message = UserMessage | WarnMessage;
 
 const message = createEvent<Message>();
 const userText = createEvent<string>();
 
 sample({
-  clock: message,
-  filter: (msg: Message): msg is UserMessage => msg.kind === "user",
-  fn: (msg) => msg.text,
-  target: userText,
+	clock: message,
+	filter: (msg: Message): msg is UserMessage => msg.kind === 'user',
+	fn: (msg) => msg.text,
+	target: userText,
 });
 
 // userMessage has type Event<string>
@@ -12037,15 +12114,15 @@ sample({
 To allow TypeScript to infer the types of the created effect, you can add a type to the first argument of `mapParams`, which will become the `Params` generic of the result:
 
 ```ts
-const sendTextFx = createEffect<{ message: string }, "ok">(() => {
-  // ...
+const sendTextFx = createEffect<{ message: string }, 'ok'>(() => {
+	// ...
 
-  return "ok";
+	return 'ok';
 });
 
 const sendWarningFx = attach({
-  effect: sendTextFx,
-  mapParams: (warningMessage: string) => ({ message: warningMessage }),
+	effect: sendTextFx,
+	mapParams: (warningMessage: string) => ({ message: warningMessage }),
 });
 // sendWarningFx has type Effect<{message: string}, 'ok'>
 ```
@@ -12056,14 +12133,14 @@ const sendWarningFx = attach({
   <TabItem label="Before TS 5.5">
 
 ```ts
-type UserMessage = { kind: "user"; text: string };
-type WarnMessage = { kind: "warn"; warn: string };
+type UserMessage = { kind: 'user'; text: string };
+type WarnMessage = { kind: 'warn'; warn: string };
 
 const message = createEvent<UserMessage | WarnMessage>();
 
 const { userMessage, warnMessage } = split(message, {
-  userMessage: (msg): msg is UserMessage => msg.kind === "user",
-  warnMessage: (msg): msg is WarnMessage => msg.kind === "warn",
+	userMessage: (msg): msg is UserMessage => msg.kind === 'user',
+	warnMessage: (msg): msg is WarnMessage => msg.kind === 'warn',
 });
 // userMessage имеет тип Event<UserMessage>
 // warnMessage имеет тип Event<WarnMessage>
@@ -12074,14 +12151,14 @@ const { userMessage, warnMessage } = split(message, {
   <TabItem label="After TS 5.5">
 
 ```ts
-type UserMessage = { kind: "user"; text: string };
-type WarnMessage = { kind: "warn"; warn: string };
+type UserMessage = { kind: 'user'; text: string };
+type WarnMessage = { kind: 'warn'; warn: string };
 
 const message = createEvent<UserMessage | WarnMessage>();
 
 const { userMessage, warnMessage } = split(message, {
-  userMessage: (msg) => msg.kind === "user",
-  warnMessage: (msg) => msg.kind === "warn",
+	userMessage: (msg) => msg.kind === 'user',
+	warnMessage: (msg) => msg.kind === 'warn',
 });
 // userMessage имеет тип Event<UserMessage>
 // warnMessage имеет тип Event<WarnMessage>
@@ -12098,8 +12175,8 @@ To allow TypeScript to infer types of created events, adding a type to second ar
 const $count = createStore(0);
 
 const { add, sub } = createApi($count, {
-  add: (x, add: number) => x + add,
-  sub: (x, sub: number) => x - sub,
+	add: (x, add: number) => x + add,
+	sub: (x, sub: number) => x - sub,
 });
 
 // add has type Event<number>
@@ -12112,18 +12189,18 @@ const { add, sub } = createApi($count, {
 
 ```typescript
 export function getUnitType(unit: unknown) {
-  if (is.event(unit)) {
-    // here unit has Event<any> type
-    return "event";
-  }
-  if (is.effect(unit)) {
-    // here unit has Effect<any, any> type
-    return "effect";
-  }
-  if (is.store(unit)) {
-    // here unit has Store<any> type
-    return "store";
-  }
+	if (is.event(unit)) {
+		// here unit has Event<any> type
+		return 'event';
+	}
+	if (is.effect(unit)) {
+		// here unit has Effect<any, any> type
+		return 'effect';
+	}
+	if (is.store(unit)) {
+		// here unit has Store<any> type
+		return 'store';
+	}
 }
 ```
 
@@ -12132,7 +12209,7 @@ export function getUnitType(unit: unknown) {
 When we wanna merge events we can get their union types:
 
 ```ts
-import { createEvent, merge } from "effector";
+import { createEvent, merge } from 'effector';
 
 const firstEvent = createEvent<string>();
 const secondEvent = createEvent<number>();
@@ -12151,7 +12228,7 @@ const anyClick = merge([buttonClicked, linkClicked]);
 `merge` accepts generic, where you can use what type do you expect from events:
 
 ```ts
-import { createEvent, merge } from "effector";
+import { createEvent, merge } from 'effector';
 
 const firstEvent = createEvent<string>();
 const secondEvent = createEvent<number>();
@@ -12170,7 +12247,7 @@ Effector provides a set of utility types for working with unit types:
 The `UnitValue` type is used to extract the data type from units:
 
 ```ts
-import { UnitValue, createEffect, createStore, createEvent } from "effector";
+import { UnitValue, createEffect, createStore, createEvent } from 'effector';
 
 const event = createEvent<{ id: string; name?: string } | { id: string }>();
 type UnitEventType = UnitValue<typeof event>;
@@ -12194,7 +12271,7 @@ type UnitScopeType = UnitValue<typeof scope>;
 `StoreValue` is essentially similar to `UnitValue`, but works only with stores:
 
 ```ts
-import { createStore, StoreValue } from "effector";
+import { createStore, StoreValue } from 'effector';
 
 const $store = createStore(true);
 
@@ -12208,7 +12285,7 @@ Extracts the data type from events.
 Similar to `UnitValue`, but only for events:
 
 ```ts
-import { createEvent, EventPayload } from "effector";
+import { createEvent, EventPayload } from 'effector';
 
 const event = createEvent<{ id: string }>();
 
@@ -12221,15 +12298,15 @@ type EventPayloadType = EventPayload<typeof event>;
 Takes an effect type as a generic parameter, allows getting the parameter type of an effect.
 
 ```ts
-import { createEffect, EffectParams } from "effector";
+import { createEffect, EffectParams } from 'effector';
 
 const fx = createEffect<
-  { id: string },
-  { name: string; isAdmin: boolean },
-  { statusText: string; status: number }
+	{ id: string },
+	{ name: string; isAdmin: boolean },
+	{ statusText: string; status: number }
 >(() => {
-  // ...
-  return { name: "Alice", isAdmin: false };
+	// ...
+	return { name: 'Alice', isAdmin: false };
 });
 
 type EffectParamsType = EffectParams<typeof fx>;
@@ -12241,13 +12318,13 @@ type EffectParamsType = EffectParams<typeof fx>;
 Takes an effect type as a generic parameter, allows getting the return value type of an effect.
 
 ```ts
-import { createEffect, EffectResult } from "effector";
+import { createEffect, EffectResult } from 'effector';
 
 const fx = createEffect<
-  { id: string },
-  { name: string; isAdmin: boolean },
-  { statusText: string; status: number }
->(() => ({ name: "Alice", isAdmin: false }));
+	{ id: string },
+	{ name: string; isAdmin: boolean },
+	{ statusText: string; status: number }
+>(() => ({ name: 'Alice', isAdmin: false }));
 
 type EffectResultType = EffectResult<typeof fx>;
 // {name: string; isAdmin: boolean}
@@ -12258,18 +12335,17 @@ type EffectResultType = EffectResult<typeof fx>;
 Takes an effect type as a generic parameter, allows getting the error type of an effect.
 
 ```ts
-import { createEffect, EffectError } from "effector";
+import { createEffect, EffectError } from 'effector';
 
 const fx = createEffect<
-  { id: string },
-  { name: string; isAdmin: boolean },
-  { statusText: string; status: number }
->(() => ({ name: "Alice", isAdmin: false }));
+	{ id: string },
+	{ name: string; isAdmin: boolean },
+	{ statusText: string; status: number }
+>(() => ({ name: 'Alice', isAdmin: false }));
 
 type EffectErrorType = EffectError<typeof fx>;
 // {statusText: string; status: number}
 ```
-
 
 # Unit Composition
 
@@ -12292,21 +12368,21 @@ The general pattern of the sample method works as follows:
 #### Basic Usage of Sample
 
 ```ts
-import { createStore, createEvent, sample, createEffect } from "effector";
+import { createStore, createEvent, sample, createEffect } from 'effector';
 
 const buttonClicked = createEvent();
 
-const $userName = createStore("Bob");
+const $userName = createStore('Bob');
 
 const fetchUserFx = createEffect((userName) => {
-  // logic
+	// logic
 });
 
 // Get current name when button is clicked
 sample({
-  clock: buttonClicked,
-  source: $userName,
-  target: fetchUserFx,
+	clock: buttonClicked,
+	source: $userName,
+	target: fetchUserFx,
 });
 ```
 
@@ -12315,14 +12391,14 @@ sample({
 > If you don't specify `clock`, then `source` can also serve as the trigger. You must use at least one of these properties in the argument!
 
 ```ts
-import { createStore, sample } from "effector";
+import { createStore, sample } from 'effector';
 
-const $currentUser = createStore({ name: "Bob", age: 25 });
+const $currentUser = createStore({ name: 'Bob', age: 25 });
 
 // creates a derived store that updates when source changes
 const $userAge = sample({
-  source: $currentUser,
-  fn: (user) => user.age,
+	source: $currentUser,
+	fn: (user) => user.age,
 });
 // equivalent to
 const $userAgeViaMap = $currentUser.map((currentUser) => currentUser.age);
@@ -12330,37 +12406,37 @@ const $userAgeViaMap = $currentUser.map((currentUser) => currentUser.age);
 
 As you can see, the sample method is very flexible and can be used in various scenarios:
 
-* When you need to take data from a store at the moment of an event
-* For data transformation before sending
-* For conditional processing via filter
-* For synchronizing multiple data sources
-* Sequential chain of unit launches
+- When you need to take data from a store at the moment of an event
+- For data transformation before sending
+- For conditional processing via filter
+- For synchronizing multiple data sources
+- Sequential chain of unit launches
 
 #### Data Filtering
 
 You may need to start a call chain when some conditions occurs. For such situations, the `sample` method allows filtering data using the `filter` parameter:
 
 ```ts
-import { createEvent, createStore, sample, createEffect } from "effector";
+import { createEvent, createStore, sample, createEffect } from 'effector';
 
 type UserFormData = {
-  username: string;
-  age: number;
+	username: string;
+	age: number;
 };
 
 const submitForm = createEvent();
 
-const $formData = createStore<UserFormData>({ username: "", age: 0 });
+const $formData = createStore<UserFormData>({ username: '', age: 0 });
 
 const submitToServerFx = createEffect((formData: UserFormData) => {
-  // logic
+	// logic
 });
 
 sample({
-  clock: submitForm,
-  source: $formData,
-  filter: (form) => form.age >= 18 && form.username.length > 0,
-  target: submitToServerFx,
+	clock: submitForm,
+	source: $formData,
+	filter: (form) => form.age >= 18 && form.username.length > 0,
+	target: submitToServerFx,
 });
 
 submitForm();
@@ -12377,17 +12453,17 @@ When `submitForm` is called, we take data from `source`, check conditions in `fi
 Often you need to not just pass data, but also transform it. The `fn` parameter is used for this:
 
 ```ts
-import { createEvent, createStore, sample } from "effector";
+import { createEvent, createStore, sample } from 'effector';
 
 const buttonClicked = createEvent();
-const $user = createStore({ name: "Bob", age: 25 });
-const $userInfo = createStore("");
+const $user = createStore({ name: 'Bob', age: 25 });
+const $userInfo = createStore('');
 
 sample({
-  clock: buttonClicked,
-  source: $user,
-  fn: (user) => `${user.name} is ${user.age} years old`,
-  target: $userInfo,
+	clock: buttonClicked,
+	source: $user,
+	fn: (user) => `${user.name} is ${user.age} years old`,
+	target: $userInfo,
 });
 ```
 
@@ -12396,29 +12472,29 @@ sample({
 You can use multiple stores as data sources:
 
 ```ts
-import { createEvent, createStore, sample, createEffect } from "effector";
+import { createEvent, createStore, sample, createEffect } from 'effector';
 
 type SubmitSearch = {
-  query: string;
-  filters: Array<string>;
+	query: string;
+	filters: Array<string>;
 };
 
 const submitSearchFx = createEffect((params: SubmitSearch) => {
-  /// logic
+	/// logic
 });
 
 const searchClicked = createEvent();
 
-const $searchQuery = createStore("");
+const $searchQuery = createStore('');
 const $filters = createStore<string[]>([]);
 
 sample({
-  clock: searchClicked,
-  source: {
-    query: $searchQuery,
-    filters: $filters,
-  },
-  target: submitSearchFx,
+	clock: searchClicked,
+	source: {
+		query: $searchQuery,
+		filters: $filters,
+	},
+	target: submitSearchFx,
 });
 ```
 
@@ -12427,7 +12503,7 @@ sample({
 `sample` allows you to use an array of events as a `clock`, which is very convenient when we need to process several different triggers in the same way. This helps avoid code duplication and makes the logic more centralized:
 
 ```ts
-import { createEvent, createStore, sample } from "effector";
+import { createEvent, createStore, sample } from 'effector';
 
 // Events for different user actions
 const saveButtonClicked = createEvent();
@@ -12435,19 +12511,19 @@ const ctrlSPressed = createEvent();
 const autoSaveTriggered = createEvent();
 
 // Common data storage
-const $formData = createStore({ text: "" });
+const $formData = createStore({ text: '' });
 
 // Save effect
 const saveDocumentFx = createEffect((data: { text: string }) => {
-  // Save logic
+	// Save logic
 });
 
 // Single point for document saving that triggers from any source
 sample({
-  // All these events will trigger saving
-  clock: [saveButtonClicked, ctrlSPressed, autoSaveTriggered],
-  source: $formData,
-  target: saveDocumentFx,
+	// All these events will trigger saving
+	clock: [saveButtonClicked, ctrlSPressed, autoSaveTriggered],
+	source: $formData,
+	target: saveDocumentFx,
 });
 ```
 
@@ -12456,16 +12532,16 @@ sample({
 `sample` allows you to pass an array of units to `target`, which is useful when you need to send the same data to multiple destinations simultaneously. You can pass an array of any units - events, effects, or stores to `target`.
 
 ```ts
-import { createEvent, createStore, createEffect, sample } from "effector";
+import { createEvent, createStore, createEffect, sample } from 'effector';
 
 // Create units where data will be directed
 const userDataReceived = createEvent<User>();
 const $lastUserData = createStore<User | null>(null);
 const saveUserFx = createEffect<User, void>((user) => {
-  // Save user
+	// Save user
 });
 const logUserFx = createEffect<User, void>((user) => {
-  // Log user actions
+	// Log user actions
 });
 
 const userUpdated = createEvent<User>();
@@ -12476,16 +12552,16 @@ const userUpdated = createEvent<User>();
 // - Update store $lastUserData
 // - Trigger userDataReceived event
 sample({
-  clock: userUpdated,
-  target: [saveUserFx, logUserFx, $lastUserData, userDataReceived],
+	clock: userUpdated,
+	target: [saveUserFx, logUserFx, $lastUserData, userDataReceived],
 });
 ```
 
 Key points:
 
-* All units in target must be type-compatible with data from `source`/`clock`
-* The execution order of targets is guaranteed - they will be called in the order written
-* You can combine different types of units in the target array
+- All units in target must be type-compatible with data from `source`/`clock`
+- The execution order of targets is guaranteed - they will be called in the order written
+- You can combine different types of units in the target array
 
 #### Return Value of Sample
 
@@ -12502,9 +12578,9 @@ const sendData = createEvent<number>();
 
 // result will have type EventCallable<number>
 const result = sample({
-  clock: submitted,
-  source: $store,
-  target: sendData,
+	clock: submitted,
+	source: $store,
+	target: sendData,
 });
 ```
 
@@ -12516,21 +12592,21 @@ When `target` is not specified, the return value type depends on the parameters 
 If `filter` is **NOT** specified, and both `clock` and `source` **are stores**, then the result will be a **derived store** with the data type from `source`.
 
 ```ts
-import { createStore, sample } from "effector";
+import { createStore, sample } from 'effector';
 
-const $store = createStore("");
+const $store = createStore('');
 const $secondStore = createStore(0);
 
 const $derived = sample({
-  clock: $secondStore,
-  source: $store,
+	clock: $secondStore,
+	source: $store,
 });
 // $derived will be Store<string>
 
 const $secondDerived = sample({
-  clock: $secondStore,
-  source: $store,
-  fn: () => false,
+	clock: $secondStore,
+	source: $store,
+	fn: () => false,
 });
 // $secondDerived will be Store<boolean>
 ```
@@ -12546,22 +12622,22 @@ In other cases, the return value will be a **derived event** with a data type de
 > The `sample` method is fully typed and accepts types depending on the parameters passed!
 
 ```ts
-import { createStore, createEvent, sample } from "effector";
+import { createStore, createEvent, sample } from 'effector';
 
 const $store = createStore(0);
 
 const submitted = createEvent<string>();
 
 const event = sample({
-  clock: submitted,
-  source: $store,
+	clock: submitted,
+	source: $store,
 });
 // event has type Event<number>
 
 const secondSampleEvent = sample({
-  clock: submitted,
-  source: $store,
-  fn: () => true,
+	clock: submitted,
+	source: $store,
+	fn: () => true,
 });
 // Event<true>
 ```
@@ -12571,11 +12647,11 @@ const secondSampleEvent = sample({
 Let's look at case, when we select user id and we want to check if user is admin, and based on selected user id create new derived store with data about user:
 
 ```ts
-import { createStore, createEvent, sample } from "effector";
+import { createStore, createEvent, sample } from 'effector';
 
 type User = {
-  id: number;
-  role: string;
+	id: number;
+	role: string;
 };
 
 const userSelected = createEvent<number>();
@@ -12584,20 +12660,21 @@ const $users = createStore<User[]>([]);
 
 // Create derived store, which will be keep selectedUser
 const $selectedUser = sample({
-  clock: userSelected,
-  source: $users,
-  fn: (users, id) => users.find((user) => user.id === id) || null,
+	clock: userSelected,
+	source: $users,
+	fn: (users, id) => users.find((user) => user.id === id) || null,
 });
 // $selectedUser has type Store<User | null>
 
 // Create derived event, which will fire only for admins
 // if selected user is admin, then event will fire instantly
 const adminSelected = sample({
-  clock: userSelected,
-  source: $users,
-  // will worked only if user found and he is admin
-  filter: (users, id) => !!users.find((user) => user.id === id && user.role === "admin"),
-  fn: (users, id) => users.find((user) => user.id === id)!,
+	clock: userSelected,
+	source: $users,
+	// will worked only if user found and he is admin
+	filter: (users, id) =>
+		!!users.find((user) => user.id === id && user.role === 'admin'),
+	fn: (users, id) => users.find((user) => user.id === id)!,
 });
 // adminSelected has type Event<User>
 
@@ -12610,41 +12687,43 @@ Full API for&#x20;
 
 `attach` is a method for creating new effects based on existing ones, with access to data from stores. This is especially useful when you need to:
 
-* Add context to an effect
-* Reuse effect logic with different parameters
-* Encapsulate store access
+- Add context to an effect
+- Reuse effect logic with different parameters
+- Encapsulate store access
 
 ```ts
-import { attach, createEffect, createStore } from "effector";
+import { attach, createEffect, createStore } from 'effector';
 
 type SendMessageParams = { text: string; token: string };
 
 // Base effect for sending data
-const baseSendMessageFx = createEffect<SendMessageParams, void>(async ({ text, token }) => {
-  await fetch("/api/messages", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ text }),
-  });
-});
+const baseSendMessageFx = createEffect<SendMessageParams, void>(
+	async ({ text, token }) => {
+		await fetch('/api/messages', {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify({ text }),
+		});
+	},
+);
 
 // Store with authentication token
-const $authToken = createStore("default-token");
+const $authToken = createStore('default-token');
 
 // Create a specialized effect that automatically uses the token
 const sendMessageFx = attach({
-  effect: baseSendMessageFx,
-  source: $authToken,
-  mapParams: (text: string, token) => ({
-    text,
-    token,
-  }),
+	effect: baseSendMessageFx,
+	source: $authToken,
+	mapParams: (text: string, token) => ({
+		text,
+		token,
+	}),
 });
 
 // Now you can call the effect with just the message text
-sendMessageFx("Hello!"); // token will be added automatically
+sendMessageFx('Hello!'); // token will be added automatically
 ```
 
 It's very convenient to use `attach` for logic reuse:
@@ -12654,26 +12733,25 @@ const fetchDataFx = createEffect<{ endpoint: string; token: string }, any>();
 
 // Create specialized effects for different endpoints
 const fetchUsersFx = attach({
-  effect: fetchDataFx,
-  mapParams: (_, token) => ({
-    endpoint: "/users",
-    token,
-  }),
-  source: $authToken,
+	effect: fetchDataFx,
+	mapParams: (_, token) => ({
+		endpoint: '/users',
+		token,
+	}),
+	source: $authToken,
 });
 
 const fetchProductsFx = attach({
-  effect: fetchDataFx,
-  mapParams: (_, token) => ({
-    endpoint: "/products",
-    token,
-  }),
-  source: $authToken,
+	effect: fetchDataFx,
+	mapParams: (_, token) => ({
+		endpoint: '/products',
+		token,
+	}),
+	source: $authToken,
 });
 ```
 
 Full API for&#x20;
-
 
 # Asynchronous Operations in effector
 
@@ -12689,9 +12767,9 @@ Asynchronous operations are a fundamental part of any modern application, and Ef
 
 Effects are Effector's tool for working with external APIs or side effects in your application, for example:
 
-* Asynchronous server requests
-* Working with `localStorage`/`indexedDB`
-* Any operations that might fail or take time to complete
+- Asynchronous server requests
+- Working with `localStorage`/`indexedDB`
+- Any operations that might fail or take time to complete
 
 > TIP good to know:
 >
@@ -12701,10 +12779,10 @@ Effects are Effector's tool for working with external APIs or side effects in yo
 
 Effector automatically tracks the state of effect execution:
 
-* `pending` — is a store that indicates whether the effect is running, useful for displaying loading states
-* `done` — is an event that triggers on successful completion
-* `fail` — is an event that triggers on error
-* `finally` — is an event that triggers when the effect is completed, either with success or error
+- `pending` — is a store that indicates whether the effect is running, useful for displaying loading states
+- `done` — is an event that triggers on successful completion
+- `fail` — is an event that triggers on error
+- `finally` — is an event that triggers when the effect is completed, either with success or error
 
 You can find the complete effect API here.
 
@@ -12714,23 +12792,25 @@ You can find the complete effect API here.
 
 ```ts
 const fetchUserFx = createEffect(() => {
-  /* external api call */
+	/* external api call */
 });
 
-fetchUserFx.pending.watch((isPending) => console.log("Pending:", isPending));
+fetchUserFx.pending.watch((isPending) => console.log('Pending:', isPending));
 
-fetchUserFx.done.watch(({ params, result }) => console.log(`Fetched user ${params}:`, result));
+fetchUserFx.done.watch(({ params, result }) =>
+	console.log(`Fetched user ${params}:`, result),
+);
 
 fetchUserFx.finally.watch((value) => {
-  if (value.status === "done") {
-    console.log("fetchUserFx resolved ", value.result);
-  } else {
-    console.log("fetchUserFx rejected ", value.error);
-  }
+	if (value.status === 'done') {
+		console.log('fetchUserFx resolved ', value.result);
+	} else {
+		console.log('fetchUserFx rejected ', value.error);
+	}
 });
 
 fetchUserFx.fail.watch(({ params, error }) =>
-  console.error(`Failed to fetch user ${params}:`, error),
+	console.error(`Failed to fetch user ${params}:`, error),
 );
 
 fetchUserFx();
@@ -12743,15 +12823,15 @@ fetchUserFx();
 Let's say we want effector to take the data returned by the effect when it completes and update the store with new data. This can be done quite easily using effect events:
 
 ```ts
-import { createStore, createEffect } from "effector";
+import { createStore, createEffect } from 'effector';
 
 const fetchUserNameFx = createEffect(async (userId: string) => {
-  const userData = await fetch(`/api/users/${userId}`);
-  return userData.name;
+	const userData = await fetch(`/api/users/${userId}`);
+	return userData.name;
 });
 
 const $error = createStore<string | null>(null);
-const $userName = createStore("");
+const $userName = createStore('');
 const $isLoading = fetchUserNameFx.pending.map((isPending) => isPending);
 
 $error.reset(fetchUserNameFx.done);
@@ -12762,7 +12842,7 @@ $error.on(fetchUserNameFx.fail, (_, { params, error }) => error.message);
 $userName.on(fetchUserNameFx.doneData, (_, result) => result);
 $error.on(fetchUserNameFx.failData, (_, error) => error.message);
 
-$isLoading.watch((isLoading) => console.log("Is loading:", isLoading));
+$isLoading.watch((isLoading) => console.log('Is loading:', isLoading));
 ```
 
 `doneData` and `failData` are events that are identical to `done` and `fail` respectively, except that they only receive result and error in their parameters.
@@ -12778,10 +12858,10 @@ In most cases, you'll want to trigger an effect when some event occurs, like for
 > <!-- todo add link to page about sample -->
 
 ```ts
-import { createEvent, sample, createEffect } from "effector";
+import { createEvent, sample, createEffect } from 'effector';
 
 const userLoginFx = createEffect(() => {
-  // some logic
+	// some logic
 });
 
 // Event for data loading
@@ -12789,8 +12869,8 @@ const formSubmitted = createEvent();
 
 // Connect event with effect
 sample({
-  clock: formSubmitted, // When this triggers
-  target: userLoginFx, // Run this
+	clock: formSubmitted, // When this triggers
+	target: userLoginFx, // Run this
 });
 
 // somewhere in application
@@ -12804,21 +12884,21 @@ Effects in Effector provide robust error handling capabilities. When an error oc
 To type an error in an effect you need to pass a specific type to the generic of the `createEffect` function:
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 class CustomError extends Error {
-  // implementation
+	// implementation
 }
 
 const effect = createEffect<Params, ReturnValue, CustomError>(() => {
-  const response = await fetch(`/api/users/${userId}`);
+	const response = await fetch(`/api/users/${userId}`);
 
-  if (!response.ok) {
-    // You can throw custom errors that will be caught by .fail handler
-    throw new CustomError(`Failed to fetch user: ${response.statusText}`);
-  }
+	if (!response.ok) {
+		// You can throw custom errors that will be caught by .fail handler
+		throw new CustomError(`Failed to fetch user: ${response.statusText}`);
+	}
 
-  return response.json();
+	return response.json();
 });
 ```
 
@@ -12827,18 +12907,18 @@ If you throw an error of a different type, the typescript will show the error to
 ### Practical Example
 
 ```ts
-import { createStore, createEvent, createEffect, sample } from "effector";
+import { createStore, createEvent, createEffect, sample } from 'effector';
 
 // Effect for data loading
 const fetchUserFx = createEffect(async (id: number) => {
-  const response = await fetch(`/api/user/${id}`);
+	const response = await fetch(`/api/user/${id}`);
 
-  if (!response.ok) {
-    // you can modify the error before it reaches fail/failData
-    throw new Error("User not found");
-  }
+	if (!response.ok) {
+		// you can modify the error before it reaches fail/failData
+		throw new Error('User not found');
+	}
 
-  return response.json();
+	return response.json();
 });
 
 const setId = createEvent<number>();
@@ -12856,9 +12936,9 @@ $error.reset(fetchUserFx.done);
 
 // Loading logic: run fetchUserFx on submit
 sample({
-  clock: submit,
-  source: $id,
-  target: fetchUserFx,
+	clock: submit,
+	source: $id,
+	target: fetchUserFx,
 });
 
 // Usage
@@ -12870,7 +12950,6 @@ submit(); // Load data
 
 Full API reference for effects
 
-
 # Computation priority
 
 For sure, you've noticed that function should be pure... or watch if there is a place
@@ -12881,10 +12960,10 @@ the highest priority and move to the start of the queue and less significant to 
 
 Computation priority allows us to have side effects, and it's one of the main reasons to create this concept:
 
-* Letting pure functions to execute first.
-* Side effects can follow a consistent state of the application.
+- Letting pure functions to execute first.
+- Side effects can follow a consistent state of the application.
 
-Actually, pure computation cannot be observed out of the scope, therefore, the definition of ***pure computation*** used
+Actually, pure computation cannot be observed out of the scope, therefore, the definition of **_pure computation_** used
 in this library gives us an opportunity to optimize grouping.
 
 Priority:
@@ -12905,15 +12984,15 @@ Let's consider prioritizing in the example below.
 ```js
 let count = 0;
 const fx = createEffect(() => {
-  // side effect 1
-  count += 1;
+	// side effect 1
+	count += 1;
 });
 
 fx.done.watch(() => {
-  // side effect 1 already executed
-  console.log("expect count to be 1", count === 1);
-  // side effect 2
-  count += 1;
+	// side effect 1 already executed
+	console.log('expect count to be 1', count === 1);
+	// side effect 2
+	count += 1;
 });
 
 fx();
@@ -12921,7 +13000,7 @@ fx();
 // side effect 2 already executed as well
 // that's what we expected to happen
 // that's watchmen effect
-console.log("expect count to be 2", count === 2);
+console.log('expect count to be 2', count === 2);
 // example which violated that agreement: setState in react
 // which defer any side effect long after setState call itself
 ```
@@ -12934,27 +13013,26 @@ Try it
 
 We hope that this information cleared some things on how the library works.
 
-
 # Glossary
 
 Glossary of basic terms in effector.
 
 ### Event
 
-*Event* is a function you can subscribe to. It can be an intention to change the store, indication of something happening in the application, a command to be executed, aggregated analytics trigger and so on.
+_Event_ is a function you can subscribe to. It can be an intention to change the store, indication of something happening in the application, a command to be executed, aggregated analytics trigger and so on.
 
 Event in api documentation
 
 ### Store
 
-*Store* is an object that holds state.
+_Store_ is an object that holds state.
 There can be multiple stores.
 
 Store in api documentation
 
 ### Effect
 
-*Effect* is a container for (possibly async) side effects.
+_Effect_ is a container for (possibly async) side effects.
 It exposes special events and stores, such as `.pending`, `.done`, `.fail`, `.finally`, etc...
 
 It can be safely used in place of the original async function.
@@ -12963,13 +13041,13 @@ It returns promise with the result of a function call.
 
 The only requirement for the function:
 
-* **Must** have zero or one argument
+- **Must** have zero or one argument
 
 Effect in api documentation
 
 ### Domain
 
-*Domain* is a namespace for your events, stores and effects.
+_Domain_ is a namespace for your events, stores and effects.
 
 Domains are notified when events, stores, effects, or nested domains are created via `.onCreateEvent`, `.onCreateStore`, `.onCreateEffect`, `.onCreateDomain` methods.
 
@@ -12993,15 +13071,15 @@ Most of the functions in api must not call other events or effects: it's easier 
 **Correct**, imperative:
 
 ```js
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const submitLoginSize = createEvent();
 
-const $login = createStore("guest");
+const $login = createStore('guest');
 const $loginSize = $login.map((login) => login.length);
 
 $loginSize.watch((size) => {
-  submitLoginSize(size);
+	submitLoginSize(size);
 });
 ```
 
@@ -13012,16 +13090,16 @@ Reference: Store.map, Store.watch
 **Better**, declarative:
 
 ```js
-import { createStore, createEvent, sample } from "effector";
+import { createStore, createEvent, sample } from 'effector';
 
 const submitLoginSize = createEvent();
 
-const $login = createStore("guest");
+const $login = createStore('guest');
 const $loginSize = $login.map((login) => login.length);
 
 sample({
-  clock: $loginSize,
-  target: submitLoginSize,
+	clock: $loginSize,
+	target: submitLoginSize,
 });
 ```
 
@@ -13032,15 +13110,15 @@ Reference: sample
 **Incorrect**:
 
 ```js
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const submitLoginSize = createEvent();
 
-const $login = createStore("guest");
+const $login = createStore('guest');
 const $loginSize = $login.map((login) => {
-  // no! use `sample` instead
-  submitLoginSize(login.length);
-  return login.length;
+	// no! use `sample` instead
+	submitLoginSize(login.length);
+	return login.length;
 });
 ```
 
@@ -13051,7 +13129,7 @@ type StoreReducer<State, E> = (state: State, payload: E) => State | void;
 type EventOrEffectReducer<T, E> = (state: T, payload: E) => T;
 ```
 
-*Reducer* calculates a new state given the previous state and an event's payload. For stores, if reducer returns undefined or the same state (`===`), then there will be no update for a given store.
+_Reducer_ calculates a new state given the previous state and an event's payload. For stores, if reducer returns undefined or the same state (`===`), then there will be no update for a given store.
 
 ### Watcher
 
@@ -13059,20 +13137,20 @@ type EventOrEffectReducer<T, E> = (state: T, payload: E) => T;
 type Watcher<T> = (update: T) => any;
 ```
 
-*Watcher* is used for **side effects**. Accepted by Event.watch, Store.watch and Domain.onCreate\* hooks. Return value of a watcher is ignored.
+_Watcher_ is used for **side effects**. Accepted by Event.watch, Store.watch and Domain.onCreate\* hooks. Return value of a watcher is ignored.
 
 ### Subscription
 
 ```ts
-import { type Subscription } from "effector";
+import { type Subscription } from 'effector';
 ```
 
 Looks like:
 
 ```typescript
 type Subscription = {
-  (): void;
-  unsubscribe(): void;
+	(): void;
+	unsubscribe(): void;
 };
 ```
 
@@ -13084,42 +13162,36 @@ type Subscription = {
 > Effector provides a wide range of features to minimize the need to remove subscriptions. This sets it apart from most other reactive libraries.
 
 [effect]: /en/api/effector/Effect
-
 [store]: /en/api/effector/Store
-
 [event]: /en/api/effector/Event
-
 [domain]: /en/api/effector/Domain
-
 [scope]: /en/api/effector/Scope
-
 
 # Prior Art
 
 ### Papers
 
-* **Functional Pearl. Weaving a Web** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/weaver+zipper.pdf) *Ralf Hinze and Johan Jeuring*
-* **A graph model of data and workflow provenance** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/A+graph+model+of+data+and+workflow+provenance.pdf) <br/> *Umut Acar, Peter Buneman, James Cheney, Jan Van den Bussche, Natalia Kwasnikowska and Stijn Vansummeren*
-* **An Applicative Control-Flow Graph Based on Huet’s Zipper** [\[pdf\]](http://zero-bias-papers.s3-website-eu-west-1.amazonaws.com/zipcfg.pdf) <br/> *Norman Ramsey and Joao Dias*
-* **Elm: Concurrent FRP for Functional GUIs** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/elm-concurrent-frp.pdf) <br/> *Evan Czaplicki*
-* **Inductive Graphs and Functional Graph Algorithms** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Inductive+Graphs+and+Functional+Graph+Algorithms.pdf) <br/> *Martin Erwig*
-* **Notes on Graph Algorithms Used in Optimizing Compilers** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Graph+Algorithms+Used+in+Optimizing+Compilers.pdf) <br/> *Carl D. Offner*
-* **Backtracking, Interleaving, and Terminating Monad Transformers** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Backtracking%2C+Interleaving%2C+and+Terminating+Monad+Transformers.pdf) <br/> *Oleg Kiselyov, Chung-chieh Shan, Daniel P. Friedman and Amr Sabry*
-* **Typed Tagless Final Interpreters** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Typed+Tagless+Final+Interpreters.pdf) *Oleg Kiselyov*
+- **Functional Pearl. Weaving a Web** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/weaver+zipper.pdf) _Ralf Hinze and Johan Jeuring_
+- **A graph model of data and workflow provenance** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/A+graph+model+of+data+and+workflow+provenance.pdf) <br/> _Umut Acar, Peter Buneman, James Cheney, Jan Van den Bussche, Natalia Kwasnikowska and Stijn Vansummeren_
+- **An Applicative Control-Flow Graph Based on Huet’s Zipper** [\[pdf\]](http://zero-bias-papers.s3-website-eu-west-1.amazonaws.com/zipcfg.pdf) <br/> _Norman Ramsey and Joao Dias_
+- **Elm: Concurrent FRP for Functional GUIs** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/elm-concurrent-frp.pdf) <br/> _Evan Czaplicki_
+- **Inductive Graphs and Functional Graph Algorithms** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Inductive+Graphs+and+Functional+Graph+Algorithms.pdf) <br/> _Martin Erwig_
+- **Notes on Graph Algorithms Used in Optimizing Compilers** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Graph+Algorithms+Used+in+Optimizing+Compilers.pdf) <br/> _Carl D. Offner_
+- **Backtracking, Interleaving, and Terminating Monad Transformers** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Backtracking%2C+Interleaving%2C+and+Terminating+Monad+Transformers.pdf) <br/> _Oleg Kiselyov, Chung-chieh Shan, Daniel P. Friedman and Amr Sabry_
+- **Typed Tagless Final Interpreters** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Typed+Tagless+Final+Interpreters.pdf) _Oleg Kiselyov_
 
 ### Books
 
-* **Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions** [\[book\]](https://www.amazon.com/o/asin/0321200683/ref=nosim/enterpriseint-20), [\[messaging patterns overview\]](https://www.enterpriseintegrationpatterns.com/patterns/messaging/) <br/> *Gregor Hohpe and Bobby Woolf*
+- **Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions** [\[book\]](https://www.amazon.com/o/asin/0321200683/ref=nosim/enterpriseint-20), [\[messaging patterns overview\]](https://www.enterpriseintegrationpatterns.com/patterns/messaging/) <br/> _Gregor Hohpe and Bobby Woolf_
 
 ### API
 
-* [re-frame](https://github.com/day8/re-frame)
-* [flux](https://facebook.github.io/flux/)
-* [redux](https://redux.js.org/)
-* [redux-act](https://github.com/pauldijou/redux-act)
-* [most](https://github.com/cujojs/most)
-* nodejs [events](https://nodejs.org/dist/latest-v12.x/docs/api/events.html#events_emitter_on_eventname_listener)
-
+- [re-frame](https://github.com/day8/re-frame)
+- [flux](https://facebook.github.io/flux/)
+- [redux](https://redux.js.org/)
+- [redux-act](https://github.com/pauldijou/redux-act)
+- [most](https://github.com/cujojs/most)
+- nodejs [events](https://nodejs.org/dist/latest-v12.x/docs/api/events.html#events_emitter_on_eventname_listener)
 
 # SIDs
 
@@ -13141,34 +13213,34 @@ In the state manager with single store (e.g. Redux), this problem does not exist
 
 ```ts
 // server.ts
-import { createStore } from "single-store-state-manager";
+import { createStore } from 'single-store-state-manager';
 
 function handlerRequest() {
-  const store = createStore({ initialValue: null });
+	const store = createStore({ initialValue: null });
 
-  return {
-    // It is possible to just serialize the whole store
-    state: JSON.stringify(store.getState()),
-  };
+	return {
+		// It is possible to just serialize the whole store
+		state: JSON.stringify(store.getState()),
+	};
 }
 
 // client.ts
-import { createStore } from "single-store-state-manager";
+import { createStore } from 'single-store-state-manager';
 
 // Let's assume that server put the state into the HTML
 const serverState = readServerStateFromWindow();
 
 const store = createStore({
-  // Just parse the whole state and use it as client state
-  initialValue: JSON.parse(serverState),
+	// Just parse the whole state and use it as client state
+	initialValue: JSON.parse(serverState),
 });
 ```
 
 It's great that you do not need any additional tools for serialization and deserialization, but single store has a few problems:
 
-* It does not support tree-shaking and code-splitting, you have to load the whole store anyway
-* Because its architecture, it requires some additional tools for fixing performance (like `reselect`)
-* It does not support any kind of micro-frontends and stuff which is getting bigger recently
+- It does not support tree-shaking and code-splitting, you have to load the whole store anyway
+- Because its architecture, it requires some additional tools for fixing performance (like `reselect`)
+- It does not support any kind of micro-frontends and stuff which is getting bigger recently
 
 #### Multi stores
 
@@ -13193,8 +13265,8 @@ Because of multi-store architecture, Effector requires a unique identifier for e
 Let's add it to some stores:
 
 ```ts
-const $name = createStore(null, { sid: "name" });
-const $age = createStore(null, { sid: "age" });
+const $name = createStore(null, { sid: 'name' });
+const $age = createStore(null, { sid: 'age' });
 ```
 
 Now, we can serialize and deserialize stores:
@@ -13202,17 +13274,17 @@ Now, we can serialize and deserialize stores:
 ```ts
 // server.ts
 async function handlerRequest() {
-  // create isolated instance of application
-  const scope = fork();
+	// create isolated instance of application
+	const scope = fork();
 
-  // fill some data to stores
-  await allSettled($name, { scope, params: "Igor" });
-  await allSettled($age, { scope, params: 25 });
+	// fill some data to stores
+	await allSettled($name, { scope, params: 'Igor' });
+	await allSettled($age, { scope, params: 25 });
 
-  const state = JSON.serialize(serialize(scope));
-  // -> { "name": "Igor", "age": 25 }
+	const state = JSON.serialize(serialize(scope));
+	// -> { "name": "Igor", "age": 25 }
 
-  return { state };
+	return { state };
 }
 ```
 
@@ -13223,8 +13295,8 @@ After this code, we have a serialized state of our application. It is a plain ob
 const serverState = readServerStateFromWindow();
 
 const scope = fork({
-  // Just parse the whole state and use it as client state
-  values: JSON.parse(serverState),
+	// Just parse the whole state and use it as client state
+	values: JSON.parse(serverState),
 });
 ```
 
@@ -13248,41 +13320,48 @@ Notice, that there is no central point at all – any event of any "feature" can
 
 ```tsx
 // src/features/first-name/model.ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 export const firstNameChanged = createEvent<string>();
-export const $firstName = createStore("");
+export const $firstName = createStore('');
 
 $firstName.on(firstNameChanged, (_, firstName) => firstName);
 
 // src/features/last-name/model.ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 export const lastNameChanged = createEvent<string>();
-export const $lastName = createStore("");
+export const $lastName = createStore('');
 
 $lastName.on(lastNameChanged, (_, lastName) => lastName);
 
 // src/features/form/model.ts
-import { createEvent, sample, combine } from "effector";
+import { createEvent, sample, combine } from 'effector';
 
-import { $firstName, firstNameChanged } from "@/features/first-name";
-import { $lastName, lastNameChanged } from "@/features/last-name";
+import { $firstName, firstNameChanged } from '@/features/first-name';
+import { $lastName, lastNameChanged } from '@/features/last-name';
 
-export const formValuesFilled = createEvent<{ firstName: string; lastName: string }>();
+export const formValuesFilled = createEvent<{
+	firstName: string;
+	lastName: string;
+}>();
 
-export const $fullName = combine($firstName, $lastName, (first, last) => `${first} ${last}`);
+export const $fullName = combine(
+	$firstName,
+	$lastName,
+	(first, last) => `${first} ${last}`,
+);
 
 sample({
-  clock: formValuesFilled,
-  fn: (values) => values.firstName,
-  target: firstNameChanged,
+	clock: formValuesFilled,
+	fn: (values) => values.firstName,
+	target: firstNameChanged,
 });
 
 sample({
-  clock: formValuesFilled,
-  fn: (values) => values.lastName,
-  target: lastNameChanged,
+	clock: formValuesFilled,
+	fn: (values) => values.lastName,
+	target: lastNameChanged,
 });
 ```
 
@@ -13313,36 +13392,36 @@ This is a generic server-side rendering handler. The `renderHtmlToString` functi
 
 ```tsx
 // src/server/handler.ts
-import { fork, allSettled, serialize } from "effector";
+import { fork, allSettled, serialize } from 'effector';
 
-import { formValuesFilled } from "@/features/form";
+import { formValuesFilled } from '@/features/form';
 
 async function handleServerRequest(req) {
-  const scope = fork(); // creates isolated container for application state
+	const scope = fork(); // creates isolated container for application state
 
-  // calculates the state of the app in this scope
-  await allSettled(formValuesFilled, {
-    scope,
-    params: {
-      firstName: "John",
-      lastName: "Doe",
-    },
-  });
+	// calculates the state of the app in this scope
+	await allSettled(formValuesFilled, {
+		scope,
+		params: {
+			firstName: 'John',
+			lastName: 'Doe',
+		},
+	});
 
-  // extract scope values to simple js object of `{[storeSid]: storeState}`
-  const values = serialize(scope);
+	// extract scope values to simple js object of `{[storeSid]: storeState}`
+	const values = serialize(scope);
 
-  const serializedState = JSON.stringify(values);
+	const serializedState = JSON.stringify(values);
 
-  return renderHtmlToString({
-    scripts: [
-      `
+	return renderHtmlToString({
+		scripts: [
+			`
         <script>
             self._SERVER_STATE_ = ${serializedState}
         </script>
       `,
-    ],
-  });
+		],
+	});
 }
 ```
 
@@ -13354,20 +13433,20 @@ Thanks to SIDs, state hydration also works automatically:
 
 ```tsx
 // src/client/index.ts
-import { Provider } from "effector-react";
+import { Provider } from 'effector-react';
 
 const serverState = window._SERVER_STATE_;
 
 const clientScope = fork({
-  values: serverState, // simply assign server state to scope
+	values: serverState, // simply assign server state to scope
 });
 
 clientScope.getState($lastName); // "Doe"
 
 hydrateApp(
-  <Provider value={clientScope}>
-    <App />
-  </Provider>,
+	<Provider value={clientScope}>
+		<App />
+	</Provider>,
 );
 ```
 
@@ -13397,7 +13476,7 @@ const $name = createStore(null);
 The plugin will apply these transformations:
 
 ```ts
-const $name = createStore(null, { sid: "j3l44" });
+const $name = createStore(null, { sid: 'j3l44' });
 ```
 
 > TIP:
@@ -13410,9 +13489,9 @@ The second case is about custom factories. These are usually created to abstract
 
 Examples of custom factories:
 
-* `createQuery`, `createMutation` from [`farfetched`](https://ff.effector.dev/)
-* `debounce`, `throttle`, etc from [`patronum`](https://patronum.effector.dev/)
-* Any custom factory in your code, e.g. factory of a [feature-flag entity](https://ff.effector.dev/recipes/feature_flags.html)
+- `createQuery`, `createMutation` from [`farfetched`](https://ff.effector.dev/)
+- `debounce`, `throttle`, etc from [`patronum`](https://patronum.effector.dev/)
+- Any custom factory in your code, e.g. factory of a [feature-flag entity](https://ff.effector.dev/recipes/feature_flags.html)
 
 > TIP:
 >
@@ -13423,16 +13502,16 @@ For this explanation, we will create a very simple factory:
 ```ts
 // src/shared/lib/create-name/index.ts
 export function createName() {
-  const updateName = createEvent();
-  const $name = createStore(null);
+	const updateName = createEvent();
+	const $name = createStore(null);
 
-  $name.on(updateName, (_, nextName) => nextName);
+	$name.on(updateName, (_, nextName) => nextName);
 
-  return { $name };
+	return { $name };
 }
 
 // src/feature/persons/model.ts
-import { createName } from "@/shared/lib/create-name";
+import { createName } from '@/shared/lib/create-name';
 
 const personOne = createName();
 const personTwo = createName();
@@ -13443,16 +13522,16 @@ First, the plugin will add `sid` to the inner stores of the factory
 ```ts
 // src/shared/lib/create-name/index.ts
 export function createName() {
-  const updateName = createEvent();
-  const $name = createStore(null, { sid: "ffds2" });
+	const updateName = createEvent();
+	const $name = createStore(null, { sid: 'ffds2' });
 
-  $name.on(updateName, (_, nextName) => nextName);
+	$name.on(updateName, (_, nextName) => nextName);
 
-  return { $name };
+	return { $name };
 }
 
 // src/feature/persons/model.ts
-import { createName } from "@/shared/lib/create-name";
+import { createName } from '@/shared/lib/create-name';
 
 const personOne = createName();
 const personTwo = createName();
@@ -13466,14 +13545,14 @@ To fix it we need to inform the plugin about our custom factory:
 ```json
 // .babelrc
 {
-  "plugins": [
-    [
-      "effector/babel-plugin",
-      {
-        "factories": ["@/shared/lib/create-name"]
-      }
-    ]
-  ]
+	"plugins": [
+		[
+			"effector/babel-plugin",
+			{
+				"factories": ["@/shared/lib/create-name"]
+			}
+		]
+	]
 }
 ```
 
@@ -13492,25 +13571,25 @@ Now the plugin knows about our factory and it will wrap `createName` with the in
 ```ts
 // src/shared/lib/create-name/index.ts
 export function createName() {
-  const updateName = createEvent();
-  const $name = createStore(null, { sid: "ffds2" });
+	const updateName = createEvent();
+	const $name = createStore(null, { sid: 'ffds2' });
 
-  $name.on(updateName, (_, nextName) => nextName);
+	$name.on(updateName, (_, nextName) => nextName);
 
-  return { $name };
+	return { $name };
 }
 
 // src/feature/persons/model.ts
-import { withFactory } from "effector";
-import { createName } from "@/shared/lib/create-name";
+import { withFactory } from 'effector';
+import { createName } from '@/shared/lib/create-name';
 
 const personOne = withFactory({
-  sid: "gre24f",
-  fn: () => createName(),
+	sid: 'gre24f',
+	fn: () => createName(),
 });
 const personTwo = withFactory({
-  sid: "lpefgd",
-  fn: () => createName(),
+	sid: 'lpefgd',
+	fn: () => createName(),
 });
 ```
 
@@ -13531,21 +13610,21 @@ Internal implementation of `withFactory` is pretty simple, it puts received `sid
 let globalSid = null;
 
 function withFactory({ sid, fn }) {
-  globalSid = sid;
+	globalSid = sid;
 
-  const result = fn();
+	const result = fn();
 
-  globalSid = null;
+	globalSid = null;
 
-  return result;
+	return result;
 }
 
 function createStore(initialValue, { sid }) {
-  if (globalSid) {
-    sid = `${globalSid}|${sid}`;
-  }
+	if (globalSid) {
+		sid = `${globalSid}|${sid}`;
+	}
 
-  // ...
+	// ...
 }
 ```
 
@@ -13562,7 +13641,6 @@ Because of single thread nature of JavaScript, it is safe to use global variable
 3. Plugins for code transformations add `sid`-s and meta-information to raw Effector's units creation, like `createStore` or `createEvent`.
 4. Plugins for code transformations wrap custom factories with `withFactory` helper that allow to make `sid`-s of inner units unique as well.
 
-
 # Best Practices and Recommendations in Effector
 
 import Tabs from "@components/Tabs/Tabs.astro";
@@ -13578,15 +13656,15 @@ Unlike Redux, in Effector it's recommended to make stores as atomic as possible.
 
 Large stores with multiple fields create several problems:
 
-* Unnecessary re-renders: When any field changes, all components subscribed to the store update
-* Heavy computations: Each update requires copying the entire object
-* Unnecessary calculations: if you have derived stores depending on a large store, they will be recalculated
+- Unnecessary re-renders: When any field changes, all components subscribed to the store update
+- Heavy computations: Each update requires copying the entire object
+- Unnecessary calculations: if you have derived stores depending on a large store, they will be recalculated
 
 Atomic stores allow:
 
-* Updating only what actually changed
-* Subscribing only to needed data
-* More efficient work with reactive dependencies
+- Updating only what actually changed
+- Subscribing only to needed data
+- More efficient work with reactive dependencies
 
 ```ts
 // ❌ Big store - any change triggers update of everything
@@ -13611,28 +13689,28 @@ return <h1>{name}</h1>
 
 Rules for atomic stores:
 
-* One store = one responsibility
-* Store should be indivisible
-* Stores can be combined using combine
-* Store update should not affect other data
+- One store = one responsibility
+- Store should be indivisible
+- Stores can be combined using combine
+- Store update should not affect other data
 
 ### Immer for Complex Objects
 
 If your store contains nested structures, you can use the beloved Immer for simplified updates:
 
 ```ts
-import { createStore } from "effector";
-import { produce } from "immer";
+import { createStore } from 'effector';
+import { produce } from 'immer';
 
 const $users = createStore<User[]>([]);
 
 $users.on(userUpdated, (users, updatedUser) =>
-  produce(users, (draft) => {
-    const user = draft.find((u) => u.id === updatedUser.id);
-    if (user) {
-      user.profile.settings.theme = updatedUser.profile.settings.theme;
-    }
-  }),
+	produce(users, (draft) => {
+		const user = draft.find((u) => u.id === updatedUser.id);
+		if (user) {
+			user.profile.settings.theme = updatedUser.profile.settings.theme;
+		}
+	}),
 );
 ```
 
@@ -13657,12 +13735,12 @@ call event and subscribe on it:
   <TabItem label="Without Scopes">
 
 ```ts
-import { sample } from "effector";
-import { scope } from "./app.js";
+import { sample } from 'effector';
+import { scope } from './app.js';
 
 sample({
-  clock: appStarted,
-  target: initFx,
+	clock: appStarted,
+	target: initFx,
 });
 
 appStarted();
@@ -13672,12 +13750,12 @@ appStarted();
   <TabItem label="With Scopes">
 
 ```ts
-import { sample, allSettled } from "effector";
-import { scope } from "./app.js";
+import { sample, allSettled } from 'effector';
+import { scope } from './app.js';
 
 sample({
-  clock: appStarted,
-  target: initFx,
+	clock: appStarted,
+	target: initFx,
 });
 
 allSettled(appStarted, { scope });
@@ -13697,18 +13775,18 @@ This is necessary so that in the future you can easily migrate to working with `
 Using the useUnit hook is the recommended way to work with units when using frameworks (📘React, 📗Vue, and 📘Solid).
 Why you should use `useUnit`:
 
-* Correct work with stores
-* Optimized updates
-* Automatic work with `Scope` – units know which scope they were called in
+- Correct work with stores
+- Optimized updates
+- Automatic work with `Scope` – units know which scope they were called in
 
 ### Pure Functions
 
 Use pure functions everywhere except effects for data processing, this ensures:
 
-* Deterministic result
-* No side effects
-* Easier to test
-* Easier to maintain
+- Deterministic result
+- No side effects
+- Easier to test
+- Easier to maintain
 
 > TIP This is work for effects:
 >
@@ -13719,19 +13797,21 @@ Use pure functions everywhere except effects for data processing, this ensures:
 We strongly recommend using the patronum library and the debug method.
 
 ```ts
-import { createStore, createEvent, createEffect } from "effector";
-import { debug } from "patronum/debug";
+import { createStore, createEvent, createEffect } from 'effector';
+import { debug } from 'patronum/debug';
 
 const event = createEvent();
-const effect = createEffect().use((payload) => Promise.resolve("result" + payload));
+const effect = createEffect().use((payload) =>
+	Promise.resolve('result' + payload),
+);
 const $store = createStore(0)
-  .on(event, (state, value) => state + value)
-  .on(effect.done, (state) => state * 10);
+	.on(event, (state, value) => state + value)
+	.on(effect.done, (state) => state * 10);
 
 debug($store, event, effect);
 
 event(5);
-effect("demo");
+effect('demo');
 
 // => [store] $store 1
 // => [event] event 5
@@ -13756,17 +13836,17 @@ If your environment does not allow adding additional dependencies, you can creat
 For convenient effector work with network requests, you can use farfetched.
 Farfetched provides:
 
-* Mutations and queries
-* Ready API for caching and more
-* Framework independence
+- Mutations and queries
+- Ready API for caching and more
+- Framework independence
 
 ### Effector Utils
 
 The Effector ecosystem includes the [patronum](https://patronum.effector.dev/operators/) library, which provides ready solutions for working with units:
 
-* State management (`condition`, `status`, etc.)
-* Working with time (`debounce`, `interval`, etc.)
-* Predicate functions (`not`, `or`, `once`, etc.)
+- State management (`condition`, `status`, etc.)
+- Working with time (`debounce`, `interval`, etc.)
+- Predicate functions (`not`, `or`, `once`, etc.)
 
 ### Simplifying Complex Logic with `createAction`
 
@@ -13778,35 +13858,35 @@ Moreover, `effector-action` helps make your code more readable:
   <TabItem label="❌ Complex sample">
 
 ```ts
-import { sample } from "effector";
+import { sample } from 'effector';
 
 sample({
-  clock: formSubmitted,
-  source: {
-    form: $form,
-    settings: $settings,
-    user: $user,
-  },
-  filter: ({ form }) => form.isValid,
-  fn: ({ form, settings, user }) => ({
-    data: form,
-    theme: settings.theme,
-  }),
-  target: submitFormFx,
+	clock: formSubmitted,
+	source: {
+		form: $form,
+		settings: $settings,
+		user: $user,
+	},
+	filter: ({ form }) => form.isValid,
+	fn: ({ form, settings, user }) => ({
+		data: form,
+		theme: settings.theme,
+	}),
+	target: submitFormFx,
 });
 
 sample({
-  clock: formSubmitted,
-  source: $form,
-  filter: (form) => !form.isValid,
-  target: showErrorMessageFx,
+	clock: formSubmitted,
+	source: $form,
+	filter: (form) => !form.isValid,
+	target: showErrorMessageFx,
 });
 
 sample({
-  clock: submitFormFx.done,
-  source: $settings,
-  filter: (settings) => settings.sendNotifications,
-  target: sendNotificationFx,
+	clock: submitFormFx.done,
+	source: $settings,
+	filter: (settings) => settings.sendNotifications,
+	target: sendNotificationFx,
 });
 ```
 
@@ -13815,40 +13895,40 @@ sample({
 <TabItem label="✅ With createAction">
 
 ```ts
-import { createAction } from "effector-action";
+import { createAction } from 'effector-action';
 
 const submitForm = createAction({
-  source: {
-    form: $form,
-    settings: $settings,
-    user: $user,
-  },
-  target: {
-    submitFormFx,
-    showErrorMessageFx,
-    sendNotificationFx,
-  },
-  fn: (target, { form, settings, user }) => {
-    if (!form.isValid) {
-      target.showErrorMessageFx(form.errors);
-      return;
-    }
+	source: {
+		form: $form,
+		settings: $settings,
+		user: $user,
+	},
+	target: {
+		submitFormFx,
+		showErrorMessageFx,
+		sendNotificationFx,
+	},
+	fn: (target, { form, settings, user }) => {
+		if (!form.isValid) {
+			target.showErrorMessageFx(form.errors);
+			return;
+		}
 
-    target.submitFormFx({
-      data: form,
-      theme: settings.theme,
-    });
-  },
+		target.submitFormFx({
+			data: form,
+			theme: settings.theme,
+		});
+	},
 });
 
 createAction(submitFormFx.done, {
-  source: $settings,
-  target: sendNotificationFx,
-  fn: (sendNotification, settings) => {
-    if (settings.sendNotifications) {
-      sendNotification();
-    }
-  },
+	source: $settings,
+	target: sendNotificationFx,
+	fn: (sendNotification, settings) => {
+		if (settings.sendNotifications) {
+			sendNotification();
+		}
+	},
 });
 
 submitForm();
@@ -13861,20 +13941,20 @@ submitForm();
 
 Use accepted naming conventions:
 
-* For stores – prefix `$`
-* For effects – postfix `fx`, this will help you distinguish your effects from events
-* For events – no rules, however, we suggest naming events that directly trigger store updates as if they've already happened.
+- For stores – prefix `$`
+- For effects – postfix `fx`, this will help you distinguish your effects from events
+- For events – no rules, however, we suggest naming events that directly trigger store updates as if they've already happened.
 
 ```ts
 const updateUserNameFx = createEffect(() => {});
 
 const userNameUpdated = createEvent();
 
-const $userName = createStore("JS");
+const $userName = createStore('JS');
 
 $userName.on(userNameUpdated, (_, newName) => newName);
 
-userNameUpdated("TS");
+userNameUpdated('TS');
 ```
 
 > INFO Naming Convention:
@@ -13893,9 +13973,9 @@ watch should only be used for debugging. For logic, use sample, guard, or effect
 ```ts
 // logic in watch
 $user.watch((user) => {
-  localStorage.setItem("user", JSON.stringify(user));
-  api.trackUserUpdate(user);
-  someEvent(user.id);
+	localStorage.setItem('user', JSON.stringify(user));
+	api.trackUserUpdate(user);
+	someEvent(user.id);
 });
 ```
 
@@ -13905,22 +13985,22 @@ $user.watch((user) => {
 ```ts
 // separate effects for side effects
 const saveToStorageFx = createEffect((user: User) =>
-  localStorage.setItem("user", JSON.stringify(user)),
+	localStorage.setItem('user', JSON.stringify(user)),
 );
 
 const trackUpdateFx = createEffect((user: User) => api.trackUserUpdate(user));
 
 // connect through sample
 sample({
-  clock: $user,
-  target: [saveToStorageFx, trackUpdateFx],
+	clock: $user,
+	target: [saveToStorageFx, trackUpdateFx],
 });
 
 // for events also use sample
 sample({
-  clock: $user,
-  fn: (user) => user.id,
-  target: someEvent,
+	clock: $user,
+	fn: (user) => user.id,
+	target: someEvent,
 });
 ```
 
@@ -13942,10 +14022,10 @@ Use meaningful names instead of abstract `value`, `data`, `item`.
 $users.on(userAdded, (state, payload) => [...state, payload]);
 
 sample({
-  clock: buttonClicked,
-  source: $data,
-  fn: (data) => data,
-  target: someFx,
+	clock: buttonClicked,
+	source: $data,
+	fn: (data) => data,
+	target: someFx,
 });
 ```
 
@@ -13956,10 +14036,10 @@ sample({
 $users.on(userAdded, (users, newUser) => [...users, newUser]);
 
 sample({
-  clock: buttonClicked,
-  source: $userData,
-  fn: (userData) => userData,
-  target: updateUserFx,
+	clock: buttonClicked,
+	source: $userData,
+	fn: (userData) => userData,
+	target: updateUserFx,
 });
 ```
 
@@ -13975,14 +14055,14 @@ Don't call events or effects imperatively inside other effects, instead use decl
 
 ```ts
 const loginFx = createEffect(async (params) => {
-  const user = await api.login(params);
+	const user = await api.login(params);
 
-  // imperative calls
-  setUser(user);
-  redirectFx("/dashboard");
-  showNotification("Welcome!");
+	// imperative calls
+	setUser(user);
+	redirectFx('/dashboard');
+	showNotification('Welcome!');
 
-  return user;
+	return user;
 });
 ```
 
@@ -13993,12 +14073,12 @@ const loginFx = createEffect(async (params) => {
 const loginFx = createEffect((params) => api.login(params));
 // Connect through sample
 sample({
-  clock: loginFx.doneData,
-  target: [
-    $user, // update store
-    redirectToDashboardFx,
-    showWelcomeNotificationFx,
-  ],
+	clock: loginFx.doneData,
+	target: [
+		$user, // update store
+		redirectToDashboardFx,
+		showWelcomeNotificationFx,
+	],
 });
 ```
 
@@ -14014,15 +14094,15 @@ Don't use `$store.getState` to get values. If you need to get data from some sto
 
 ```ts
 const submitFormFx = createEffect((formData) => {
-  // get values through getState
-  const user = $user.getState();
-  const settings = $settings.getState();
+	// get values through getState
+	const user = $user.getState();
+	const settings = $settings.getState();
 
-  return api.submit({
-    ...formData,
-    userId: user.id,
-    theme: settings.theme,
-  });
+	return api.submit({
+		...formData,
+		userId: user.id,
+		theme: settings.theme,
+	});
 });
 ```
 
@@ -14035,18 +14115,18 @@ const submitFormFx = createEffect(({ form, userId, theme }) => {});
 
 // get all necessary data through sample
 sample({
-  clock: formSubmitted,
-  source: {
-    form: $form,
-    user: $user,
-    settings: $settings,
-  },
-  fn: ({ form, user, settings }) => ({
-    form,
-    userId: user.id,
-    theme: settings.theme,
-  }),
-  target: submitFormFx,
+	clock: formSubmitted,
+	source: {
+		form: $form,
+		user: $user,
+		settings: $settings,
+	},
+	fn: ({ form, user, settings }) => ({
+		form,
+		userId: user.id,
+		theme: settings.theme,
+	}),
+	target: submitFormFx,
 });
 ```
 
@@ -14068,16 +14148,15 @@ Brief summary of anti-patterns:
 7. Don't use `$store.getState` for work
 8. Don't put logic in UI
 
-
 # Migration guide
 
 This guide covers the steps required to migrate to Effector 23 from a previous version.
 Several features were declared deprecated in this release:
 
-* `forward` and `guard` operators
-* `greedy` option of `sample` was renamed into `batch`
-* "derived" and "callable" unit types are officially separated now
-* the ability to use `undefined` as a magic "skip" value in reducers
+- `forward` and `guard` operators
+- `greedy` option of `sample` was renamed into `batch`
+- "derived" and "callable" unit types are officially separated now
+- the ability to use `undefined` as a magic "skip" value in reducers
 
 ### Deprecation of `forward` and `guard`
 
@@ -14103,18 +14182,18 @@ You will see a deprecation warning in console for every usage of `greedy` option
 
 Derived units now fully separated from "callable/writable" ones:
 
-* Main factories `createEvent` and `createStore` now return types `EventCallable` and `StoreWritable` (because you can call and write to these units at any moment).
-* Methods and operators like `unit.map(...)` or `combine(...)` now return types `Event` and `Store`, which are "read-only" i.e. you can only use them as `clock` or `source`, but not as a `target`.
-* `EventCallable` type is assignable to `Event`, but not the other way around, same for stores.
-* There are also runtime exceptions for types mismatch.
+- Main factories `createEvent` and `createStore` now return types `EventCallable` and `StoreWritable` (because you can call and write to these units at any moment).
+- Methods and operators like `unit.map(...)` or `combine(...)` now return types `Event` and `Store`, which are "read-only" i.e. you can only use them as `clock` or `source`, but not as a `target`.
+- `EventCallable` type is assignable to `Event`, but not the other way around, same for stores.
+- There are also runtime exceptions for types mismatch.
 
 Most likely you will not need to do anything, you will just get better types.
 
 But you might have issues with external libraries, **which are not updated to Effector 23 yet**:
 
-* Most of the libraries are just *accepting* units as clocks and sources – those cases are ok.
-* If some operator from the external library is accepting some unit as a `target`, you still will see an good-old `Event` type in this case, so you will not have a type error here even if there is actually an issue.
-* If some *factory* returns an event, which you are expected to call in your own code, then you will get a type error and you will need to typecast this event to `EventCallable`.
+- Most of the libraries are just _accepting_ units as clocks and sources – those cases are ok.
+- If some operator from the external library is accepting some unit as a `target`, you still will see an good-old `Event` type in this case, so you will not have a type error here even if there is actually an issue.
+- If some _factory_ returns an event, which you are expected to call in your own code, then you will get a type error and you will need to typecast this event to `EventCallable`.
 
 > TIP:
 >
@@ -14129,7 +14208,10 @@ Just replace `Event` with `EventCallable`, `Store` with `StoreWritable` or `Unit
 There is an old feature in Effector: `undefined` is used as a "magic" value to skip updates in reducers in rare cases, e.g.
 
 ```ts
-const $value = createStore(0).on(newValueReceived, (_oldValue, newValue) => newValue);
+const $value = createStore(0).on(
+	newValueReceived,
+	(_oldValue, newValue) => newValue,
+);
 ```
 
 ☝️ if `newValue` is `undefined`, then update will be skipped.
@@ -14159,9 +14241,9 @@ It's safe to just swap the calls of the old hooks with the new one:
 
 ```ts
 const Component = () => {
-  const foo = useStore($foo);
-  const bar = useStore($bar);
-  const onSubmit = useEvent(triggerSubmit);
+	const foo = useStore($foo);
+	const bar = useStore($bar);
+	const onSubmit = useEvent(triggerSubmit);
 };
 ```
 
@@ -14169,9 +14251,9 @@ Becomes:
 
 ```ts
 const Component = () => {
-  const foo = useUnit($foo);
-  const bar = useUnit($bar);
-  const onSubmit = useUnit(triggerSubmit);
+	const foo = useUnit($foo);
+	const bar = useUnit($bar);
+	const onSubmit = useUnit(triggerSubmit);
 };
 ```
 
@@ -14179,10 +14261,9 @@ Or shorter:
 
 ```ts
 const Component = () => {
-  const [foo, bar, onSubmit] = useUnit([$foo, $bar, triggerSubmit]);
+	const [foo, bar, onSubmit] = useUnit([$foo, $bar, triggerSubmit]);
 };
 ```
-
 
 # Scope loss
 
@@ -14196,11 +14277,11 @@ The execution of units in Effector always happens within a scope — either the 
 
 Typical places where this happens:
 
-* `setTimeout` / `setInterval`
-* `addEventListener`
-* WebSocket
-* direct promise calls inside effects
-* third-party libraries with async APIs or callbacks.
+- `setTimeout` / `setInterval`
+- `addEventListener`
+- WebSocket
+- direct promise calls inside effects
+- third-party libraries with async APIs or callbacks.
 
 ### Example of the problem
 
@@ -14211,9 +14292,9 @@ We’ll create a simple timer in React, although the same behavior applies to an
 <TabItem label='timer.tsx'>
 
 ```tsx
-import React from "react";
-import { createEvent, createStore, createEffect, scopeBind } from "effector";
-import { useUnit } from "effector-react";
+import React from 'react';
+import { createEvent, createStore, createEffect, scopeBind } from 'effector';
+import { useUnit } from 'effector-react';
 
 const tick = createEvent();
 const $timer = createStore(0);
@@ -14221,14 +14302,14 @@ const $timer = createStore(0);
 $timer.on(tick, (s) => s + 1);
 
 export function Timer() {
-  const [timer, startTimer] = useUnit([$timer, startTimerFx]);
+	const [timer, startTimer] = useUnit([$timer, startTimerFx]);
 
-  return (
-    <div className="App">
-      <div>Timer:{timer} sec</div>
-      <button onClick={startTimer}>Start timer</button>
-    </div>
-  );
+	return (
+		<div className='App'>
+			<div>Timer:{timer} sec</div>
+			<button onClick={startTimer}>Start timer</button>
+		</div>
+	);
 }
 ```
 
@@ -14237,18 +14318,18 @@ export function Timer() {
 <TabItem label='app.tsx'>
 
 ```tsx
-import { Provider } from "effector-react";
-import { fork } from "effector";
-import { Timer } from "./timer";
+import { Provider } from 'effector-react';
+import { fork } from 'effector';
+import { Timer } from './timer';
 
 export const scope = fork();
 
 export default function App() {
-  return (
-    <Provider value={scope}>
-      <Timer />
-    </Provider>
-  );
+	return (
+		<Provider value={scope}>
+			<Timer />
+		</Provider>
+	);
 }
 ```
 
@@ -14259,9 +14340,9 @@ Now let’s add an effect that calls `tick` every second:
 
 ```ts
 const startTimerFx = createEffect(() => {
-  setInterval(() => {
-    tick();
-  }, 1000);
+	setInterval(() => {
+		tick();
+	}, 1000);
 });
 ```
 
@@ -14275,11 +14356,11 @@ To fix scope loss, you need to use the scopeBind function. This method returns a
 
 ```ts ins={2} "bindedTick"
 const startTimerFx = createEffect(() => {
-  const bindedTick = scopeBind(tick);
+	const bindedTick = scopeBind(tick);
 
-  setInterval(() => {
-    bindedTick();
-  }, 1000);
+	setInterval(() => {
+		bindedTick();
+	}, 1000);
 });
 ```
 
@@ -14304,22 +14385,22 @@ Let’s illustrate how scope works in effector:
 let scope;
 
 function process() {
-  try {
-    scope = "effector";
-    asyncProcess();
-  } finally {
-    scope = undefined;
-    console.log("our scope is undefined now");
-  }
+	try {
+		scope = 'effector';
+		asyncProcess();
+	} finally {
+		scope = undefined;
+		console.log('our scope is undefined now');
+	}
 }
 
 async function asyncProcess() {
-  console.log("we have scope", scope); // effector
+	console.log('we have scope', scope); // effector
 
-  await 1;
+	await 1;
 
-  // here we already lost the context
-  console.log("but here scope is gone", scope); // undefined
+	// here we already lost the context
+	console.log('but here scope is gone', scope); // undefined
 }
 
 process();
@@ -14345,18 +14426,17 @@ which wraps all asynchronous global functions like `setTimeout` or `Promise.reso
 
 ### Related API and articles
 
-* **API**
-    * Effect - Description of effects, their methods and properties
-    * Scope - Description of scopes and their methods
-    * scopeBind - Method for binding a unit to a scope
-    * fork - Operator for creating a scope
-    * allSettled - Method for calling a unit in a given scope and awaiting the full effect chain
-* **Articles**
-    * Isolated scopes
-    * SSR guide
-    * Guide to testing
-    * The importance of SIDs for store hydration
-
+- **API**
+    - Effect - Description of effects, their methods and properties
+    - Scope - Description of scopes and their methods
+    - scopeBind - Method for binding a unit to a scope
+    - fork - Operator for creating a scope
+    - allSettled - Method for calling a unit in a given scope and awaiting the full effect chain
+- **Articles**
+    - Isolated scopes
+    - SSR guide
+    - Guide to testing
+    - The importance of SIDs for store hydration
 
 # Server Side Rendering
 
@@ -14419,9 +14499,15 @@ For sake of example we will use a very simple React-based counter app – all of
 
 ```tsx
 // app.tsx
-import React from "react";
-import { createEvent, createStore, createEffect, sample, combine } from "effector";
-import { useUnit } from "effector-react";
+import React from 'react';
+import {
+	createEvent,
+	createStore,
+	createEffect,
+	sample,
+	combine,
+} from 'effector';
+import { useUnit } from 'effector-react';
 
 // model
 export const appStarted = createEvent();
@@ -14430,85 +14516,93 @@ export const $pathname = createStore<string | null>(null);
 const $counter = createStore<number | null>(null);
 
 const fetchUserCounterFx = createEffect(async () => {
-  await sleep(100); // in real life it would be some api request
+	await sleep(100); // in real life it would be some api request
 
-  return Math.floor(Math.random() * 100);
+	return Math.floor(Math.random() * 100);
 });
 
 const buttonClicked = createEvent();
 const saveUserCounterFx = createEffect(async (count: number) => {
-  await sleep(100); // in real life it would be some api request
+	await sleep(100); // in real life it would be some api request
 });
 
 sample({
-  clock: appStarted,
-  source: $counter,
-  filter: (count) => count === null, // if count is already fetched - do not fetch it again
-  target: fetchUserCounterFx,
+	clock: appStarted,
+	source: $counter,
+	filter: (count) => count === null, // if count is already fetched - do not fetch it again
+	target: fetchUserCounterFx,
 });
 
 sample({
-  clock: fetchUserCounterFx.doneData,
-  target: $counter,
+	clock: fetchUserCounterFx.doneData,
+	target: $counter,
 });
 
 sample({
-  clock: buttonClicked,
-  source: $counter,
-  fn: (count) => count + 1,
-  target: [$counter, saveUserCounterFx],
+	clock: buttonClicked,
+	source: $counter,
+	fn: (count) => count + 1,
+	target: [$counter, saveUserCounterFx],
 });
 
 const $countUpdatePending = combine(
-  [fetchUserCounterFx.pending, saveUserCounterFx.pending],
-  (updates) => updates.some((upd) => upd === true),
+	[fetchUserCounterFx.pending, saveUserCounterFx.pending],
+	(updates) => updates.some((upd) => upd === true),
 );
 
-const $isClient = createStore(typeof document !== "undefined", {
-  /**
-   * Here we're explicitly telling effector, that this store, which depends on the environment,
-   * should be never included in serialization
-   * as it's should be always calculated based on actual current env
-   *
-   * This is not actually necessary, because only diff of state changes is included into serialization
-   * and this store is not going to be changed.
-   *
-   * But it is good to add this setting anyway - to highlight the intention
-   */
-  serialize: "ignore",
+const $isClient = createStore(typeof document !== 'undefined', {
+	/**
+	 * Here we're explicitly telling effector, that this store, which depends on the environment,
+	 * should be never included in serialization
+	 * as it's should be always calculated based on actual current env
+	 *
+	 * This is not actually necessary, because only diff of state changes is included into serialization
+	 * and this store is not going to be changed.
+	 *
+	 * But it is good to add this setting anyway - to highlight the intention
+	 */
+	serialize: 'ignore',
 });
 
 const notifyFx = createEffect((message: string) => {
-  alert(message);
+	alert(message);
 });
 
 sample({
-  clock: [
-    saveUserCounterFx.done.map(() => "Counter update is saved successfully"),
-    saveUserCounterFx.fail.map(() => "Could not save the counter update :("),
-  ],
-  // It is totally ok to have some splits in the app's logic based on current environment
-  //
-  // Here we want to trigger notification alert only at the client
-  filter: $isClient,
-  target: notifyFx,
+	clock: [
+		saveUserCounterFx.done.map(
+			() => 'Counter update is saved successfully',
+		),
+		saveUserCounterFx.fail.map(
+			() => 'Could not save the counter update :(',
+		),
+	],
+	// It is totally ok to have some splits in the app's logic based on current environment
+	//
+	// Here we want to trigger notification alert only at the client
+	filter: $isClient,
+	target: notifyFx,
 });
 
 // ui
 export function App() {
-  const clickButton = useUnit(buttonClicked);
-  const { count, updatePending } = useUnit({
-    count: $counter,
-    updatePending: $countUpdatePending,
-  });
+	const clickButton = useUnit(buttonClicked);
+	const { count, updatePending } = useUnit({
+		count: $counter,
+		updatePending: $countUpdatePending,
+	});
 
-  return (
-    <div>
-      <h1>Counter App</h1>
-      <h2>{updatePending ? "Counter is updating" : `Current count is ${count ?? "unknown"}`}</h2>
-      <button onClick={() => clickButton()}>Update counter</button>
-    </div>
-  );
+	return (
+		<div>
+			<h1>Counter App</h1>
+			<h2>
+				{updatePending ?
+					'Counter is updating'
+				:	`Current count is ${count ?? 'unknown'}`}
+			</h2>
+			<button onClick={() => clickButton()}>Update counter</button>
+		</div>
+	);
 }
 ```
 
@@ -14542,47 +14636,47 @@ Notice, that for meaningful parts of our app we are still using the "shared" `ap
 
 ```tsx
 // server.tsx
-import { renderToString } from "react-dom/server";
-import { Provider } from "effector-react";
-import { fork, allSettled, serialize } from "effector";
+import { renderToString } from 'react-dom/server';
+import { Provider } from 'effector-react';
+import { fork, allSettled, serialize } from 'effector';
 
-import { appStarted, App, $pathname } from "./app";
+import { appStarted, App, $pathname } from './app';
 
 export async function handleRequest(req) {
-  // 1. create separate instance of effector's state - special `Scope` object
-  const scope = fork({
-    values: [
-      // some parts of app's state can be immediately set to relevant states,
-      // before any computations started
-      [$pathname, req.pathname],
-    ],
-  });
+	// 1. create separate instance of effector's state - special `Scope` object
+	const scope = fork({
+		values: [
+			// some parts of app's state can be immediately set to relevant states,
+			// before any computations started
+			[$pathname, req.pathname],
+		],
+	});
 
-  // 2. start app's logic - all computations will be performed according to the model's logic,
-  // as well as any required effects
-  await allSettled(appStarted, {
-    scope,
-  });
+	// 2. start app's logic - all computations will be performed according to the model's logic,
+	// as well as any required effects
+	await allSettled(appStarted, {
+		scope,
+	});
 
-  // 3. Serialize the calculated state, so it can be passed over the network
-  const storesValues = serialize(scope);
+	// 3. Serialize the calculated state, so it can be passed over the network
+	const storesValues = serialize(scope);
 
-  // 4. Render the app - also into some serializable version
-  const app = renderToString(
-    // by using Provider with the scope we tell the <App />, which state of the stores it should use
-    <Provider value={scope}>
-      <App />
-    </Provider>,
-  );
+	// 4. Render the app - also into some serializable version
+	const app = renderToString(
+		// by using Provider with the scope we tell the <App />, which state of the stores it should use
+		<Provider value={scope}>
+			<App />
+		</Provider>,
+	);
 
-  // 5. prepare serialized HTML response
-  //
-  // This is serialization (or network) boundary
-  // The point, where all state is stringified to be sent over the network
-  //
-  // effectors state is stored as a `<script>`, which will set the state into global object
-  // `react`'s state is stored as a part of the DOM tree.
-  return `
+	// 5. prepare serialized HTML response
+	//
+	// This is serialization (or network) boundary
+	// The point, where all state is stringified to be sent over the network
+	//
+	// effectors state is stored as a `<script>`, which will set the state into global object
+	// `react`'s state is stored as a part of the DOM tree.
+	return `
     <html>
       <head>
         <script>
@@ -14613,12 +14707,12 @@ The process of restoring the server state at the client is usually called **hydr
 
 ```tsx
 // client.tsx
-import React from "react";
-import { hydrateRoot } from "react-dom/client";
-import { fork, allSettled } from "effector";
-import { Provider } from "effector-react";
+import React from 'react';
+import { hydrateRoot } from 'react-dom/client';
+import { fork, allSettled } from 'effector';
+import { Provider } from 'effector-react';
 
-import { App, appStarted } from "./app";
+import { App, appStarted } from './app';
 
 /**
  * 1. Find, where the server state is stored and retrieve it
@@ -14626,23 +14720,23 @@ import { App, appStarted } from "./app";
  * See the server handler code to find out, where it was saved in the HTML
  */
 const effectorState = globalThis._SERVER_STATE_;
-const reactRoot = document.querySelector("#app");
+const reactRoot = document.querySelector('#app');
 
 /**
  * 2. Initiate the client scope of effector with server-calculated values
  */
 const clientScope = fork({
-  values: effectorState,
+	values: effectorState,
 });
 
 /**
  * 3. "Hydrate" React state in the DOM tree
  */
 hydrateRoot(
-  reactRoot,
-  <Provider value={clientScope}>
-    <App />
-  </Provider>,
+	reactRoot,
+	<Provider value={clientScope}>
+		<App />
+	</Provider>,
 );
 
 /**
@@ -14663,7 +14757,6 @@ allSettled(appStarted, { scope: clientScope });
 4. Server-specific code calculates and **serializes** all of the app's state into the HTML string.
 5. Client-specific code retrieves this state and uses it to **"hydrate"** the app on the client.
 
-
 # Testing in Effector
 
 import Tabs from "@components/Tabs/Tabs.astro";
@@ -14681,8 +14774,8 @@ Testing state management logic is one of Effector’s strengths. Thanks to isola
 
 Effector provides built-in tools for:
 
-* State isolation: Each testable state can be created in its own context, preventing side effects.
-* Asynchronous execution: All effects and events can be executed and verified using allSettled.
+- State isolation: Each testable state can be created in its own context, preventing side effects.
+- Asynchronous execution: All effects and events can be executed and verified using allSettled.
 
 #### Store Testing
 
@@ -14693,16 +14786,16 @@ Testing stores in Effector is straightforward since they are pure functions that
   <TabItem label="counter.test.js">
 
 ```ts
-import { counterIncremented, $counter } from "./counter.js";
+import { counterIncremented, $counter } from './counter.js';
 
-test("counter should increase by 1", async () => {
-  const scope = fork();
+test('counter should increase by 1', async () => {
+	const scope = fork();
 
-  expect(scope.getState($counter)).toEqual(0);
+	expect(scope.getState($counter)).toEqual(0);
 
-  await allSettled(counterIncremented, { scope });
+	await allSettled(counterIncremented, { scope });
 
-  expect(scope.getState($counter)).toEqual(1);
+	expect(scope.getState($counter)).toEqual(1);
 });
 ```
 
@@ -14713,7 +14806,7 @@ test("counter should increase by 1", async () => {
 ```
 
 ```ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const counterIncremented = createEvent();
 
@@ -14732,26 +14825,26 @@ For isolated state logic testing, fork is used. This allows testing stores and e
 To test whether an event was triggered and how many times, you can use the `createWatch` method, which will create a subscription to the passed unit:
 
 ```ts
-import { createEvent, createWatch, fork } from "effector";
-import { userUpdated } from "../";
+import { createEvent, createWatch, fork } from 'effector';
+import { userUpdated } from '../';
 
-test("should handle user update with scope", async () => {
-  const scope = fork();
-  const fn = jest.fn();
+test('should handle user update with scope', async () => {
+	const scope = fork();
+	const fn = jest.fn();
 
-  // Create a watcher in the specific scope
-  const unwatch = createWatch({
-    unit: userUpdated,
-    fn,
-    scope,
-  });
+	// Create a watcher in the specific scope
+	const unwatch = createWatch({
+		unit: userUpdated,
+		fn,
+		scope,
+	});
 
-  // Trigger the event in scope
-  await allSettled(userUpdated, {
-    scope,
-  });
+	// Trigger the event in scope
+	await allSettled(userUpdated, {
+		scope,
+	});
 
-  expect(fn).toHaveBeenCalledTimes(1);
+	expect(fn).toHaveBeenCalledTimes(1);
 });
 ```
 
@@ -14768,21 +14861,21 @@ Effects can be tested by verifying their successful execution or error handling.
   <TabItem label="effect.test.js">
 
 ```ts
-import { fork, allSettled } from "effector";
-import { getUserProjectsFx } from "./effect.js";
+import { fork, allSettled } from 'effector';
+import { getUserProjectsFx } from './effect.js';
 
-test("effect executes correctly", async () => {
-  const scope = fork({
-    handlers: [
-      // List of [effect, mock handler] pairs
-      [getUserProjectsFx, () => "user projects data"],
-    ],
-  });
+test('effect executes correctly', async () => {
+	const scope = fork({
+		handlers: [
+			// List of [effect, mock handler] pairs
+			[getUserProjectsFx, () => 'user projects data'],
+		],
+	});
 
-  const result = await allSettled(getUserProjectsFx, { scope });
+	const result = await allSettled(getUserProjectsFx, { scope });
 
-  expect(result.status).toBe("done");
-  expect(result.value).toBe("user projects data");
+	expect(result.status).toBe('done');
+	expect(result.value).toBe('user projects data');
 });
 ```
 
@@ -14793,12 +14886,12 @@ test("effect executes correctly", async () => {
 ```
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const getUserProjectsFx = async () => {
-  const result = await fetch("/users/projects/2");
+	const result = await fetch('/users/projects/2');
 
-  return result.json();
+	return result.json();
 };
 ```
 
@@ -14809,39 +14902,39 @@ const getUserProjectsFx = async () => {
 
 Let’s consider a typical counter with asynchronous validation via our backend. Suppose we have the following requirements:
 
-* When a user clicks a button, we check if the counter is less than 100, then validate the click through our backend API.
-* If validation succeeds, increment the counter by 1.
-* If validation fails, reset the counter to zero.
+- When a user clicks a button, we check if the counter is less than 100, then validate the click through our backend API.
+- If validation succeeds, increment the counter by 1.
+- If validation fails, reset the counter to zero.
 
 ```ts
-import { createEvent, createStore, createEffect, sample } from "effector";
+import { createEvent, createStore, createEffect, sample } from 'effector';
 
 export const buttonClicked = createEvent();
 
 export const validateClickFx = createEffect(async () => {
-  /* external API call */
+	/* external API call */
 });
 
 export const $clicksCount = createStore(0);
 
 sample({
-  clock: buttonClicked,
-  source: $clicksCount,
-  filter: (count) => count < 100,
-  target: validateClickFx,
+	clock: buttonClicked,
+	source: $clicksCount,
+	filter: (count) => count < 100,
+	target: validateClickFx,
 });
 
 sample({
-  clock: validateClickFx.done,
-  source: $clicksCount,
-  fn: (count) => count + 1,
-  target: $clicksCount,
+	clock: validateClickFx.done,
+	source: $clicksCount,
+	fn: (count) => count + 1,
+	target: $clicksCount,
 });
 
 sample({
-  clock: validateClickFx.fail,
-  fn: () => 0,
-  target: $clicksCount,
+	clock: validateClickFx.fail,
+	fn: () => 0,
+	target: $clicksCount,
 });
 ```
 
@@ -14861,18 +14954,18 @@ Let’s test it:
 4. Verify that the final state is as expected.
 
 ```ts
-import { fork, allSettled } from "effector";
+import { fork, allSettled } from 'effector';
 
-import { $clicksCount, buttonClicked, validateClickFx } from "./model";
+import { $clicksCount, buttonClicked, validateClickFx } from './model';
 
-test("main case", async () => {
-  const scope = fork(); // 1
+test('main case', async () => {
+	const scope = fork(); // 1
 
-  expect(scope.getState($clicksCount)).toEqual(0); // 2
+	expect(scope.getState($clicksCount)).toEqual(0); // 2
 
-  await allSettled(buttonClicked, { scope }); // 3
+	await allSettled(buttonClicked, { scope }); // 3
 
-  expect(scope.getState($clicksCount)).toEqual(1); // 4
+	expect(scope.getState($clicksCount)).toEqual(1); // 4
 });
 ```
 
@@ -14883,19 +14976,19 @@ However, this test has an issue—it uses a real backend API. Since this is a un
 To avoid real server requests, we can mock the server response by providing a custom handler via the fork configuration.
 
 ```ts
-test("main case", async () => {
-  const scope = fork({
-    handlers: [
-      // List of [effect, mock handler] pairs
-      [validateClickFx, () => true],
-    ],
-  });
+test('main case', async () => {
+	const scope = fork({
+		handlers: [
+			// List of [effect, mock handler] pairs
+			[validateClickFx, () => true],
+		],
+	});
 
-  expect(scope.getState($clicksCount)).toEqual(0);
+	expect(scope.getState($clicksCount)).toEqual(0);
 
-  await allSettled(buttonClicked, { scope });
+	await allSettled(buttonClicked, { scope });
 
-  expect(scope.getState($clicksCount)).toEqual(1);
+	expect(scope.getState($clicksCount)).toEqual(1);
 });
 ```
 
@@ -14910,39 +15003,38 @@ Another scenario:
 In this case, we need to set an initial state where the counter is greater than 100. This can be done using custom initial values via the fork configuration.
 
 ```ts
-test("bad case", async () => {
-  const MOCK_VALUE = 101;
-  const mockFunction = jest.fn();
+test('bad case', async () => {
+	const MOCK_VALUE = 101;
+	const mockFunction = jest.fn();
 
-  const scope = fork({
-    values: [
-      // List of [store, mockValue] pairs
-      [$clicksCount, MOCK_VALUE],
-    ],
-    handlers: [
-      // List of [effect, mock handler] pairs
-      [
-        validateClickFx,
-        () => {
-          mockFunction();
+	const scope = fork({
+		values: [
+			// List of [store, mockValue] pairs
+			[$clicksCount, MOCK_VALUE],
+		],
+		handlers: [
+			// List of [effect, mock handler] pairs
+			[
+				validateClickFx,
+				() => {
+					mockFunction();
 
-          return false;
-        },
-      ],
-    ],
-  });
+					return false;
+				},
+			],
+		],
+	});
 
-  expect(scope.getState($clicksCount)).toEqual(MOCK_VALUE);
+	expect(scope.getState($clicksCount)).toEqual(MOCK_VALUE);
 
-  await allSettled(buttonClicked, { scope });
+	await allSettled(buttonClicked, { scope });
 
-  expect(scope.getState($clicksCount)).toEqual(MOCK_VALUE);
-  expect(mockFunction).toHaveBeenCalledTimes(0);
+	expect(scope.getState($clicksCount)).toEqual(MOCK_VALUE);
+	expect(mockFunction).toHaveBeenCalledTimes(0);
 });
 ```
 
 This is how you can test every use case you want to validate.
-
 
 # Troubleshooting in Effector
 
@@ -14962,7 +15054,7 @@ If you really need to store `undefined`, pass an object with `{ skipVoid: false 
 
 ```ts
 const $store = createStore(0, {
-  skipVoid: false,
+	skipVoid: false,
 });
 ```
 
@@ -14983,11 +15075,11 @@ To fix this, add an `sid` to your store. You can do this in one of the following
 1. Use the Babel or SWC plugin to handle it automatically.
 2. Manually specify an `sid` by providing an object with a `sid` property as the second argument to `createStore`:
 
-   ```ts
-   const $store = createStore(0, {
-     sid: "unique id",
-   });
-   ```
+    ```ts
+    const $store = createStore(0, {
+    	sid: 'unique id',
+    });
+    ```
 
 For more details, see Understanding .
 
@@ -14995,6 +15087,7 @@ For more details, see Understanding .
 
 This error occurs when a scope is lost at some point in execution, preventing `scopeBind` from associating an event or effect with the correct execution scope.<br/>
 It may be caused by:
+
 1. Using a "scope-free" mode where scopes are not present in your application.
 2. Calling units outside of a scope.
 
@@ -15002,35 +15095,35 @@ Possible Solutions:
 
 1. Ensure `scopeBind` is used within effects:
 
-   ```ts
-   const event = createEvent();
+    ```ts
+    const event = createEvent();
 
-   // ❌ - Do not call scopeBind inside callbacks
-   const effectFx = createEffect(() => {
-     setTimeout(() => {
-       scopeBind(event)();
-     }, 1111);
-   });
+    // ❌ - Do not call scopeBind inside callbacks
+    const effectFx = createEffect(() => {
+    	setTimeout(() => {
+    		scopeBind(event)();
+    	}, 1111);
+    });
 
-   // ✅ - Use scopeBind inside the effect
-   const effectFx = createEffect(() => {
-     const scopeEvent = scopeBind(event);
+    // ✅ - Use scopeBind inside the effect
+    const effectFx = createEffect(() => {
+    	const scopeEvent = scopeBind(event);
 
-     setTimeout(() => {
-       scopeEvent();
-     }, 1111);
-   });
-   ```
+    	setTimeout(() => {
+    		scopeEvent();
+    	}, 1111);
+    });
+    ```
 
 2. Ensure that your units are used inside a scope:
-    * When working with a framework, use `useUnit`.
-    * If calling an event or effect outside a framework, use `allSettled` and provide the appropriate `scope` as an argument.
+    - When working with a framework, use `useUnit`.
+    - If calling an event or effect outside a framework, use `allSettled` and provide the appropriate `scope` as an argument.
 
 If necessary, and you want to suppress the error, you can pass `{ safe: true }` as an option:
 
 ```ts
 const scopeEvent = scopeBind(event, {
-  safe: true,
+	safe: true,
 });
 ```
 
@@ -15044,13 +15137,13 @@ To fix this, use an event created via `createEvent`.
 
 This error occurs when you try to call events or effects from pure functions in Effector:
 
-* **Calling events in event methods**<br/>
+- **Calling events in event methods**<br/>
   When you try to call one event inside another event's `.map()`, `.filter()`, `.filterMap()`, or `.prepend()` methods.
 
-* **Calling events in store handlers**<br/>
+- **Calling events in store handlers**<br/>
   When attempting to call an event in a .on() handler, inside the .map() method, or in the updateFilter() configuration property of a store.
 
-* **Calling events in `sample` functions**<br/>
+- **Calling events in `sample` functions**<br/>
   When calling an event in the `fn` or `filter` function of the `sample` operator.
 
 How to fix: Instead of calling events in pure functions, use declarative operators, for example, `sample`.
@@ -15065,16 +15158,16 @@ A common type-related issue with `sample` occurs when a check is performed in `f
 <Fragment slot="left">
 
 ```tsx wrap data-height="full"
-import { sample } from "effector";
+import { sample } from 'effector';
 
 const messageSent = createEvent<Message>();
 const userText = createEvent<string>();
 
 sample({
-  clock: messageSent,
-  filter: (msg: Message): msg is UserMessage => msg.kind === "user",
-  fn: (msg) => msg.text,
-  target: userText,
+	clock: messageSent,
+	filter: (msg: Message): msg is UserMessage => msg.kind === 'user',
+	fn: (msg) => msg.text,
+	target: userText,
 });
 ```
 
@@ -15082,17 +15175,17 @@ sample({
 <Fragment slot="right">
 
 ```tsx wrap data-height="full"
-import { createAction } from "effector-action";
+import { createAction } from 'effector-action';
 
 const userText = createEvent<string>();
 
 const messageSent = createAction({
-  target: userText,
-  fn: (userText, msg: Message) => {
-    if (msg.kind === "user") {
-      userText(msg.txt);
-    }
-  },
+	target: userText,
+	fn: (userText, msg: Message) => {
+		if (msg.kind === 'user') {
+			userText(msg.txt);
+		}
+	},
 });
 ```
 
@@ -15105,11 +15198,11 @@ If your state does not update as expected, you are likely working with scopes an
 
 Typical places where this happens:
 
-* `setTimeout` / `setInterval`
-* `addEventListener`
-* WebSocket
-* direct promise calls inside effects
-* third-party libraries with async APIs or callbacks.
+- `setTimeout` / `setInterval`
+- `addEventListener`
+- WebSocket
+- direct promise calls inside effects
+- third-party libraries with async APIs or callbacks.
 
 **Solution**:
 Bind your event or effect to the current scope using :
@@ -15123,11 +15216,11 @@ Bind your event or effect to the current scope using :
 const event = createEvent();
 
 const effectFx = createEffect(() => {
-  const scopedEvent = scopeBind(event);
+	const scopedEvent = scopeBind(event);
 
-  setTimeout(() => {
-    scopedEvent();
-  }, 1000);
+	setTimeout(() => {
+		scopedEvent();
+	}, 1000);
 });
 ```
 
@@ -15140,9 +15233,9 @@ const effectFx = createEffect(() => {
 const event = createEvent();
 
 const effectFx = createEffect(() => {
-  setTimeout(() => {
-    event();
-  }, 1000);
+	setTimeout(() => {
+		event();
+	}, 1000);
 });
 ```
 
@@ -15160,13 +15253,13 @@ To fix this, pass the unit to the `useUnit` hook and use the returned value:
 ```tsx wrap data-border="good" data-height="full" ins={4,7} "onEvent"
 // ✅ hook used
 
-import { event } from "./model.js";
-import { useUnit } from "effector-react";
+import { event } from './model.js';
+import { useUnit } from 'effector-react';
 
 const Component = () => {
-  const onEvent = useUnit(event);
+	const onEvent = useUnit(event);
 
-  return <button onClick={() => onEvent()}>click me</button>;
+	return <button onClick={() => onEvent()}>click me</button>;
 };
 ```
 
@@ -15176,10 +15269,10 @@ const Component = () => {
 ```tsx wrap data-border="bad" data-height="full"
 // ❌ direct unit call
 
-import { event } from "./model.js";
+import { event } from './model.js';
 
 const Component = () => {
-  return <button onClick={() => event()}>click me</button>;
+	return <button onClick={() => event()}>click me</button>;
 };
 ```
 
@@ -15188,17 +15281,16 @@ const Component = () => {
 
 > INFO Best Practice:
 >
-> Using  for working with units.
+> Using for working with units.
 
 ### No Answer to Your Question?
 
 If you couldn't find the answer to your question, you can always ask the community:
 
-* [RU Telegram](https://t.me/effector_ru)
-* [EN Telegram](https://t.me/effector_en)
-* [Discord](https://discord.gg/t3KkcQdt)
-* [Reddit](https://www.reddit.com/r/effectorjs/)
-
+- [RU Telegram](https://t.me/effector_ru)
+- [EN Telegram](https://t.me/effector_en)
+- [Discord](https://discord.gg/t3KkcQdt)
+- [Reddit](https://www.reddit.com/r/effectorjs/)
 
 # Setting up WebSocket with Effector
 
@@ -15215,7 +15307,7 @@ In this guide, we'll look at how to properly organize work with WebSocket connec
 Let's create a simple but working WebSocket client model. First, let's define the basic events and states:
 
 ```ts
-import { createStore, createEvent, createEffect, sample } from "effector";
+import { createStore, createEvent, createEffect, sample } from 'effector';
 
 // Events for working with socket
 const disconnected = createEvent();
@@ -15223,37 +15315,37 @@ const messageSent = createEvent<string>();
 const rawMessageReceived = createEvent<string>();
 
 const $connection = createStore<WebSocket | null>(null)
-  .on(connectWebSocketFx.doneData, (_, ws) => ws)
-  .reset(disconnected);
+	.on(connectWebSocketFx.doneData, (_, ws) => ws)
+	.reset(disconnected);
 ```
 
 Then create an effect for establishing connection:
 
 ```ts
 const connectWebSocketFx = createEffect((url: string): Promise<WebSocket> => {
-  const ws = new WebSocket(url);
+	const ws = new WebSocket(url);
 
-  const scopeDisconnected = scopeBind(disconnected);
-  const scopeRawMessageReceived = scopeBind(rawMessageReceived);
+	const scopeDisconnected = scopeBind(disconnected);
+	const scopeRawMessageReceived = scopeBind(rawMessageReceived);
 
-  return new Promise((res, rej) => {
-    ws.onopen = () => {
-      res(ws);
-    };
+	return new Promise((res, rej) => {
+		ws.onopen = () => {
+			res(ws);
+		};
 
-    ws.onmessage = (event) => {
-      scopeRawMessageReceived(event.data);
-    };
+		ws.onmessage = (event) => {
+			scopeRawMessageReceived(event.data);
+		};
 
-    ws.onclose = () => {
-      scopeDisconnected();
-    };
+		ws.onclose = () => {
+			scopeDisconnected();
+		};
 
-    ws.onerror = (err) => {
-      scopeDisconnected();
-      rej(err);
-    };
-  });
+		ws.onerror = (err) => {
+			scopeDisconnected();
+			rej(err);
+		};
+	});
 });
 ```
 
@@ -15270,7 +15362,7 @@ Read more.
 Let's create a store for the last received message:
 
 ```ts
-const $lastMessage = createStore<string>("");
+const $lastMessage = createStore<string>('');
 
 $lastMessage.on(rawMessageReceived, (_, newMessage) => newMessage);
 ```
@@ -15278,20 +15370,22 @@ $lastMessage.on(rawMessageReceived, (_, newMessage) => newMessage);
 And also implement an effect for sending messages:
 
 ```ts
-const sendMessageFx = createEffect((params: { socket: WebSocket; message: string }) => {
-  params.socket.send(params.message);
-});
+const sendMessageFx = createEffect(
+	(params: { socket: WebSocket; message: string }) => {
+		params.socket.send(params.message);
+	},
+);
 
 // Link message sending with current socket
 sample({
-  clock: messageSent,
-  source: $connection,
-  filter: Boolean, // Send only if connection exists
-  fn: (socket, message) => ({
-    socket,
-    message,
-  }),
-  target: sendMessageFx,
+	clock: messageSent,
+	source: $connection,
+	filter: Boolean, // Send only if connection exists
+	fn: (socket, message) => ({
+		socket,
+		message,
+	}),
+	target: sendMessageFx,
 });
 ```
 
@@ -15312,47 +15406,47 @@ const TIMEOUT = 5_000;
 const socketError = createEvent<Error>();
 
 const connectWebSocketFx = createEffect((url: string): Promise<WebSocket> => {
-  const ws = new WebSocket(url);
+	const ws = new WebSocket(url);
 
-  const scopeDisconnected = scopeBind(disconnected);
-  const scopeRawMessageReceived = scopeBind(rawMessageReceived);
-  const scopeSocketError = scopeBind(socketError);
+	const scopeDisconnected = scopeBind(disconnected);
+	const scopeRawMessageReceived = scopeBind(rawMessageReceived);
+	const scopeSocketError = scopeBind(socketError);
 
-  return new Promise((res, rej) => {
-    const timeout = setTimeout(() => {
-      const error = new Error("Connection timeout");
+	return new Promise((res, rej) => {
+		const timeout = setTimeout(() => {
+			const error = new Error('Connection timeout');
 
-      scopeSocketError(error);
-      reject(error);
-      socket.close();
-    }, TIMEOUT);
+			scopeSocketError(error);
+			reject(error);
+			socket.close();
+		}, TIMEOUT);
 
-    ws.onopen = () => {
-      clearTimeout(timeout);
-      res(ws);
-    };
+		ws.onopen = () => {
+			clearTimeout(timeout);
+			res(ws);
+		};
 
-    ws.onmessage = (event) => {
-      scopeRawMessageReceived(event.data);
-    };
+		ws.onmessage = (event) => {
+			scopeRawMessageReceived(event.data);
+		};
 
-    ws.onclose = () => {
-      disconnected();
-    };
+		ws.onclose = () => {
+			disconnected();
+		};
 
-    ws.onerror = (err) => {
-      const error = new Error("WebSocket error");
-      scopeDisconnected();
-      scopeSocketError(error);
-      rej(err);
-    };
-  });
+		ws.onerror = (err) => {
+			const error = new Error('WebSocket error');
+			scopeDisconnected();
+			scopeSocketError(error);
+			rej(err);
+		};
+	});
 });
 
 // Store for error storage
-const $error = createStore("")
-  .on(socketError, (_, error) => error.message)
-  .reset(connectWebSocketFx.done);
+const $error = createStore('')
+	.on(socketError, (_, error) => error.message)
+	.reset(connectWebSocketFx.done);
 ```
 
 > WARNING Error Handling:
@@ -15372,16 +15466,16 @@ For this purpose, we'll use the [Zod](https://zod.dev/) library, though you can 
 Let's say we expect two types of messages: `balanceChanged` and `reportGenerated`, containing the following fields:
 
 ```ts
-export const messagesSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("balanceChanged"),
-    balance: z.number(),
-  }),
-  z.object({
-    type: z.literal("reportGenerated"),
-    reportId: z.string(),
-    reportName: z.string(),
-  }),
+export const messagesSchema = z.discriminatedUnion('type', [
+	z.object({
+		type: z.literal('balanceChanged'),
+		balance: z.number(),
+	}),
+	z.object({
+		type: z.literal('reportGenerated'),
+		reportId: z.string(),
+		reportName: z.string(),
+	}),
 ]);
 
 // Get type from schema
@@ -15394,19 +15488,21 @@ Now add a message handling effect to ensure that messages match the expected typ
 const parsedMessageReceived = createEvent<MessagesSchema>();
 
 const parseFx = createEffect((message: unknown): MessagesSchema => {
-  return messagesSchema.parse(JSON.parse(typeof message === "string" ? message : "{}"));
+	return messagesSchema.parse(
+		JSON.parse(typeof message === 'string' ? message : '{}'),
+	);
 });
 
 // Parse the message when received
 sample({
-  clock: rawMessageReceived,
-  target: parseFx,
+	clock: rawMessageReceived,
+	target: parseFx,
 });
 
 // If parsing succeeds, forward the message
 sample({
-  clock: parseFx.doneData,
-  target: parsedMessageReceived,
+	clock: parseFx.doneData,
+	target: parsedMessageReceived,
 });
 ```
 
@@ -15417,8 +15513,8 @@ const validationError = createEvent<Error>();
 
 // If parsing fails, handle the error
 sample({
-  clock: parseFx.failData,
-  target: validationError,
+	clock: parseFx.failData,
+	target: validationError,
 });
 ```
 
@@ -15431,15 +15527,20 @@ That's it! Now all incoming messages will be validated against the schema before
 If you want more granular control, you can create an event that triggers only for a specific message type:
 
 ```ts
-type MessageType<T extends MessagesSchema["type"]> = Extract<MessagesSchema, { type: T }>;
+type MessageType<T extends MessagesSchema['type']> = Extract<
+	MessagesSchema,
+	{ type: T }
+>;
 
-export const messageReceivedByType = <T extends MessagesSchema["type"]>(type: T) => {
-  return sample({
-    clock: parsedMessageReceived,
-    filter: (message): message is MessageType<T> => {
-      return message.type === type;
-    },
-  });
+export const messageReceivedByType = <T extends MessagesSchema['type']>(
+	type: T,
+) => {
+	return sample({
+		clock: parsedMessageReceived,
+		filter: (message): message is MessageType<T> => {
+			return message.type === type;
+		},
+	});
 };
 ```
 
@@ -15447,11 +15548,11 @@ Usage example:
 
 ```ts
 sample({
-  clock: messageReceivedByType("balanceChanged"),
-  fn: (message) => {
-    // TypeScript knows the structure of message
-  },
-  target: doWhateverYouWant,
+	clock: messageReceivedByType('balanceChanged'),
+	fn: (message) => {
+		// TypeScript knows the structure of message
+	},
+	target: doWhateverYouWant,
 });
 ```
 
@@ -15465,17 +15566,17 @@ sample({
 
 > INFO Socket.IO Advantages:
 >
-> * Automatic reconnection
-> * Support for rooms and namespaces
-> * Fallback to HTTP Long-polling if WebSocket is unavailable
-> * Built-in support for events and acknowledgments
-> * Automatic data serialization/deserialization
+> - Automatic reconnection
+> - Support for rooms and namespaces
+> - Fallback to HTTP Long-polling if WebSocket is unavailable
+> - Built-in support for events and acknowledgments
+> - Automatic data serialization/deserialization
 
 ```ts
-import { io, Socket } from "socket.io-client";
-import { createStore, createEvent, createEffect, sample } from "effector";
+import { io, Socket } from 'socket.io-client';
+import { createStore, createEvent, createEffect, sample } from 'effector';
 
-const API_URL = "wss://your.ws.server";
+const API_URL = 'wss://your.ws.server';
 
 // Events
 const connected = createEvent();
@@ -15484,9 +15585,9 @@ const socketError = createEvent<Error>();
 
 // Types for events
 type ChatMessage = {
-  room: string;
-  message: string;
-  author: string;
+	room: string;
+	message: string;
+	author: string;
 };
 
 const messageSent = createEvent<ChatMessage>();
@@ -15495,98 +15596,99 @@ const socketConnected = createEvent();
 const connectSocket = createEvent();
 
 const connectFx = createEffect((): Promise<Socket> => {
-  const socket = io(API_URL, {
-    //... your configuration
-  });
+	const socket = io(API_URL, {
+		//... your configuration
+	});
 
-  // needed for correct work with scopes
-  const scopeConnected = scopeBind(connected);
-  const scopeDisconnected = scopeBind(disconnected);
-  const scopeSocketError = scopeBind(socketError);
-  const scopeMessageReceived = scopeBind(messageReceived);
+	// needed for correct work with scopes
+	const scopeConnected = scopeBind(connected);
+	const scopeDisconnected = scopeBind(disconnected);
+	const scopeSocketError = scopeBind(socketError);
+	const scopeMessageReceived = scopeBind(messageReceived);
 
-  return new Promise((resolve, reject) => {
-    socket.on("connect", () => {
-      scopeConnected();
-      resolve(socket);
-    });
+	return new Promise((resolve, reject) => {
+		socket.on('connect', () => {
+			scopeConnected();
+			resolve(socket);
+		});
 
-    socket.on("disconnect", () => scopeDisconnected());
-    socket.on("connect_error", (error) => scopeSocketError(error));
-    socket.on("chat message", (msg: ChatMessage) => scopeMessageReceived(msg));
-  });
+		socket.on('disconnect', () => scopeDisconnected());
+		socket.on('connect_error', (error) => scopeSocketError(error));
+		socket.on('chat message', (msg: ChatMessage) =>
+			scopeMessageReceived(msg),
+		);
+	});
 });
 
 const sendMessageFx = createEffect(
-  ({
-    socket,
-    name,
-    payload,
-  }: SocketResponse<any> & {
-    socket: Socket;
-  }) => {
-    socket.emit(name, payload);
-  },
+	({
+		socket,
+		name,
+		payload,
+	}: SocketResponse<any> & {
+		socket: Socket;
+	}) => {
+		socket.emit(name, payload);
+	},
 );
 
 // States
 const $socket = createStore<Socket | null>(null)
-  .on(connectFx.doneData, (_, socket) => socket)
-  .reset(disconnected);
+	.on(connectFx.doneData, (_, socket) => socket)
+	.reset(disconnected);
 
 // initialize connection
 sample({
-  clock: connectSocket,
-  target: connectFx,
+	clock: connectSocket,
+	target: connectFx,
 });
 
 // trigger event after successful connection
 sample({
-  clock: connectSocketFx.doneData,
-  target: socketConnected,
+	clock: connectSocketFx.doneData,
+	target: socketConnected,
 });
 ```
-
 
 # Community
 
 ### Articles
 
-* [dev.to/effector](https://dev.to/effector) — space on the public platform
-* [community.effector.dev](https://community.effector.dev) — personal space
-* [reddit.com/r/effectorjs](https://reddit.com/r/effectorjs) — subreddit
-* [twitter.com/effectorJS](https://twitter.com/effectorJS) — retweets, releases, announces
+- [dev.to/effector](https://dev.to/effector) — space on the public platform
+- [community.effector.dev](https://community.effector.dev) — personal space
+- [reddit.com/r/effectorjs](https://reddit.com/r/effectorjs) — subreddit
+- [twitter.com/effectorJS](https://twitter.com/effectorJS) — retweets, releases, announces
 
 ### Videos
 
-* [Youtube Channel](https://www.youtube.com/channel/UCm8PRc_yjz3jXHH0JylVw1Q)
+- [Youtube Channel](https://www.youtube.com/channel/UCm8PRc_yjz3jXHH0JylVw1Q)
 
 ### Where can I ask a question?
 
 1. First of all, you can review the [issues](https://github.com/effector/effector/issues) and [discussions](https://github.com/effector/effector/discussions) of the repository
 2. We have some chat spaces:
-    * Telegram — [t.me/effector\_en](https://t.me/effector_en)
-    * Discord — [discord.gg/t3KkcQdt](https://discord.gg/t3KkcQdt)
-    * Reddit — [reddit.com/r/effectorjs](https://www.reddit.com/r/effectorjs/)
-    * Gitter — [gitter.im/effector/community](https://gitter.im/effector/community)
+    - Telegram — [t.me/effector_en](https://t.me/effector_en)
+    - Discord — [discord.gg/t3KkcQdt](https://discord.gg/t3KkcQdt)
+    - Reddit — [reddit.com/r/effectorjs](https://www.reddit.com/r/effectorjs/)
+    - Gitter — [gitter.im/effector/community](https://gitter.im/effector/community)
 
 ### Russian-speaking community
 
-* Ask a question — [t.me/effector\_ru](https://t.me/effector_ru)
-* News and announces — [t.me/effector\_news](https://t.me/effector_news)
-* Videos:
-    * Effector Meetup 1 — [youtube.com/watch?v=IacUIo9fXhI](https://www.youtube.com/watch?v=IacUIo9fXhI)
-    * Effector Meetup 2 — [youtube.com/watch?v=nLYc4PaTXYk](https://www.youtube.com/watch?v=nLYc4PaTXYk)
-    * Implement feature in the project — [youtube.com/watch?v=dtrWzH8O\_4k](https://www.youtube.com/watch?v=dtrWzH8O_4k)
-    * How aviasales migrate on effector — [youtube.com/watch?v=HYaSnVEZiFk](https://www.youtube.com/watch?v=HYaSnVEZiFk)
-    * Let’s write a game — [youtube.com/watch?v=tjjxIQd0E8c](https://www.youtube.com/watch?v=tjjxIQd0E8c)
-    * Effector 22.2.0 Halley — [youtube.com/watch?v=pTq9AbmS0FI](https://www.youtube.com/watch?v=pTq9AbmS0FI)
-    * Effector 22.4.0 Encke — [youtube.com/watch?v=9UjgcNn0K\_o](https://www.youtube.com/watch?v=9UjgcNn0K_o)
+- Ask a question — [t.me/effector_ru](https://t.me/effector_ru)
+- News and announces — [t.me/effector_news](https://t.me/effector_news)
+- Videos:
+    - Effector Meetup 1 — [youtube.com/watch?v=IacUIo9fXhI](https://www.youtube.com/watch?v=IacUIo9fXhI)
+    - Effector Meetup 2 — [youtube.com/watch?v=nLYc4PaTXYk](https://www.youtube.com/watch?v=nLYc4PaTXYk)
+    - Implement feature in the project — [youtube.com/watch?v=dtrWzH8O_4k](https://www.youtube.com/watch?v=dtrWzH8O_4k)
+    - How aviasales migrate on effector — [youtube.com/watch?v=HYaSnVEZiFk](https://www.youtube.com/watch?v=HYaSnVEZiFk)
+    - Let’s write a game — [youtube.com/watch?v=tjjxIQd0E8c](https://www.youtube.com/watch?v=tjjxIQd0E8c)
+    - Effector 22.2.0 Halley — [youtube.com/watch?v=pTq9AbmS0FI](https://www.youtube.com/watch?v=pTq9AbmS0FI)
+    - Effector 22.4.0 Encke — [youtube.com/watch?v=9UjgcNn0K_o](https://www.youtube.com/watch?v=9UjgcNn0K_o)
 
 ### Support and sponsor
 
-* OpenCollective — [opencollective.com/effector](https://opencollective.com/effector)
-* Patreon — [patreon.com/zero\_bias](https://www.patreon.com/zero_bias)
+- OpenCollective — [opencollective.com/effector](https://opencollective.com/effector)
+- Patreon — [patreon.com/zero_bias](https://www.patreon.com/zero_bias)
 
 <br /><br />
 
@@ -15706,7 +15808,7 @@ Andrei was at the origin of the effector. He wrote all the first documentation, 
 
 Roman promotes effector among the front-end community and works on documentation.
 
-*This list is not exhaustive.*
+_This list is not exhaustive._
 
 <br /><br />
 
@@ -15720,7 +15822,6 @@ We’d like to give thanks to all contributors for effector and the ecosystem.
 
 Thank you for your support and love over all this time \:heart:
 
-
 # Effector Core concepts
 
 ## Core concepts
@@ -15732,25 +15833,25 @@ By combining these units, developers can construct complex yet intuitive data fl
 
 Effector development is based on two key principles:
 
-* 📝 **Declarativity**: You define *what* should happen, not *how* it should work.
-* 🚀 **Reactivity**: Changes propagate automatically throughout the application.
+- 📝 **Declarativity**: You define _what_ should happen, not _how_ it should work.
+- 🚀 **Reactivity**: Changes propagate automatically throughout the application.
 
 Effector employs an intelligent dependency-tracking system that ensures only the necessary parts of the application update when data changes. This provides several benefits:
 
-* No need for manual subscription management
-* High performance even at scale
-* A predictable and clear data flow
+- No need for manual subscription management
+- High performance even at scale
+- A predictable and clear data flow
 
 ### Units
 
 A unit is a fundamental concept in Effector. Store, Event, and Effect are all units—core building blocks for constructing an application's business logic. Each unit is an independent entity that can be:
 
-* Connected with other units
-* Subscribed to changes of other units
-* Used to create new units
+- Connected with other units
+- Subscribed to changes of other units
+- Used to create new units
 
 ```ts
-import { createStore, createEvent, createEffect, is } from "effector";
+import { createStore, createEvent, createEffect, is } from 'effector';
 
 const $counter = createStore(0);
 const event = createEvent();
@@ -15769,17 +15870,17 @@ An event (Event) in Effector serves as an entry point into the reactive data flo
 
 ##### Event features
 
-* Simplicity: Events are minimalistic and can be easily created using createEvent.
-* Composition: Events can be combined, filtered, transformed, and forwarded to other handlers or stores.
+- Simplicity: Events are minimalistic and can be easily created using createEvent.
+- Composition: Events can be combined, filtered, transformed, and forwarded to other handlers or stores.
 
 ```js
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 // create event
 const formSubmitted = createEvent();
 
 // subscribe to the event
-formSubmitted.watch(() => console.log("Form submitted!"));
+formSubmitted.watch(() => console.log('Form submitted!'));
 
 // Trigger the event
 formSubmitted();
@@ -15794,28 +15895,28 @@ A store (Store) holds the application's data. It acts as a reactive value, provi
 
 ##### Store features
 
-* You can have as many stores as needed.
-* Stores are reactive — changes automatically propagate to all subscribed components.
-* Effector optimizes re-renders, minimizing unnecessary updates for subscribed components.
-* Store data is immutable.
-* There is no `setState`, state changes occur through events.
+- You can have as many stores as needed.
+- Stores are reactive — changes automatically propagate to all subscribed components.
+- Effector optimizes re-renders, minimizing unnecessary updates for subscribed components.
+- Store data is immutable.
+- There is no `setState`, state changes occur through events.
 
 ```js
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 // create event
 const superAdded = createEvent();
 
 // create store
 const $supers = createStore([
-  {
-    name: "Spider-man",
-    role: "hero",
-  },
-  {
-    name: "Green goblin",
-    role: "villain",
-  },
+	{
+		name: 'Spider-man',
+		role: 'hero',
+	},
+	{
+		name: 'Green goblin',
+		role: 'villain',
+	},
 ]);
 
 // update store on event triggered
@@ -15823,8 +15924,8 @@ $supers.on(superAdded, (supers, newSuper) => [...supers, newSuper]);
 
 // trigger event
 superAdded({
-  name: "Rhino",
-  role: "villain",
+	name: 'Rhino',
+	role: 'villain',
 });
 ```
 
@@ -15834,23 +15935,23 @@ An effect (Effect) is designed to handle side effects — interactions with the 
 
 ##### Effect features
 
-* Effects have built-in states like `pending` and emit events such as `done` and `fail`, making it easier to track operation statuses.
-* Logic related to external interactions is isolated, improving testability and making the code more predictable.
-* Can be either asynchronous or synchronous.
+- Effects have built-in states like `pending` and emit events such as `done` and `fail`, making it easier to track operation statuses.
+- Logic related to external interactions is isolated, improving testability and making the code more predictable.
+- Can be either asynchronous or synchronous.
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 // Create an effect
 const fetchUserFx = createEffect(async (userId) => {
-  const response = await fetch(`/api/user/${userId}`);
-  return response.json();
+	const response = await fetch(`/api/user/${userId}`);
+	return response.json();
 });
 
 // Subscribe to effect results
-fetchUserFx.done.watch(({ result }) => console.log("User data:", result));
+fetchUserFx.done.watch(({ result }) => console.log('User data:', result));
 // If effect throw error we will catch it via fail event
-fetchUserFx.fail.watch(({ error }) => console.log("Error occurred! ", error));
+fetchUserFx.fail.watch(({ error }) => console.log('Error occurred! ', error));
 
 // Trigger effect
 fetchUserFx(1);
@@ -15865,34 +15966,38 @@ As mentioned at the beginning, Effector is built on the principles of reactivity
 Let's revisit the example from the **Stores** section, where we have a store containing an array of superhumans. Now, suppose we need to separate heroes and villains into distinct lists. This can be easily achieved using derived stores:
 
 ```ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 // Create an event
 const superAdded = createEvent();
 
 // Create a store
 const $supers = createStore([
-  {
-    name: "Spider-Man",
-    role: "hero",
-  },
-  {
-    name: "Green Goblin",
-    role: "villain",
-  },
+	{
+		name: 'Spider-Man',
+		role: 'hero',
+	},
+	{
+		name: 'Green Goblin',
+		role: 'villain',
+	},
 ]);
 
 // Create derived stores based on $supers
-const $superHeroes = $supers.map((supers) => supers.filter((sup) => sup.role === "hero"));
-const $superVillains = $supers.map((supers) => supers.filter((sup) => sup.role === "villain"));
+const $superHeroes = $supers.map((supers) =>
+	supers.filter((sup) => sup.role === 'hero'),
+);
+const $superVillains = $supers.map((supers) =>
+	supers.filter((sup) => sup.role === 'villain'),
+);
 
 // Update the store when the event is triggered
 $supers.on(superAdded, (supers, newSuper) => [...supers, newSuper]);
 
 // Add a new character
 superAdded({
-  name: "Rhino",
-  role: "villain",
+	name: 'Rhino',
+	role: 'villain',
 });
 ```
 
@@ -15909,31 +16014,35 @@ And now let's see how all this works together. All our concepts come together in
 For example, we will take the same code with superheroes as before, but we will modify it slightly by adding an effect to load initial data, just like in real applications:
 
 ```ts
-import { createStore, createEvent, createEffect } from "effector";
+import { createStore, createEvent, createEffect } from 'effector';
 
 // Define our stores
 const $supers = createStore([]);
-const $superHeroes = $supers.map((supers) => supers.filter((sup) => sup.role === "hero"));
-const $superVillains = $supers.map((supers) => supers.filter((sup) => sup.role === "villain"));
+const $superHeroes = $supers.map((supers) =>
+	supers.filter((sup) => sup.role === 'hero'),
+);
+const $superVillains = $supers.map((supers) =>
+	supers.filter((sup) => sup.role === 'villain'),
+);
 
 // Create events
 const superAdded = createEvent();
 
 // Create effects for fetching data
 const getSupersFx = createEffect(async () => {
-  const res = await fetch("/server/api/supers");
-  if (!res.ok) {
-    throw new Error("something went wrong");
-  }
-  const data = await res.json();
-  return data;
+	const res = await fetch('/server/api/supers');
+	if (!res.ok) {
+		throw new Error('something went wrong');
+	}
+	const data = await res.json();
+	return data;
 });
 
 // Create effects for saving new data
 const saveNewSuperFx = createEffect(async (newSuper) => {
-  // Simulate saving a new super
-  await new Promise((res) => setTimeout(res, 1500));
-  return newSuper;
+	// Simulate saving a new super
+	await new Promise((res) => setTimeout(res, 1500));
+	return newSuper;
 });
 
 // When the data fetch is successful, set the data
@@ -15959,27 +16068,31 @@ Here, the sample method comes to our aid. If units are the building blocks, then
 > `sample` is the primary method for working with units, allowing you to declaratively trigger a chain of actions.
 
 ```ts ins={27-37}
-import { createStore, createEvent, createEffect, sample } from "effector";
+import { createStore, createEvent, createEffect, sample } from 'effector';
 
 const $supers = createStore([]);
-const $superHeroes = $supers.map((supers) => supers.filter((sup) => sup.role === "hero"));
-const $superVillains = $supers.map((supers) => supers.filter((sup) => sup.role === "villain"));
+const $superHeroes = $supers.map((supers) =>
+	supers.filter((sup) => sup.role === 'hero'),
+);
+const $superVillains = $supers.map((supers) =>
+	supers.filter((sup) => sup.role === 'villain'),
+);
 
 const superAdded = createEvent();
 
 const getSupersFx = createEffect(async () => {
-  const res = await fetch("/server/api/supers");
-  if (!res.ok) {
-    throw new Error("something went wrong");
-  }
-  const data = await res.json();
-  return data;
+	const res = await fetch('/server/api/supers');
+	if (!res.ok) {
+		throw new Error('something went wrong');
+	}
+	const data = await res.json();
+	return data;
 });
 
 const saveNewSuperFx = createEffect(async (newSuper) => {
-  // Simulate saving a new super
-  await new Promise((res) => setTimeout(res, 1500));
-  return newSuper;
+	// Simulate saving a new super
+	await new Promise((res) => setTimeout(res, 1500));
+	return newSuper;
 });
 
 $supers.on(getSupersFx.done, ({ result }) => result);
@@ -15987,14 +16100,14 @@ $supers.on(superAdded, (supers, newSuper) => [...supers, newSuper]);
 
 // when clock triggered called target and pass data
 sample({
-  clock: superAdded,
-  target: saveNewSuperFx,
+	clock: superAdded,
+	target: saveNewSuperFx,
 });
 
 // when saveNewSuperFx successfully done called getSupersFx
 sample({
-  clock: saveNewSuperFx.done,
-  target: getSupersFx,
+	clock: saveNewSuperFx.done,
+	target: getSupersFx,
 });
 
 // Trigger the data fetch
@@ -16002,7 +16115,6 @@ getSupersFx();
 ```
 
 Just like that, we easily and simply wrote part of the business logic for our application, leaving the part that displays this data to the UI framework.
-
 
 # Ecosystem
 
@@ -16020,42 +16132,41 @@ More content in [awesome-effector repository](https://github.com/effector/awesom
 
 ### Packages
 
-* [patronum](https://github.com/effector/patronum) 💚 — Effector utility library delivering modularity and convenience.
-* [@effector/reflect](https://github.com/effector/reflect) 💚 — Classic HOCs redesigned to connect React components to Effector units in an efficient, composable and (sort of) "fine-grained reactive" way.
-* [@withease/redux](https://withease.effector.dev/redux/) 💚 — Smooth migration from redux to effector.
-* [@withease/i18next](https://withease.effector.dev/i18next) 💚 — A powerful internationalization framework bindings.
-* [@withease/web-api](https://withease.effector.dev/web-api/) 💚 — Web API bindings — network status, tab visibility, and more.
-* [@withease/factories](https://withease.effector.dev/factories/) 💚 — Set of helpers to create factories in your application.
-* [effector-storage](https://github.com/yumauri/effector-storage) 💚 - Small module to sync stores with all kinds of storages (local/session storage, IndexedDB, cookies, server side storage, etc).
-* [farfetched](https://ff.effector.dev) 🛠 — The advanced data fetching tool for web applications.
-* [@effector/next](https://github.com/effector/next) 🛠 - Official bindings for Next.js
-* [effector-localstorage](https://github.com/lessmess-dev/effector-localstorage) 🛠 — Module for effector that sync stores with localStorage.
-* [effector-hotkey](https://github.com/kelin2025/effector-hotkey) 🛠 — Hotkeys made easy.
-* [atomic-router](https://github.com/atomic-router/atomic-router) 🛠️ — View-library agnostic router.
-* [effector-undo](https://github.com/tanyaisinmybed/effector-undo) ☢️ — Simple undo/redo functionality.
-* [forest](https://github.com/effector/effector/tree/master/packages/forest) ☢️ — Reactive UI engine for web.
+- [patronum](https://github.com/effector/patronum) 💚 — Effector utility library delivering modularity and convenience.
+- [@effector/reflect](https://github.com/effector/reflect) 💚 — Classic HOCs redesigned to connect React components to Effector units in an efficient, composable and (sort of) "fine-grained reactive" way.
+- [@withease/redux](https://withease.effector.dev/redux/) 💚 — Smooth migration from redux to effector.
+- [@withease/i18next](https://withease.effector.dev/i18next) 💚 — A powerful internationalization framework bindings.
+- [@withease/web-api](https://withease.effector.dev/web-api/) 💚 — Web API bindings — network status, tab visibility, and more.
+- [@withease/factories](https://withease.effector.dev/factories/) 💚 — Set of helpers to create factories in your application.
+- [effector-storage](https://github.com/yumauri/effector-storage) 💚 - Small module to sync stores with all kinds of storages (local/session storage, IndexedDB, cookies, server side storage, etc).
+- [farfetched](https://ff.effector.dev) 🛠 — The advanced data fetching tool for web applications.
+- [@effector/next](https://github.com/effector/next) 🛠 - Official bindings for Next.js
+- [effector-localstorage](https://github.com/lessmess-dev/effector-localstorage) 🛠 — Module for effector that sync stores with localStorage.
+- [effector-hotkey](https://github.com/kelin2025/effector-hotkey) 🛠 — Hotkeys made easy.
+- [atomic-router](https://github.com/atomic-router/atomic-router) 🛠️ — View-library agnostic router.
+- [effector-undo](https://github.com/tanyaisinmybed/effector-undo) ☢️ — Simple undo/redo functionality.
+- [forest](https://github.com/effector/effector/tree/master/packages/forest) ☢️ — Reactive UI engine for web.
 
 ### DX
 
-* [eslint-plugin-effector](https://eslint.effector.dev) 💚 — Enforcing best practices.
-* [@effector/swc-plugin](https://github.com/effector/swc-plugin) 💚 — An official SWC plugin for Effector.
-* [effector-logger](https://github.com/effector/logger) 🛠 — Simple logger for stores, events, effects and domains.
-* [@effector/redux-devtools-adapter](https://github.com/effector/redux-devtools-adapter) 🛠 - Simple adapter, which logs updates to Redux DevTools.
+- [eslint-plugin-effector](https://eslint.effector.dev) 💚 — Enforcing best practices.
+- [@effector/swc-plugin](https://github.com/effector/swc-plugin) 💚 — An official SWC plugin for Effector.
+- [effector-logger](https://github.com/effector/logger) 🛠 — Simple logger for stores, events, effects and domains.
+- [@effector/redux-devtools-adapter](https://github.com/effector/redux-devtools-adapter) 🛠 - Simple adapter, which logs updates to Redux DevTools.
 
 ### Form management
 
-* [effector-final-form](https://github.com/binjospookie/effector-final-form) ☢️ – Effector bindings for Final Form.
-* [filledout](https://filledout.github.io) ☢️ — Form manager with easy-to-use yup validation
-* [effector-forms](https://github.com/aanation/effector-forms) ☢️ — Form manager for effector.
-* [effector-react-form](https://github.com/GTOsss/effector-react-form) ☢️ — Connect your forms with state manager.
-* [efform](https://github.com/tehSLy/efform) ⛔ — Form manager based on a state manager, designed for high-quality DX.
-* [effector-reform](https://github.com/movpushmov/effector-reform) ☢️ — Form manager implementing the concept of composite forms.
+- [effector-final-form](https://github.com/binjospookie/effector-final-form) ☢️ – Effector bindings for Final Form.
+- [filledout](https://filledout.github.io) ☢️ — Form manager with easy-to-use yup validation
+- [effector-forms](https://github.com/aanation/effector-forms) ☢️ — Form manager for effector.
+- [effector-react-form](https://github.com/GTOsss/effector-react-form) ☢️ — Connect your forms with state manager.
+- [efform](https://github.com/tehSLy/efform) ⛔ — Form manager based on a state manager, designed for high-quality DX.
+- [effector-reform](https://github.com/movpushmov/effector-reform) ☢️ — Form manager implementing the concept of composite forms.
 
 ### Templates
 
-* [ViteJS+React Template](https://github.com/effector/vite-react-template) 💚 — Try effector with React and TypeScript in seconds!
-* [ViteJS+TypeScript Template](https://github.com/mmnkuh/effector-vite-template) 🛠 — Another ViteJS + TypeScript template.
-
+- [ViteJS+React Template](https://github.com/effector/vite-react-template) 💚 — Try effector with React and TypeScript in seconds!
+- [ViteJS+TypeScript Template](https://github.com/mmnkuh/effector-vite-template) 🛠 — Another ViteJS + TypeScript template.
 
 # Examples
 
@@ -16090,34 +16201,33 @@ To connect a custom range input component with state
 
 ### More examples
 
-* [Snake game (interactive A\* algorithm visualisation)](https://dmitryshelomanov.github.io/snake/) ([source code](https://github.com/dmitryshelomanov/snake))
-* [Ballcraft game](https://ballcraft.now.sh/) ([source code](https://github.com/kobzarvs/effector-craftball))
-* [Client-server interaction with effects](https://github.com/effector/effector/tree/master/examples/worker-rpc) GitHub
-* Tree folder structure
-* Reddit reader With effects for data fetching and effector-react hooks <!-- Reddit api is disabled, example not working! -->
-  <!-- - [Lists rendering](https://share.effector.dev/OlakwECa) With `useList` hook Example with forbidden event calls in pure functions -->
-  <!-- - [Dynamic typing status](https://share.effector.dev/tAnzG5oJ) example with watch calls in effect for aborting -->
-* Conditional filtering
-  <!-- - [Request cancellation](https://share.effector.dev/W4I0ghLt) just rewrite it in farfetched -->
-  <!-- - [Dynamic form fields, saving and loading from localStorage with effects](https://share.effector.dev/Qxt0zAdd) rewrite it with models -->
-  <!-- - [Loading initial state from localStorage with domains](https://share.effector.dev/YbiBnyAD) rewrite it with effector-storage -->
-* Dynamic page selection with useStoreMap
-* Update on scroll
-* Night theme switcher component
+- [Snake game (interactive A\* algorithm visualisation)](https://dmitryshelomanov.github.io/snake/) ([source code](https://github.com/dmitryshelomanov/snake))
+- [Ballcraft game](https://ballcraft.now.sh/) ([source code](https://github.com/kobzarvs/effector-craftball))
+- [Client-server interaction with effects](https://github.com/effector/effector/tree/master/examples/worker-rpc) GitHub
+- Tree folder structure
+- Reddit reader With effects for data fetching and effector-react hooks <!-- Reddit api is disabled, example not working! -->
+    <!-- - [Lists rendering](https://share.effector.dev/OlakwECa) With `useList` hook Example with forbidden event calls in pure functions -->
+    <!-- - [Dynamic typing status](https://share.effector.dev/tAnzG5oJ) example with watch calls in effect for aborting -->
+- Conditional filtering
+    <!-- - [Request cancellation](https://share.effector.dev/W4I0ghLt) just rewrite it in farfetched -->
+    <!-- - [Dynamic form fields, saving and loading from localStorage with effects](https://share.effector.dev/Qxt0zAdd) rewrite it with models -->
+    <!-- - [Loading initial state from localStorage with domains](https://share.effector.dev/YbiBnyAD) rewrite it with effector-storage -->
+- Dynamic page selection with useStoreMap
+- Update on scroll
+- Night theme switcher component
 
 <!-- - [Computed bounce menu animation](https://share.effector.dev/ZXEtGBBq) on with derived store -->
 
-* Values history
-* Read default state from backend
-  <!-- - [Requests cache](https://share.effector.dev/jvE7r0By) rewrite with farfetched -->
-  <!-- - [Watch last two store state values](https://share.effector.dev/LRVsYhIc) -->
-  <!-- - [Basic todolist example](https://codesandbox.io/s/vmx6wxww43) Codesandbox update example -->
-* [Recent users projects](https://github.com/effector/effector/network/dependents)
-* [BallSort game](https://ballsort.sova.dev/) with [source code](https://github.com/sergeysova/ballsort)
-* [Sudoku game](https://sudoku-effector.pages.dev/) with [source code](https://github.com/Shiyan7/sudoku-effector)
+- Values history
+- Read default state from backend
+    <!-- - [Requests cache](https://share.effector.dev/jvE7r0By) rewrite with farfetched -->
+    <!-- - [Watch last two store state values](https://share.effector.dev/LRVsYhIc) -->
+    <!-- - [Basic todolist example](https://codesandbox.io/s/vmx6wxww43) Codesandbox update example -->
+- [Recent users projects](https://github.com/effector/effector/network/dependents)
+- [BallSort game](https://ballsort.sova.dev/) with [source code](https://github.com/sergeysova/ballsort)
+- [Sudoku game](https://sudoku-effector.pages.dev/) with [source code](https://github.com/Shiyan7/sudoku-effector)
 
 <!-- - [RealWorld app](https://github.com/mg901/react-effector-realworld-example-app) ([RealWorld apps](https://github.com/gothinkster/realworld)) -->
-
 
 # Getting Started with Effector
 
@@ -16134,18 +16244,18 @@ Before diving in, it's worth mentioning that we support `llms.txt` for using AI 
 
 Currently, the following documents are available:
 
-* https://effector.dev/docs/llms.txt
-* https://effector.dev/docs/llms-full.txt
+- https://effector.dev/docs/llms.txt
+- https://effector.dev/docs/llms-full.txt
 
 Additionally, we offer a [ChatGPT effector assistant](https://chatgpt.com/g/g-thabaCJlt-effector-assistant), a repository on [DeepWiki](https://deepwiki.com/effector/effector), and uploaded documentation on [Context7](https://context7.com/effector/effector). These resources are designed to help you understand and work more effectively with Effector, with AI-powered support guiding you through the process.
 
 ### Effector Features
 
-* Effector is reactive 🚀: Effector automatically tracks dependencies and updates all related parts of the application, eliminating the need to manually manage updates.
-* Declarative code 📝: You describe the relationships between data and their transformations, while Effector takes care of how and when to perform these transformations.
-* Predictable testing ✅: Isolated contexts make testing business logic simple and reliable.
-* Flexible architecture 🏗️: Effector works equally well for both small applications and large enterprise systems.
-* Versatility 🔄: While Effector integrates perfectly with popular frameworks, it can be used in any JavaScript environment.
+- Effector is reactive 🚀: Effector automatically tracks dependencies and updates all related parts of the application, eliminating the need to manually manage updates.
+- Declarative code 📝: You describe the relationships between data and their transformations, while Effector takes care of how and when to perform these transformations.
+- Predictable testing ✅: Isolated contexts make testing business logic simple and reliable.
+- Flexible architecture 🏗️: Effector works equally well for both small applications and large enterprise systems.
+- Versatility 🔄: While Effector integrates perfectly with popular frameworks, it can be used in any JavaScript environment.
 
 More about effector core concepts you can read here
 
@@ -16183,7 +16293,7 @@ Now, let’s create a store, which represents a state of your application:
 
 ```ts
 // counter.js
-import { createStore } from "effector";
+import { createStore } from 'effector';
 
 const $counter = createStore(0);
 ```
@@ -16194,7 +16304,7 @@ Next, let’s create some events, that will update our store when triggered:
 
 ```ts ins={3-4}
 // counter.js
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const incremented = createEvent();
 const decremented = createEvent();
@@ -16208,7 +16318,7 @@ And link the events to the store:
 
 ```ts ins={9-10}
 // counter.js
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const $counter = createStore(0);
 
@@ -16265,26 +16375,34 @@ And use it like this:
   <TabItem label="React">
 
 ```jsx
-import { useUnit } from "effector-react";
-import { createEvent, createStore } from "effector";
-import { $counter, incremented, decremented } from "./counter.js";
+import { useUnit } from 'effector-react';
+import { createEvent, createStore } from 'effector';
+import { $counter, incremented, decremented } from './counter.js';
 
 export const Counter = () => {
-  const [counter, onIncremented, onDecremented] = useUnit([$counter, incremented, decremented]);
-  // or
-  const { counter, onIncremented, onDecremented } = useUnit({ $counter, incremented, decremented });
-  // or
-  const counter = useUnit($counter);
-  const onIncremented = useUnit(incremented);
-  const onDecremented = useUnit(decremented);
+	const [counter, onIncremented, onDecremented] = useUnit([
+		$counter,
+		incremented,
+		decremented,
+	]);
+	// or
+	const { counter, onIncremented, onDecremented } = useUnit({
+		$counter,
+		incremented,
+		decremented,
+	});
+	// or
+	const counter = useUnit($counter);
+	const onIncremented = useUnit(incremented);
+	const onDecremented = useUnit(decremented);
 
-  return (
-    <div>
-      <h1>Count: {counter}</h1>
-      <button onClick={onIncremented}>Increment</button>
-      <button onClick={onDecremented}>Decrement</button>
-    </div>
-  );
+	return (
+		<div>
+			<h1>Count: {counter}</h1>
+			<button onClick={onIncremented}>Increment</button>
+			<button onClick={onDecremented}>Decrement</button>
+		</div>
+	);
 };
 ```
 
@@ -16293,23 +16411,31 @@ export const Counter = () => {
 
 ```html
 <script setup>
-  import { useUnit } from "@effector-vue/composition";
-  import { $counter, incremented, decremented } from "./counter.js";
-  const [counter, onIncremented, onDecremented] = useUnit([$counter, incremented, decremented]);
-  // or
-  const { counter, onIncremented, onDecremented } = useUnit({ $counter, incremented, decremented });
-  // or
-  const counter = useUnit($counter);
-  const onIncremented = useUnit(incremented);
-  const onDecremented = useUnit(decremented);
+	import { useUnit } from '@effector-vue/composition';
+	import { $counter, incremented, decremented } from './counter.js';
+	const [counter, onIncremented, onDecremented] = useUnit([
+		$counter,
+		incremented,
+		decremented,
+	]);
+	// or
+	const { counter, onIncremented, onDecremented } = useUnit({
+		$counter,
+		incremented,
+		decremented,
+	});
+	// or
+	const counter = useUnit($counter);
+	const onIncremented = useUnit(incremented);
+	const onDecremented = useUnit(decremented);
 </script>
 
 <template>
-  <div>
-    <h1>Count: {{ counter }}</h1>
-    <button @click="onIncremented">Increment</button>
-    <button @click="onDecremented">Decrement</button>
-  </div>
+	<div>
+		<h1>Count: {{ counter }}</h1>
+		<button @click="onIncremented">Increment</button>
+		<button @click="onDecremented">Decrement</button>
+	</div>
 </template>
 ```
 
@@ -16317,26 +16443,34 @@ export const Counter = () => {
   <TabItem label="Solid">
 
 ```jsx
-import { createEvent, createStore } from "effector";
-import { useUnit } from "effector-solid";
-import { $counter, incremented, decremented } from "./counter.js";
+import { createEvent, createStore } from 'effector';
+import { useUnit } from 'effector-solid';
+import { $counter, incremented, decremented } from './counter.js';
 
 const Counter = () => {
-  const [counter, onIncremented, onDecremented] = useUnit([$counter, incremented, decremented]);
-  // or
-  const { counter, onIncremented, onDecremented } = useUnit({ $counter, incremented, decremented });
-  // or
-  const counter = useUnit($counter);
-  const onIncremented = useUnit(incremented);
-  const onDecremented = useUnit(decremented);
+	const [counter, onIncremented, onDecremented] = useUnit([
+		$counter,
+		incremented,
+		decremented,
+	]);
+	// or
+	const { counter, onIncremented, onDecremented } = useUnit({
+		$counter,
+		incremented,
+		decremented,
+	});
+	// or
+	const counter = useUnit($counter);
+	const onIncremented = useUnit(incremented);
+	const onDecremented = useUnit(decremented);
 
-  return (
-    <div>
-      <h1>Count: {counter()}</h1>
-      <button onClick={onIncremented}>Increment</button>
-      <button onClick={onDecremented}>Decrement</button>
-    </div>
-  );
+	return (
+		<div>
+			<h1>Count: {counter()}</h1>
+			<button onClick={onIncremented}>Increment</button>
+			<button onClick={onDecremented}>Decrement</button>
+		</div>
+	);
 };
 
 export default Counter;
@@ -16348,7 +16482,6 @@ export default Counter;
 > INFO What about Svelte ?:
 >
 > No additional packages are required to use Effector with Svelte. It works seamlessly with the base Effector package.
-
 
 # Installation
 
@@ -16432,16 +16565,16 @@ Examples in this documentation are running in [our online playground](https://sh
 Just import `effector.mjs` from any CDN.
 
 ```typescript
-import { createStore } from "https://cdn.jsdelivr.net/npm/effector/effector.mjs";
+import { createStore } from 'https://cdn.jsdelivr.net/npm/effector/effector.mjs';
 ```
 
 Sample CDNS:
 
-* https://www.jsdelivr.com/package/npm/effector
-* https://cdn.jsdelivr.net/npm/effector/effector.cjs.js
-* https://cdn.jsdelivr.net/npm/effector/effector.mjs
-* https://cdn.jsdelivr.net/npm/effector-react/effector-react.cjs.js
-* https://cdn.jsdelivr.net/npm/effector-vue/effector-vue.cjs.js
+- https://www.jsdelivr.com/package/npm/effector
+- https://cdn.jsdelivr.net/npm/effector/effector.cjs.js
+- https://cdn.jsdelivr.net/npm/effector/effector.mjs
+- https://cdn.jsdelivr.net/npm/effector-react/effector-react.cjs.js
+- https://cdn.jsdelivr.net/npm/effector-vue/effector-vue.cjs.js
 
 ### DevTools
 
@@ -16478,17 +16611,17 @@ Usage with [babel-plugin-module-resolver](https://github.com/tleunen/babel-plugi
 
 ```json
 {
-  "plugins": [
-    [
-      "babel-plugin-module-resolver",
-      {
-        "alias": {
-          "^effector$": "effector/compat",
-          "^effector-react$": "effector-react/compat"
-        }
-      }
-    ]
-  ]
+	"plugins": [
+		[
+			"babel-plugin-module-resolver",
+			{
+				"alias": {
+					"^effector$": "effector/compat",
+					"^effector-react$": "effector-react/compat"
+				}
+			}
+		]
+	]
 }
 ```
 
@@ -16498,10 +16631,9 @@ Effector uses some APIs and objects that older browsers may not have, so you may
 
 You may need to install the following polyfills:
 
-* `Promise`
-* `Object.assign`
-* `Array.prototype.flat`
-
+- `Promise`
+- `Object.assign`
+- `Array.prototype.flat`
 
 # Motivation
 
@@ -16513,9 +16645,9 @@ Modern web application development is becoming more complex every day. Multiple 
 
 Effector was designed to describe application business logic in a simple and clear language using three basic primitives:
 
-* Event — for describing events
-* Store — for state management
-* Effect — for handling side effects
+- Event — for describing events
+- Store — for state management
+- Effect — for handling side effects
 
 At the same time, user interface logic is handled by the framework.
 Let each framework efficiently address its specific task.
@@ -16532,9 +16664,9 @@ In modern development, business logic and user interface are clearly separated:
 
 In real projects, tasks from product managers rarely contain interface implementation details. Instead, they describe user interaction scenarios with the system. Effector allows you to describe these scenarios in the same language that the development team uses:
 
-* Users interact with the application → Event
-* See changes on the page → Store
-* Application interacts with the outside world → Effect
+- Users interact with the application → Event
+- See changes on the page → Store
+- Application interacts with the outside world → Effect
 
 ### Framework agnostic
 
@@ -16544,7 +16676,6 @@ This means you can:
 1. Focus on business logic, not framework specifics
 2. Easily reuse code between different parts of the application
 3. Create more maintainable and scalable solutions
-
 
 # Countdown timer on setTimeout
 
@@ -16560,43 +16691,46 @@ Task:
 4. Countdown can't be started if already started
 
 ```js
-function createCountdown(name, { start, abort = createEvent(`${name}Reset`), timeout = 1000 }) {
-  // tick every 1 second
-  const $working = createStore(true, { name: `${name}Working` });
-  const tick = createEvent(`${name}Tick`);
-  const timerFx = createEffect(`${name}Timer`).use(() => wait(timeout));
+function createCountdown(
+	name,
+	{ start, abort = createEvent(`${name}Reset`), timeout = 1000 },
+) {
+	// tick every 1 second
+	const $working = createStore(true, { name: `${name}Working` });
+	const tick = createEvent(`${name}Tick`);
+	const timerFx = createEffect(`${name}Timer`).use(() => wait(timeout));
 
-  $working.on(abort, () => false).on(start, () => true);
+	$working.on(abort, () => false).on(start, () => true);
 
-  sample({
-    source: start,
-    filter: timerFx.pending.map((is) => !is),
-    target: tick,
-  });
+	sample({
+		source: start,
+		filter: timerFx.pending.map((is) => !is),
+		target: tick,
+	});
 
-  sample({
-    clock: tick,
-    target: timerFx,
-  });
+	sample({
+		clock: tick,
+		target: timerFx,
+	});
 
-  const willTick = sample({
-    source: timerFx.done.map(({ params }) => params - 1),
-    filter: (seconds) => seconds >= 0,
-  });
+	const willTick = sample({
+		source: timerFx.done.map(({ params }) => params - 1),
+		filter: (seconds) => seconds >= 0,
+	});
 
-  sample({
-    source: willTick,
-    filter: $working,
-    target: tick,
-  });
+	sample({
+		source: willTick,
+		filter: $working,
+		target: tick,
+	});
 
-  return { tick };
+	return { tick };
 }
 
 function wait(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
+	return new Promise((resolve) => {
+		setTimeout(resolve, ms);
+	});
 }
 ```
 
@@ -16606,14 +16740,14 @@ Usage:
 const startCountdown = createEvent();
 const abortCountdown = createEvent();
 
-const countdown = createCountdown("simple", {
-  start: startCountdown,
-  abort: abortCountdown,
+const countdown = createCountdown('simple', {
+	start: startCountdown,
+	abort: abortCountdown,
 });
 
 // handle each tick
 countdown.tick.watch((remainSeconds) => {
-  console.info("Tick. Remain seconds: ", remainSeconds);
+	console.info('Tick. Remain seconds: ', remainSeconds);
 });
 
 // let's start
@@ -16623,11 +16757,9 @@ startCountdown(15); // 15 ticks to count down, 1 tick per second
 setTimeout(abortCountdown, 5000);
 ```
 
-
 # Integrate Next.js with effector
 
 There is the official Next.js bindings package - [`@effector/next`](https://github.com/effector/next). Follow its documentation to find out, how to integrate Next.js with effector.
-
 
 # Integrate with Next.js router
 
@@ -16741,7 +16873,6 @@ export function goToSomeRouteNameButton() {
 
 ```
 
-
 # Use scopeBind in Next.js
 
 > TIP:
@@ -16753,54 +16884,53 @@ If we directly bind events, then we will face the loss of the scope.
 To solve this problem, we can use scopeBind.
 
 We have some external library that returns us the status of our connection.
-Let's call it an instance in the store and call it *$service*, and we will take the status through an event.
+Let's call it an instance in the store and call it _$service_, and we will take the status through an event.
 
 ```js
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
-const $connectStatus = createStore("close");
+const $connectStatus = createStore('close');
 const connectEv = createEvent();
 
 sample({
-  clock: connectEv,
-  targt: $connectStatus,
+	clock: connectEv,
+	targt: $connectStatus,
 });
 ```
 
-Next, we need to create an effect, within which we will connect our event and *service*.
+Next, we need to create an effect, within which we will connect our event and _service_.
 
 ```js
-import { attach, scopeBind } from "effector";
+import { attach, scopeBind } from 'effector';
 
 const connectFx = attach({
-  source: {
-    service: $service,
-  },
-  async effect({ service }) {
-    /**
-     * `scopeBind` will automatically derive current scope, if called inside of an Effect
-     */
-    const serviceStarted = scopeBind(connectEv);
+	source: {
+		service: $service,
+	},
+	async effect({ service }) {
+		/**
+		 * `scopeBind` will automatically derive current scope, if called inside of an Effect
+		 */
+		const serviceStarted = scopeBind(connectEv);
 
-    return await service.on("service_start", serviceStarted);
-  },
+		return await service.on('service_start', serviceStarted);
+	},
 });
 ```
 
-After calling our effect, the event will be tied to the scope and will be able to take the current value from our *service*.
-
+After calling our effect, the event will be tied to the scope and will be able to take the current value from our _service_.
 
 # AsyncStorage Counter on React Native
 
 The following example is a React Native counter that stores data to AsyncStorage. It uses store, events and effects.
 
 ```js
-import * as React from "react";
-import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
-import AsyncStorage from "@react-native-community/async-storage";
+import * as React from 'react';
+import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
 
-import { createStore, createEvent, createEffect, sample } from "effector";
-import { useUnit } from "effector-react";
+import { createStore, createEvent, createEffect, sample } from 'effector';
+import { useUnit } from 'effector-react';
 
 const init = createEvent();
 const increment = createEvent();
@@ -16808,103 +16938,114 @@ const decrement = createEvent();
 const reset = createEvent();
 
 const fetchCountFromAsyncStorageFx = createEffect(async () => {
-  const value = parseInt(await AsyncStorage.getItem("count"));
-  return !isNaN(value) ? value : 0;
+	const value = parseInt(await AsyncStorage.getItem('count'));
+	return !isNaN(value) ? value : 0;
 });
 
 const updateCountInAsyncStorageFx = createEffect(async (count) => {
-  try {
-    await AsyncStorage.setItem("count", `${count}`, (err) => {
-      if (err) console.error(err);
-    });
-  } catch (err) {
-    console.error(err);
-  }
+	try {
+		await AsyncStorage.setItem('count', `${count}`, (err) => {
+			if (err) console.error(err);
+		});
+	} catch (err) {
+		console.error(err);
+	}
 });
 
 const $counter = createStore(0);
 
 sample({
-  clock: fetchCountFromAsyncStorageFx.doneData,
-  target: init,
+	clock: fetchCountFromAsyncStorageFx.doneData,
+	target: init,
 });
 
 $counter
-  .on(init, (state, value) => value)
-  .on(increment, (state) => state + 1)
-  .on(decrement, (state) => state - 1)
-  .reset(reset);
+	.on(init, (state, value) => value)
+	.on(increment, (state) => state + 1)
+	.on(decrement, (state) => state - 1)
+	.reset(reset);
 
 sample({
-  clock: $counter,
-  target: updateCountInAsyncStorageFx,
+	clock: $counter,
+	target: updateCountInAsyncStorageFx,
 });
 
 fetchCountFromAsyncStorageFx();
 
 export default () => {
-  const count = useUnit(counter);
+	const count = useUnit(counter);
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.paragraph}>{count}</Text>
-      <View style={styles.buttons}>
-        <TouchableOpacity key="dec" onPress={decrement} style={styles.button}>
-          <Text style={styles.label}>-</Text>
-        </TouchableOpacity>
-        <TouchableOpacity key="reset" onPress={reset} style={styles.button}>
-          <Text style={styles.label}>0</Text>
-        </TouchableOpacity>
-        <TouchableOpacity key="inc" onPress={increment} style={styles.button}>
-          <Text style={styles.label}>+</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+	return (
+		<View style={styles.container}>
+			<Text style={styles.paragraph}>{count}</Text>
+			<View style={styles.buttons}>
+				<TouchableOpacity
+					key='dec'
+					onPress={decrement}
+					style={styles.button}
+				>
+					<Text style={styles.label}>-</Text>
+				</TouchableOpacity>
+				<TouchableOpacity
+					key='reset'
+					onPress={reset}
+					style={styles.button}
+				>
+					<Text style={styles.label}>0</Text>
+				</TouchableOpacity>
+				<TouchableOpacity
+					key='inc'
+					onPress={increment}
+					style={styles.button}
+				>
+					<Text style={styles.label}>+</Text>
+				</TouchableOpacity>
+			</View>
+		</View>
+	);
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    paddingTop: 20,
-    backgroundColor: "#ecf0f1",
-    padding: 8,
-  },
-  paragraph: {
-    margin: 24,
-    fontSize: 60,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  buttons: {
-    flexDirection: "row",
-    alignSelf: "center",
-    justifyContent: "space-between",
-  },
-  button: {
-    marginHorizontal: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: "#4287f5",
-    borderRadius: 5,
-  },
-  label: {
-    fontSize: 30,
-    color: "#ffffff",
-    fontWeight: "bold",
-  },
+	container: {
+		flex: 1,
+		justifyContent: 'center',
+		paddingTop: 20,
+		backgroundColor: '#ecf0f1',
+		padding: 8,
+	},
+	paragraph: {
+		margin: 24,
+		fontSize: 60,
+		fontWeight: 'bold',
+		textAlign: 'center',
+	},
+	buttons: {
+		flexDirection: 'row',
+		alignSelf: 'center',
+		justifyContent: 'space-between',
+	},
+	button: {
+		marginHorizontal: 10,
+		paddingVertical: 10,
+		paddingHorizontal: 20,
+		backgroundColor: '#4287f5',
+		borderRadius: 5,
+	},
+	label: {
+		fontSize: 30,
+		color: '#ffffff',
+		fontWeight: 'bold',
+	},
 });
 ```
-
 
 # React Counter
 
 ```js
-import React from "react";
-import ReactDOM from "react-dom";
-import { createEvent, createStore, combine } from "effector";
-import { useUnit } from "effector-react";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { createEvent, createStore, combine } from 'effector';
+import { useUnit } from 'effector-react';
 
 const plus = createEvent();
 
@@ -16916,56 +17057,64 @@ const $counterCombined = combine({ counter: $counter, text: $counterText });
 $counter.on(plus, (count) => count + 1);
 
 function App() {
-  const counter = useUnit($counter);
-  const counterText = useUnit($counterText);
-  const counterCombined = useUnit($counterCombined);
+	const counter = useUnit($counter);
+	const counterText = useUnit($counterText);
+	const counterCombined = useUnit($counterCombined);
 
-  return (
-    <div>
-      <button onClick={plus}>Plus</button>
-      <div>counter: {counter}</div>
-      <div>counterText: ${counterText}</div>
-      <div>
-        counterCombined: {counterCombined.counter}, {counterCombined.text}
-      </div>
-    </div>
-  );
+	return (
+		<div>
+			<button onClick={plus}>Plus</button>
+			<div>counter: {counter}</div>
+			<div>counterText: ${counterText}</div>
+			<div>
+				counterCombined: {counterCombined.counter},{' '}
+				{counterCombined.text}
+			</div>
+		</div>
+	);
 }
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(<App />, document.getElementById('root'));
 ```
 
 Try it
-
 
 # Dynamic form schema
 
 Try it
 
 ```js
-import { createEvent, createEffect, createStore, createApi, sample } from "effector";
-import { useList, useUnit } from "effector-react";
+import {
+	createEvent,
+	createEffect,
+	createStore,
+	createApi,
+	sample,
+} from 'effector';
+import { useList, useUnit } from 'effector-react';
 
 const submitForm = createEvent();
 const addMessage = createEvent();
 const changeFieldType = createEvent();
 
-const showTooltipFx = createEffect(() => new Promise((rs) => setTimeout(rs, 1500)));
+const showTooltipFx = createEffect(
+	() => new Promise((rs) => setTimeout(rs, 1500)),
+);
 
 const saveFormFx = createEffect((data) => {
-  localStorage.setItem("form_state/2", JSON.stringify(data, null, 2));
+	localStorage.setItem('form_state/2', JSON.stringify(data, null, 2));
 });
 const loadFormFx = createEffect(() => {
-  return JSON.parse(localStorage.getItem("form_state/2"));
+	return JSON.parse(localStorage.getItem('form_state/2'));
 });
 
-const $fieldType = createStore("text");
-const $message = createStore("done");
+const $fieldType = createStore('text');
+const $message = createStore('done');
 const $mainForm = createStore({});
 const $types = createStore({
-  username: "text",
-  email: "text",
-  password: "text",
+	username: 'text',
+	email: 'text',
+	password: 'text',
 });
 
 const $fields = $types.map((state) => Object.keys(state));
@@ -16973,393 +17122,454 @@ const $fields = $types.map((state) => Object.keys(state));
 $message.on(addMessage, (_, message) => message);
 
 $mainForm.on(loadFormFx.doneData, (form, result) => {
-  let changed = false;
+	let changed = false;
 
-  form = { ...form };
-  for (const key in result) {
-    const { value } = result[key];
-    if (value == null) continue;
-    if (form[key] === value) continue;
-    changed = true;
-    form[key] = value;
-  }
-  if (!changed) return;
+	form = { ...form };
+	for (const key in result) {
+		const { value } = result[key];
+		if (value == null) continue;
+		if (form[key] === value) continue;
+		changed = true;
+		form[key] = value;
+	}
+	if (!changed) return;
 
-  return form;
+	return form;
 });
 
 const mainFormApi = createApi($mainForm, {
-  upsertField(form, name) {
-    if (name in form) return;
+	upsertField(form, name) {
+		if (name in form) return;
 
-    return { ...form, [name]: "" };
-  },
-  changeField(form, [name, value]) {
-    if (form[name] === value) return;
+		return { ...form, [name]: '' };
+	},
+	changeField(form, [name, value]) {
+		if (form[name] === value) return;
 
-    return { ...form, [name]: value };
-  },
-  addField(form, [name, value = ""]) {
-    if (form[name] === value) return;
+		return { ...form, [name]: value };
+	},
+	addField(form, [name, value = '']) {
+		if (form[name] === value) return;
 
-    return { ...form, [name]: value };
-  },
-  deleteField(form, name) {
-    if (!(name in form)) return;
-    form = { ...form };
-    delete form[name];
+		return { ...form, [name]: value };
+	},
+	deleteField(form, name) {
+		if (!(name in form)) return;
+		form = { ...form };
+		delete form[name];
 
-    return form;
-  },
+		return form;
+	},
 });
 
 $types.on(mainFormApi.addField, (state, [name, value, type]) => {
-  if (state[name] === type) return;
+	if (state[name] === type) return;
 
-  return { ...state, [name]: value };
+	return { ...state, [name]: value };
 });
 $types.on(mainFormApi.deleteField, (state, name) => {
-  if (!(name in state)) return;
-  state = { ...state };
-  delete state[name];
+	if (!(name in state)) return;
+	state = { ...state };
+	delete state[name];
 
-  return state;
+	return state;
 });
 $types.on(loadFormFx.doneData, (state, result) => {
-  let changed = false;
+	let changed = false;
 
-  state = { ...state };
-  for (const key in result) {
-    const { type } = result[key];
+	state = { ...state };
+	for (const key in result) {
+		const { type } = result[key];
 
-    if (type == null) continue;
-    if (state[key] === type) continue;
-    changed = true;
-    state[key] = type;
-  }
-  if (!changed) return;
+		if (type == null) continue;
+		if (state[key] === type) continue;
+		changed = true;
+		state[key] = type;
+	}
+	if (!changed) return;
 
-  return state;
+	return state;
 });
 
 const changeFieldInput = mainFormApi.changeField.prepend((e) => [
-  e.currentTarget.name,
-  e.currentTarget.type === "checkbox" ? e.currentTarget.checked : e.currentTarget.value,
+	e.currentTarget.name,
+	e.currentTarget.type === 'checkbox' ?
+		e.currentTarget.checked
+	:	e.currentTarget.value,
 ]);
 
 const submitField = mainFormApi.addField.prepend((e) => [
-  e.currentTarget.fieldname.value,
-  e.currentTarget.fieldtype.value === "checkbox"
-    ? e.currentTarget.fieldvalue.checked
-    : e.currentTarget.fieldvalue.value,
-  e.currentTarget.fieldtype.value,
+	e.currentTarget.fieldname.value,
+	e.currentTarget.fieldtype.value === 'checkbox' ?
+		e.currentTarget.fieldvalue.checked
+	:	e.currentTarget.fieldvalue.value,
+	e.currentTarget.fieldtype.value,
 ]);
 
-const submitRemoveField = mainFormApi.deleteField.prepend((e) => e.currentTarget.field.value);
+const submitRemoveField = mainFormApi.deleteField.prepend(
+	(e) => e.currentTarget.field.value,
+);
 
 $fieldType.on(changeFieldType, (_, e) => e.currentTarget.value);
 $fieldType.reset(submitField);
 
 submitForm.watch((e) => {
-  e.preventDefault();
+	e.preventDefault();
 });
 submitField.watch((e) => {
-  e.preventDefault();
-  e.currentTarget.reset();
+	e.preventDefault();
+	e.currentTarget.reset();
 });
 submitRemoveField.watch((e) => {
-  e.preventDefault();
+	e.preventDefault();
 });
 
 sample({
-  clock: [submitForm, submitField, submitRemoveField],
-  source: { values: $mainForm, types: $types },
-  target: saveFormFx,
-  fn({ values, types }) {
-    const form = {};
+	clock: [submitForm, submitField, submitRemoveField],
+	source: { values: $mainForm, types: $types },
+	target: saveFormFx,
+	fn({ values, types }) {
+		const form = {};
 
-    for (const [key, value] of Object.entries(values)) {
-      form[key] = {
-        value,
-        type: types[key],
-      };
-    }
+		for (const [key, value] of Object.entries(values)) {
+			form[key] = {
+				value,
+				type: types[key],
+			};
+		}
 
-    return form;
-  },
+		return form;
+	},
 });
 
 sample({
-  clock: addMessage,
-  target: showTooltipFx,
+	clock: addMessage,
+	target: showTooltipFx,
 });
 sample({
-  clock: submitField,
-  fn: () => "added",
-  target: addMessage,
+	clock: submitField,
+	fn: () => 'added',
+	target: addMessage,
 });
 sample({
-  clock: submitRemoveField,
-  fn: () => "removed",
-  target: addMessage,
+	clock: submitRemoveField,
+	fn: () => 'removed',
+	target: addMessage,
 });
 sample({
-  clock: submitForm,
-  fn: () => "saved",
-  target: addMessage,
+	clock: submitForm,
+	fn: () => 'saved',
+	target: addMessage,
 });
 
 loadFormFx.finally.watch(() => {
-  ReactDOM.render(<App />, document.getElementById("root"));
+	ReactDOM.render(<App />, document.getElementById('root'));
 });
 
 function useFormField(name) {
-  const type = useStoreMap({
-    store: $types,
-    keys: [name],
-    fn(state, [field]) {
-      if (field in state) return state[field];
+	const type = useStoreMap({
+		store: $types,
+		keys: [name],
+		fn(state, [field]) {
+			if (field in state) return state[field];
 
-      return "text";
-    },
-  });
-  const value = useStoreMap({
-    store: $mainForm,
-    keys: [name],
-    fn(state, [field]) {
-      if (field in state) return state[field];
+			return 'text';
+		},
+	});
+	const value = useStoreMap({
+		store: $mainForm,
+		keys: [name],
+		fn(state, [field]) {
+			if (field in state) return state[field];
 
-      return "";
-    },
-  });
-  mainFormApi.upsertField(name);
+			return '';
+		},
+	});
+	mainFormApi.upsertField(name);
 
-  return [value, type];
+	return [value, type];
 }
 
 function Form() {
-  const pending = useUnit(saveFormFx.pending);
+	const pending = useUnit(saveFormFx.pending);
 
-  return (
-    <form onSubmit={submitForm} data-form autocomplete="off">
-      <header>
-        <h4>Form</h4>
-      </header>
-      {useList($fields, (name) => (
-        <InputField name={name} />
-      ))}
+	return (
+		<form
+			onSubmit={submitForm}
+			data-form
+			autocomplete='off'
+		>
+			<header>
+				<h4>Form</h4>
+			</header>
+			{useList($fields, (name) => (
+				<InputField name={name} />
+			))}
 
-      <input type="submit" value="save form" disabled={pending} />
-    </form>
-  );
+			<input
+				type='submit'
+				value='save form'
+				disabled={pending}
+			/>
+		</form>
+	);
 }
 
 function InputField({ name }) {
-  const [value, type] = useFormField(name);
-  let input = null;
+	const [value, type] = useFormField(name);
+	let input = null;
 
-  switch (type) {
-    case "checkbox":
-      input = (
-        <input
-          id={name}
-          name={name}
-          value={name}
-          checked={value}
-          onChange={changeFieldInput}
-          type="checkbox"
-        />
-      );
-      break;
-    case "text":
-    default:
-      input = <input id={name} name={name} value={value} onChange={changeFieldInput} type="text" />;
-  }
+	switch (type) {
+		case 'checkbox':
+			input = (
+				<input
+					id={name}
+					name={name}
+					value={name}
+					checked={value}
+					onChange={changeFieldInput}
+					type='checkbox'
+				/>
+			);
+			break;
+		case 'text':
+		default:
+			input = (
+				<input
+					id={name}
+					name={name}
+					value={value}
+					onChange={changeFieldInput}
+					type='text'
+				/>
+			);
+	}
 
-  return (
-    <>
-      <label htmlFor={name} style={{ display: "block" }}>
-        <strong>{name}</strong>
-      </label>
-      {input}
-    </>
-  );
+	return (
+		<>
+			<label
+				htmlFor={name}
+				style={{ display: 'block' }}
+			>
+				<strong>{name}</strong>
+			</label>
+			{input}
+		</>
+	);
 }
 
 function FieldForm() {
-  const currentFieldType = useUnit($fieldType);
-  const fieldValue =
-    currentFieldType === "checkbox" ? (
-      <input id="fieldvalue" name="fieldvalue" type="checkbox" />
-    ) : (
-      <input id="fieldvalue" name="fieldvalue" type="text" defaultValue="" />
-    );
+	const currentFieldType = useUnit($fieldType);
+	const fieldValue =
+		currentFieldType === 'checkbox' ?
+			<input
+				id='fieldvalue'
+				name='fieldvalue'
+				type='checkbox'
+			/>
+		:	<input
+				id='fieldvalue'
+				name='fieldvalue'
+				type='text'
+				defaultValue=''
+			/>;
 
-  return (
-    <form onSubmit={submitField} autocomplete="off" data-form>
-      <header>
-        <h4>Insert new field</h4>
-      </header>
-      <label htmlFor="fieldname">
-        <strong>name</strong>
-      </label>
-      <input id="fieldname" name="fieldname" type="text" required defaultValue="" />
-      <label htmlFor="fieldvalue">
-        <strong>value</strong>
-      </label>
-      {fieldValue}
-      <label htmlFor="fieldtype">
-        <strong>type</strong>
-      </label>
-      <select id="fieldtype" name="fieldtype" onChange={changeFieldType}>
-        <option value="text">text</option>
-        <option value="checkbox">checkbox</option>
-      </select>
-      <input type="submit" value="insert" />
-    </form>
-  );
+	return (
+		<form
+			onSubmit={submitField}
+			autocomplete='off'
+			data-form
+		>
+			<header>
+				<h4>Insert new field</h4>
+			</header>
+			<label htmlFor='fieldname'>
+				<strong>name</strong>
+			</label>
+			<input
+				id='fieldname'
+				name='fieldname'
+				type='text'
+				required
+				defaultValue=''
+			/>
+			<label htmlFor='fieldvalue'>
+				<strong>value</strong>
+			</label>
+			{fieldValue}
+			<label htmlFor='fieldtype'>
+				<strong>type</strong>
+			</label>
+			<select
+				id='fieldtype'
+				name='fieldtype'
+				onChange={changeFieldType}
+			>
+				<option value='text'>text</option>
+				<option value='checkbox'>checkbox</option>
+			</select>
+			<input
+				type='submit'
+				value='insert'
+			/>
+		</form>
+	);
 }
 
 function RemoveFieldForm() {
-  return (
-    <form onSubmit={submitRemoveField} data-form>
-      <header>
-        <h4>Remove field</h4>
-      </header>
-      <label htmlFor="field">
-        <strong>name</strong>
-      </label>
-      <select id="field" name="field" required>
-        {useList($fields, (name) => (
-          <option value={name}>{name}</option>
-        ))}
-      </select>
-      <input type="submit" value="remove" />
-    </form>
-  );
+	return (
+		<form
+			onSubmit={submitRemoveField}
+			data-form
+		>
+			<header>
+				<h4>Remove field</h4>
+			</header>
+			<label htmlFor='field'>
+				<strong>name</strong>
+			</label>
+			<select
+				id='field'
+				name='field'
+				required
+			>
+				{useList($fields, (name) => (
+					<option value={name}>{name}</option>
+				))}
+			</select>
+			<input
+				type='submit'
+				value='remove'
+			/>
+		</form>
+	);
 }
 
 const Tooltip = () => {
-  const [visible, text] = useUnit([showTooltipFx.pending, $message]);
+	const [visible, text] = useUnit([showTooltipFx.pending, $message]);
 
-  return <span data-tooltip={text} data-visible={visible} />;
+	return (
+		<span
+			data-tooltip={text}
+			data-visible={visible}
+		/>
+	);
 };
 
 const App = () => (
-  <>
-    <Tooltip />
-    <div id="app">
-      <Form />
-      <FieldForm />
-      <RemoveFieldForm />
-    </div>
-  </>
+	<>
+		<Tooltip />
+		<div id='app'>
+			<Form />
+			<FieldForm />
+			<RemoveFieldForm />
+		</div>
+	</>
 );
 
 await loadFormFx();
 
 css`
-  [data-tooltip]:before {
-    display: block;
-    background: white;
-    width: min-content;
-    content: attr(data-tooltip);
-    position: sticky;
-    top: 0;
-    left: 50%;
-    color: darkgreen;
-    font-family: sans-serif;
-    font-weight: 800;
-    font-size: 20px;
-    padding: 5px 5px;
-    transition: transform 100ms ease-out;
-  }
+	[data-tooltip]:before {
+		display: block;
+		background: white;
+		width: min-content;
+		content: attr(data-tooltip);
+		position: sticky;
+		top: 0;
+		left: 50%;
+		color: darkgreen;
+		font-family: sans-serif;
+		font-weight: 800;
+		font-size: 20px;
+		padding: 5px 5px;
+		transition: transform 100ms ease-out;
+	}
 
-  [data-tooltip][data-visible="true"]:before {
-    transform: translate(0px, 0.5em);
-  }
+	[data-tooltip][data-visible='true']:before {
+		transform: translate(0px, 0.5em);
+	}
 
-  [data-tooltip][data-visible="false"]:before {
-    transform: translate(0px, -2em);
-  }
+	[data-tooltip][data-visible='false']:before {
+		transform: translate(0px, -2em);
+	}
 
-  [data-form] {
-    display: contents;
-  }
+	[data-form] {
+		display: contents;
+	}
 
-  [data-form] > header {
-    grid-column: 1 / span 2;
-  }
+	[data-form] > header {
+		grid-column: 1 / span 2;
+	}
 
-  [data-form] > header > h4 {
-    margin-block-end: 0;
-  }
+	[data-form] > header > h4 {
+		margin-block-end: 0;
+	}
 
-  [data-form] label {
-    grid-column: 1;
-    justify-self: end;
-  }
+	[data-form] label {
+		grid-column: 1;
+		justify-self: end;
+	}
 
-  [data-form] input:not([type="submit"]),
-  [data-form] select {
-    grid-column: 2;
-  }
+	[data-form] input:not([type='submit']),
+	[data-form] select {
+		grid-column: 2;
+	}
 
-  [data-form] input[type="submit"] {
-    grid-column: 2;
-    justify-self: end;
-    width: fit-content;
-  }
+	[data-form] input[type='submit'] {
+		grid-column: 2;
+		justify-self: end;
+		width: fit-content;
+	}
 
-  #app {
-    width: min-content;
-    display: grid;
-    grid-column-gap: 5px;
-    grid-row-gap: 8px;
-    grid-template-columns: repeat(2, 3fr);
-  }
+	#app {
+		width: min-content;
+		display: grid;
+		grid-column-gap: 5px;
+		grid-row-gap: 8px;
+		grid-template-columns: repeat(2, 3fr);
+	}
 `;
 
 function css(tags, ...attrs) {
-  const value = style(tags, ...attrs);
-  const node = document.createElement("style");
-  node.id = "insertedStyle";
-  node.appendChild(document.createTextNode(value));
-  const sheet = document.getElementById("insertedStyle");
+	const value = style(tags, ...attrs);
+	const node = document.createElement('style');
+	node.id = 'insertedStyle';
+	node.appendChild(document.createTextNode(value));
+	const sheet = document.getElementById('insertedStyle');
 
-  if (sheet) {
-    sheet.disabled = true;
-    sheet.parentNode.removeChild(sheet);
-  }
-  document.head.appendChild(node);
+	if (sheet) {
+		sheet.disabled = true;
+		sheet.parentNode.removeChild(sheet);
+	}
+	document.head.appendChild(node);
 
-  function style(tags, ...attrs) {
-    if (tags.length === 0) return "";
-    let result = " " + tags[0];
+	function style(tags, ...attrs) {
+		if (tags.length === 0) return '';
+		let result = ' ' + tags[0];
 
-    for (let i = 0; i < attrs.length; i++) {
-      result += attrs[i];
-      result += tags[i + 1];
-    }
+		for (let i = 0; i < attrs.length; i++) {
+			result += attrs[i];
+			result += tags[i + 1];
+		}
 
-    return result;
-  }
+		return result;
+	}
 }
 ```
-
 
 # Effects with React
 
 ```js
-import React from "react";
-import ReactDOM from "react-dom";
-import { createEffect, createStore, sample } from "effector";
-import { useUnit } from "effector-react";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { createEffect, createStore, sample } from 'effector';
+import { useUnit } from 'effector-react';
 
 const url =
-  "https://gist.githubusercontent.com/" +
-  "zerobias/24bc72aa8394157549e0b566ac5059a4/raw/" +
-  "b55eb74b06afd709e2d1d19f9703272b4d753386/data.json";
+	'https://gist.githubusercontent.com/' +
+	'zerobias/24bc72aa8394157549e0b566ac5059a4/raw/' +
+	'b55eb74b06afd709e2d1d19f9703272b4d753386/data.json';
 
 const loadUserClicked = createEvent();
 
@@ -17368,93 +17578,110 @@ const fetchUserFx = createEffect((url) => fetch(url).then((req) => req.json()));
 const $user = createStore(null);
 
 sample({
-  clock: loadUserClicked,
-  fn: () => url,
-  target: fetchUserFx,
+	clock: loadUserClicked,
+	fn: () => url,
+	target: fetchUserFx,
 });
 
 $user.on(fetchUserFx.doneData, (_, user) => user.username);
 
 const App = () => {
-  const [user, pending] = useUnit([$user, fetchUserFx.pending]);
-  const handleUserLoad = useUnit(loadUserClicked);
-  return (
-    <div>
-      {user ? <div>current user: {user}</div> : <div>no current user</div>}
-      <button disable={pending} onClick={handleUserLoad}>
-        load user
-      </button>
-    </div>
-  );
+	const [user, pending] = useUnit([$user, fetchUserFx.pending]);
+	const handleUserLoad = useUnit(loadUserClicked);
+	return (
+		<div>
+			{user ?
+				<div>current user: {user}</div>
+			:	<div>no current user</div>}
+			<button
+				disable={pending}
+				onClick={handleUserLoad}
+			>
+				load user
+			</button>
+		</div>
+	);
 };
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(<App />, document.getElementById('root'));
 ```
 
 Try it
-
 
 # Forms
 
 ### Example 1
 
 ```jsx
-import React from "react";
-import ReactDOM from "react-dom";
-import { createEffect, createStore, createEvent, sample } from "effector";
-import { useStoreMap } from "effector-react";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { createEffect, createStore, createEvent, sample } from 'effector';
+import { useStoreMap } from 'effector-react';
 
 const formSubmitted = createEvent();
 const fieldUpdate = createEvent();
 
 const sendFormFx = createEffect((params) => {
-  console.log(params);
+	console.log(params);
 });
 
 const $form = createStore({});
 
 $form.on(fieldUpdate, (form, { key, value }) => ({
-  ...form,
-  [key]: value,
+	...form,
+	[key]: value,
 }));
 
 sample({
-  clock: formSubmitted,
-  source: $form,
-  target: sendFormFx,
+	clock: formSubmitted,
+	source: $form,
+	target: sendFormFx,
 });
 
 const handleChange = fieldUpdate.prepend((event) => ({
-  key: event.target.name,
-  value: event.target.value,
+	key: event.target.name,
+	value: event.target.value,
 }));
 
 const Field = ({ name, type, label }) => {
-  const value = useStoreMap({
-    store: $form,
-    keys: [name],
-    fn: (values) => values[name] ?? "",
-  });
-  return (
-    <div>
-      {label} <input name={name} type={type} value={value} onChange={handleChange} />
-    </div>
-  );
+	const value = useStoreMap({
+		store: $form,
+		keys: [name],
+		fn: (values) => values[name] ?? '',
+	});
+	return (
+		<div>
+			{label}{' '}
+			<input
+				name={name}
+				type={type}
+				value={value}
+				onChange={handleChange}
+			/>
+		</div>
+	);
 };
 
 const App = () => (
-  <form onSubmit={formSubmitted}>
-    <Field name="login" label="Login" />
-    <Field name="password" type="password" label="Password" />
-    <button type="submit">Submit!</button>
-  </form>
+	<form onSubmit={formSubmitted}>
+		<Field
+			name='login'
+			label='Login'
+		/>
+		<Field
+			name='password'
+			type='password'
+			label='Password'
+		/>
+		<button type='submit'>Submit!</button>
+	</form>
 );
 
 formSubmitted.watch((e) => {
-  e.preventDefault();
+	e.preventDefault();
 });
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(<App />, document.getElementById('root'));
 ```
 
 Try it
@@ -17465,15 +17692,15 @@ These are just events & effects definitions.
 
 ```js
 const sendFormFx = createEffect((params) => {
-  console.log(params);
+	console.log(params);
 });
 const formSubmitted = createEvent(); // will be used further, and indicates, we have an intention to submit form
 const fieldUpdate = createEvent(); //has intention to change $form's state in a way, defined in reducer further
 const $form = createStore({});
 
 $form.on(fieldUpdate, (form, { key, value }) => ({
-  ...form,
-  [key]: value,
+	...form,
+	[key]: value,
 }));
 ```
 
@@ -17481,10 +17708,10 @@ The next piece of code shows how we can obtain a state in effector in the right 
 
 ```js
 sample({
-  clock: formSubmitted, // when `formSubmitted` is triggered
-  source: $form, // Take LATEST state from $form, and
-  target: sendFormFx, // pass it to `sendFormFx`, in other words -> sendFormFx(state)
-  //fn: (sourceState, clockParams) => transformedData // we could additionally transform data here, but if we need just pass source's value, we may omit this property
+	clock: formSubmitted, // when `formSubmitted` is triggered
+	source: $form, // Take LATEST state from $form, and
+	target: sendFormFx, // pass it to `sendFormFx`, in other words -> sendFormFx(state)
+	//fn: (sourceState, clockParams) => transformedData // we could additionally transform data here, but if we need just pass source's value, we may omit this property
 });
 ```
 
@@ -17492,8 +17719,8 @@ So far, so good, we've almost set up our model (events, effects and stores). Nex
 
 ```js
 const handleChange = fieldUpdate.prepend((event) => ({
-  key: event.target.name,
-  value: event.target.value,
+	key: event.target.name,
+	value: event.target.value,
 })); // upon trigger `handleChange`, passed data will be transformed in a way, described in function above, and returning value will be passed to original `setField` event.
 ```
 
@@ -17501,23 +17728,23 @@ Next, we have to deal with how inputs should work. useStoreMap hook here prevent
 
 ```jsx
 const Field = ({ name, type, label }) => {
-  const value = useStoreMap({
-    store: $form, // take $form's state
-    keys: [name], // watch for changes of `name`
-    fn: (values) => values[name] ?? "", // retrieve data from $form's state in this way (note: there will be an error, if undefined is returned)
-  });
+	const value = useStoreMap({
+		store: $form, // take $form's state
+		keys: [name], // watch for changes of `name`
+		fn: (values) => values[name] ?? '', // retrieve data from $form's state in this way (note: there will be an error, if undefined is returned)
+	});
 
-  return (
-    <div>
-      {label}{" "}
-      <input
-        name={name}
-        type={type}
-        value={value}
-        onChange={handleChange /*note, bound event is here!*/}
-      />
-    </div>
-  );
+	return (
+		<div>
+			{label}{' '}
+			<input
+				name={name}
+				type={type}
+				value={value}
+				onChange={handleChange /*note, bound event is here!*/}
+			/>
+		</div>
+	);
 };
 ```
 
@@ -17525,11 +17752,22 @@ And, finally, the `App` itself! Note, how we got rid of any business-logic in vi
 
 ```jsx
 const App = () => (
-  <form onSubmit={submitted /*note, there is an event, which is `clock` for `sample`*/}>
-    <Field name="login" label="Login" />
-    <Field name="password" type="password" label="Password" />
-    <button type="submit">Submit!</button>
-  </form>
+	<form
+		onSubmit={
+			submitted /*note, there is an event, which is `clock` for `sample`*/
+		}
+	>
+		<Field
+			name='login'
+			label='Login'
+		/>
+		<Field
+			name='password'
+			type='password'
+			label='Password'
+		/>
+		<button type='submit'>Submit!</button>
+	</form>
 );
 ```
 
@@ -17537,7 +17775,7 @@ Prevent the default html form submit behavior using react event from `submitted`
 
 ```js
 submitted.watch((e) => {
-  e.preventDefault();
+	e.preventDefault();
 });
 ```
 
@@ -17546,58 +17784,67 @@ submitted.watch((e) => {
 This example demonstrates how to manage state by using an uncontrolled form, handle data loading, create components that depend on stores, and transform data passed between events.
 
 ```jsx
-import React from "react";
-import ReactDOM from "react-dom";
-import { createEffect, createStore } from "effector";
-import { useUnit } from "effector-react";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { createEffect, createStore } from 'effector';
+import { useUnit } from 'effector-react';
 
 //defining simple Effect, which results a string in 3 seconds
 const sendFormFx = createEffect(
-  (formData) => new Promise((rs) => setTimeout(rs, 1000, `Signed in as [${formData.get("name")}]`)),
+	(formData) =>
+		new Promise((rs) =>
+			setTimeout(rs, 1000, `Signed in as [${formData.get('name')}]`),
+		),
 );
 
 const Loader = () => {
-  //typeof loading === "boolean"
-  const loading = useUnit(sendFormFx.pending);
-  return loading ? <div>Loading...</div> : null;
+	//typeof loading === "boolean"
+	const loading = useUnit(sendFormFx.pending);
+	return loading ? <div>Loading...</div> : null;
 };
 
 const SubmitButton = (props) => {
-  const loading = useUnit(sendFormFx.pending);
-  return (
-    <button disabled={loading} type="submit">
-      Submit
-    </button>
-  );
+	const loading = useUnit(sendFormFx.pending);
+	return (
+		<button
+			disabled={loading}
+			type='submit'
+		>
+			Submit
+		</button>
+	);
 };
 
 //transforming upcoming data, from DOM Event to FormData
 const onSubmit = sendFormFx.prepend((e) => new FormData(e.target));
 
 const App = () => {
-  const submit = useUnit(onSubmit);
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        submit(e);
-      }}
-    >
-      Login: <input name="name" />
-      <br />
-      Password: <input name="password" type="password" />
-      <br />
-      <Loader />
-      <SubmitButton />
-    </form>
-  );
+	const submit = useUnit(onSubmit);
+	return (
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				submit(e);
+			}}
+		>
+			Login: <input name='name' />
+			<br />
+			Password:{' '}
+			<input
+				name='password'
+				type='password'
+			/>
+			<br />
+			<Loader />
+			<SubmitButton />
+		</form>
+	);
 };
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(<App />, document.getElementById('root'));
 ```
 
 Try it
-
 
 # Gate
 
@@ -17608,13 +17855,13 @@ Suppose you pass the history object from the react-router to the store, or pass 
 In a such situation Gate will help.
 
 ```js
-import { createStore, createEffect, sample } from "effector";
-import { useUnit, createGate } from "effector-react";
+import { createStore, createEffect, sample } from 'effector';
+import { useUnit, createGate } from 'effector-react';
 
 // Effect for api request
 const getTodoFx = createEffect(async ({ id }) => {
-  const req = await fetch(`https://jsonplaceholder.typicode.com/todos/${id}`);
-  return req.json();
+	const req = await fetch(`https://jsonplaceholder.typicode.com/todos/${id}`);
+	return req.json();
 });
 
 // Our main store
@@ -17627,51 +17874,50 @@ $todo.on(getTodoFx.doneData, (_, todo) => todo);
 sample({ clock: TodoGate.state, target: getTodoFx });
 
 TodoGate.open.watch(() => {
-  //called each time when TodoGate is mounted
+	//called each time when TodoGate is mounted
 });
 TodoGate.close.watch(() => {
-  //called each time when TodoGate is unmounted
+	//called each time when TodoGate is unmounted
 });
 
 function Todo() {
-  const [todo, loading] = useUnit([$todo, getTodoFx.pending]);
+	const [todo, loading] = useUnit([$todo, getTodoFx.pending]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+	if (loading) {
+		return <div>Loading...</div>;
+	}
 
-  if (!todo || Object.keys(todo).length === 0) {
-    return <div>empty</div>;
-  }
+	if (!todo || Object.keys(todo).length === 0) {
+		return <div>empty</div>;
+	}
 
-  return (
-    <div>
-      <p>title: {todo.title}</p>
-      <p>id: {todo.id}</p>
-    </div>
-  );
+	return (
+		<div>
+			<p>title: {todo.title}</p>
+			<p>id: {todo.id}</p>
+		</div>
+	);
 }
 
 const App = () => {
-  // value which need to be accessed outside from react
-  const [id, setId] = React.useState(0);
+	// value which need to be accessed outside from react
+	const [id, setId] = React.useState(0);
 
-  return (
-    <>
-      <button onClick={() => setId(id + 1)}>Get next Todo</button>
-      {/*In this situation, we have the ability to simultaneously
+	return (
+		<>
+			<button onClick={() => setId(id + 1)}>Get next Todo</button>
+			{/*In this situation, we have the ability to simultaneously
       render a component and make a request, rather than wait for the component*/}
-      <TodoGate id={id} />
-      <Todo />
-    </>
-  );
+			<TodoGate id={id} />
+			<Todo />
+		</>
+	);
 };
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(<App />, document.getElementById('root'));
 ```
 
 Try it
-
 
 # Slots
 
@@ -17683,91 +17929,105 @@ In large projects, this is not convenient, because it generates "props hell" or 
 
 Using React with effector, we can achieve slot goals without the problems described above.
 
-* [Slots proposal](https://github.com/WICG/webcomponents/blob/gh-pages/proposals/Slots-Proposal)
-* [Vue.js docs](https://v3.vuejs.org/guide/component-slots.html)
-* [Svelte docs](https://svelte.dev/docs#slot)
-* [@space307/effector-react-slots](https://github.com/space307/effector-react-slots)
+- [Slots proposal](https://github.com/WICG/webcomponents/blob/gh-pages/proposals/Slots-Proposal)
+- [Vue.js docs](https://v3.vuejs.org/guide/component-slots.html)
+- [Svelte docs](https://svelte.dev/docs#slot)
+- [@space307/effector-react-slots](https://github.com/space307/effector-react-slots)
 
 [Open ReplIt](https://replit.com/@binjospookie/effector-react-slots-example)
 
 ```tsx
-import { createApi, createStore, createEvent, sample, split } from "effector";
-import { useStoreMap } from "effector-react";
-import React from "react";
+import { createApi, createStore, createEvent, sample, split } from 'effector';
+import { useStoreMap } from 'effector-react';
+import React from 'react';
 
-import type { ReactElement, PropsWithChildren } from "react";
+import type { ReactElement, PropsWithChildren } from 'react';
 
 type Component<S> = (props: PropsWithChildren<S>) => ReactElement | null;
 type Store<S> = {
-  readonly component: Component<S>;
+	readonly component: Component<S>;
 };
 
-function createSlotFactory<Id>({ slots }: { readonly slots: Record<string, Id> }) {
-  const api = {
-    remove: createEvent<{ readonly id: Id }>(),
-    set: createEvent<{ readonly id: Id; readonly component: Component<any> }>(),
-  };
+function createSlotFactory<Id>({
+	slots,
+}: {
+	readonly slots: Record<string, Id>;
+}) {
+	const api = {
+		remove: createEvent<{ readonly id: Id }>(),
+		set: createEvent<{
+			readonly id: Id;
+			readonly component: Component<any>;
+		}>(),
+	};
 
-  function createSlot<P>({ id }: { readonly id: Id }) {
-    const defaultToStore: Store<P> = {
-      component: () => null,
-    };
-    const $slot = createStore<Store<P>>(defaultToStore);
-    const slotApi = createApi($slot, {
-      remove: (state) => ({ ...state, component: defaultToStore.component }),
-      set: (state, payload: Component<P>) => ({ ...state, component: payload }),
-    });
-    const isSlotEventCalling = (payload: { readonly id: Id }) => payload.id === id;
+	function createSlot<P>({ id }: { readonly id: Id }) {
+		const defaultToStore: Store<P> = {
+			component: () => null,
+		};
+		const $slot = createStore<Store<P>>(defaultToStore);
+		const slotApi = createApi($slot, {
+			remove: (state) => ({
+				...state,
+				component: defaultToStore.component,
+			}),
+			set: (state, payload: Component<P>) => ({
+				...state,
+				component: payload,
+			}),
+		});
+		const isSlotEventCalling = (payload: { readonly id: Id }) =>
+			payload.id === id;
 
-    sample({
-      clock: api.remove,
-      filter: isSlotEventCalling,
-      target: slotApi.remove,
-    });
+		sample({
+			clock: api.remove,
+			filter: isSlotEventCalling,
+			target: slotApi.remove,
+		});
 
-    sample({
-      clock: api.set,
-      filter: isSlotEventCalling,
-      fn: ({ component }) => component,
-      target: slotApi.set,
-    });
+		sample({
+			clock: api.set,
+			filter: isSlotEventCalling,
+			fn: ({ component }) => component,
+			target: slotApi.set,
+		});
 
-    function Slot(props: P = {} as P) {
-      const Component = useStoreMap({
-        store: $slot,
-        fn: ({ component }) => component,
-        keys: [],
-      });
+		function Slot(props: P = {} as P) {
+			const Component = useStoreMap({
+				store: $slot,
+				fn: ({ component }) => component,
+				keys: [],
+			});
 
-      return <Component {...props} />;
-    }
+			return <Component {...props} />;
+		}
 
-    return {
-      $slot,
-    };
-  }
+		return {
+			$slot,
+		};
+	}
 
-  return {
-    api,
-    createSlot,
-  };
+	return {
+		api,
+		createSlot,
+	};
 }
 
-const SLOTS = { FOO: "foo" } as const;
+const SLOTS = { FOO: 'foo' } as const;
 
 const { api, createSlot } = createSlotFactory({ slots: SLOTS });
 
 const { Slot: FooSlot } = createSlot({ id: SLOTS.FOO });
 
 const ComponentWithSlot = () => (
-  <>
-    <h1>Hello, Slots!</h1>
-    <FooSlot />
-  </>
+	<>
+		<h1>Hello, Slots!</h1>
+		<FooSlot />
+	</>
 );
 
-const updateFeatures = createEvent<string>("");
-const $featureToggle = createStore<string>("");
+const updateFeatures = createEvent<string>('');
+const $featureToggle = createStore<string>('');
 
 const MyAwesomeFeature = () => <p>Look at my horse</p>;
 const VeryAwesomeFeature = () => <p>My horse is amaizing</p>;
@@ -17775,23 +18035,23 @@ const VeryAwesomeFeature = () => <p>My horse is amaizing</p>;
 $featureToggle.on(updateFeatures, (_, feature) => feature);
 
 split({
-  source: $featureToggle,
-  match: {
-    awesome: (data) => data === "awesome",
-    veryAwesome: (data) => data === "veryAwesome",
-    hideAll: (data) => data === "hideAll",
-  },
-  cases: {
-    awesome: api.set.prepend(() => ({
-      id: SLOTS.FOO,
-      component: MyAwesomeFeature,
-    })),
-    veryAwesome: api.set.prepend(() => ({
-      id: SLOTS.FOO,
-      component: VeryAwesomeFeature,
-    })),
-    hideAll: api.remove.prepend(() => ({ id: SLOTS.FOO })),
-  },
+	source: $featureToggle,
+	match: {
+		awesome: (data) => data === 'awesome',
+		veryAwesome: (data) => data === 'veryAwesome',
+		hideAll: (data) => data === 'hideAll',
+	},
+	cases: {
+		awesome: api.set.prepend(() => ({
+			id: SLOTS.FOO,
+			component: MyAwesomeFeature,
+		})),
+		veryAwesome: api.set.prepend(() => ({
+			id: SLOTS.FOO,
+			component: VeryAwesomeFeature,
+		})),
+		hideAll: api.remove.prepend(() => ({ id: SLOTS.FOO })),
+	},
 });
 
 // updateFeatures('awesome'); // render MyAwesomeFeature in slot
@@ -17799,106 +18059,126 @@ split({
 // updateFeatures('hideAll'); // render nothing in slot
 ```
 
-
 # ToDo creator
 
 Try it
 
 ```tsx
-import React from "react";
-import ReactDOM from "react-dom";
-import { createStore, createEvent, sample } from "effector";
-import { useUnit, useList } from "effector-react";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { createStore, createEvent, sample } from 'effector';
+import { useUnit, useList } from 'effector-react';
 
 function createTodoListApi(initial: string[] = []) {
-  const insert = createEvent<string>();
-  const remove = createEvent<number>();
-  const change = createEvent<string>();
-  const reset = createEvent<void>();
+	const insert = createEvent<string>();
+	const remove = createEvent<number>();
+	const change = createEvent<string>();
+	const reset = createEvent<void>();
 
-  const $input = createStore<string>("");
-  const $todos = createStore<string[]>(initial);
+	const $input = createStore<string>('');
+	const $todos = createStore<string[]>(initial);
 
-  $input.on(change, (_, value) => value);
+	$input.on(change, (_, value) => value);
 
-  $input.reset(insert);
-  $todos.on(insert, (todos, newTodo) => [...todos, newTodo]);
+	$input.reset(insert);
+	$todos.on(insert, (todos, newTodo) => [...todos, newTodo]);
 
-  $todos.on(remove, (todos, index) => todos.filter((_, i) => i !== index));
+	$todos.on(remove, (todos, index) => todos.filter((_, i) => i !== index));
 
-  $input.reset(reset);
+	$input.reset(reset);
 
-  const submit = createEvent<React.SyntheticEvent>();
-  submit.watch((event) => event.preventDefault());
+	const submit = createEvent<React.SyntheticEvent>();
+	submit.watch((event) => event.preventDefault());
 
-  sample({
-    clock: submit,
-    source: $input,
-    target: insert,
-  });
+	sample({
+		clock: submit,
+		source: $input,
+		target: insert,
+	});
 
-  return {
-    submit,
-    remove,
-    change,
-    reset,
-    $todos,
-    $input,
-  };
+	return {
+		submit,
+		remove,
+		change,
+		reset,
+		$todos,
+		$input,
+	};
 }
 
-const firstTodoList = createTodoListApi(["hello, world!"]);
-const secondTodoList = createTodoListApi(["hello, world!"]);
+const firstTodoList = createTodoListApi(['hello, world!']);
+const secondTodoList = createTodoListApi(['hello, world!']);
 
 function TodoList({ label, model }) {
-  const input = useUnit(model.$input);
+	const input = useUnit(model.$input);
 
-  const todos = useList(model.$todos, (value, index) => (
-    <li>
-      {value}{" "}
-      <button type="button" onClick={() => model.remove(index)}>
-        Remove
-      </button>
-    </li>
-  ));
+	const todos = useList(model.$todos, (value, index) => (
+		<li>
+			{value}{' '}
+			<button
+				type='button'
+				onClick={() => model.remove(index)}
+			>
+				Remove
+			</button>
+		</li>
+	));
 
-  return (
-    <>
-      <h1>{label}</h1>
-      <ul>{todos}</ul>
-      <form>
-        <label>Insert todo: </label>
-        <input
-          type="text"
-          value={input}
-          onChange={(event) => model.change(event.currentTarget.value)}
-        />
-        <input type="submit" onClick={model.submit} value="Insert" />
-      </form>
-    </>
-  );
+	return (
+		<>
+			<h1>{label}</h1>
+			<ul>{todos}</ul>
+			<form>
+				<label>Insert todo: </label>
+				<input
+					type='text'
+					value={input}
+					onChange={(event) =>
+						model.change(event.currentTarget.value)
+					}
+				/>
+				<input
+					type='submit'
+					onClick={model.submit}
+					value='Insert'
+				/>
+			</form>
+		</>
+	);
 }
 
 function App() {
-  return (
-    <>
-      <TodoList label="First todo list" model={firstTodoList} />
-      <TodoList label="Second todo list" model={secondTodoList} />
-    </>
-  );
+	return (
+		<>
+			<TodoList
+				label='First todo list'
+				model={firstTodoList}
+			/>
+			<TodoList
+				label='Second todo list'
+				model={secondTodoList}
+			/>
+		</>
+	);
 }
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(<App />, document.getElementById('root'));
 ```
-
 
 # TODO list with input validation
 
 Try it
 
 ```js
-import { createEvent, createStore, createEffect, restore, combine, sample } from "effector";
-import { useUnit, useList } from "effector-react";
+import {
+	createEvent,
+	createStore,
+	createEffect,
+	restore,
+	combine,
+	sample,
+} from 'effector';
+import { useUnit, useList } from 'effector-react';
 
 const submit = createEvent();
 const submitted = createEvent();
@@ -17907,36 +18187,37 @@ const changed = createEvent();
 const removed = createEvent();
 
 const validateFx = createEffect(([todo, todos]) => {
-  if (todos.some((item) => item.text === todo)) throw "This todo is already on the list";
-  if (!todo.trim().length) throw "Required field";
-  return null;
+	if (todos.some((item) => item.text === todo))
+		throw 'This todo is already on the list';
+	if (!todo.trim().length) throw 'Required field';
+	return null;
 });
 
-const $todo = createStore("");
+const $todo = createStore('');
 const $todos = createStore([]);
-const $error = createStore("");
+const $error = createStore('');
 
 $todo.on(changed, (_, todo) => todo);
 $error.reset(changed);
 
 $todos.on(completed, (list, index) =>
-  list.map((todo, foundIndex) => ({
-    ...todo,
-    completed: index === foundIndex ? !todo.completed : todo.completed,
-  })),
+	list.map((todo, foundIndex) => ({
+		...todo,
+		completed: index === foundIndex ? !todo.completed : todo.completed,
+	})),
 );
 $todos.on(removed, (state, index) => state.filter((_, i) => i !== index));
 
 sample({
-  clock: submit,
-  source: [$todo, $todos],
-  target: validateFx,
+	clock: submit,
+	source: [$todo, $todos],
+	target: validateFx,
 });
 
 sample({
-  clock: validateFx.done,
-  source: $todo,
-  target: submitted,
+	clock: validateFx.done,
+	source: $todo,
+	target: submitted,
 });
 
 $todos.on(submitted, (list, text) => [...list, { text, completed: false }]);
@@ -17947,41 +18228,52 @@ $error.on(validateFx.failData, (_, error) => error);
 submit.watch((e) => e.preventDefault());
 
 const App = () => {
-  const [todo, error] = useUnit([$todo, $error]);
-  const list = useList($todos, (todo, index) => (
-    <li style={{ textDecoration: todo.completed ? "line-through" : "" }}>
-      <input type="checkbox" checked={todo.completed} onChange={() => completed(index)} />
-      {todo.text}
-      <button type="button" onClick={() => removed(index)} className="delete">
-        x
-      </button>
-    </li>
-  ));
-  return (
-    <div>
-      <h1>Todos</h1>
-      <form>
-        <input
-          className="text"
-          type="text"
-          name="todo"
-          value={todo}
-          onChange={(e) => changed(e.target.value)}
-        />
-        <button type="submit" onClick={submit} className="submit">
-          Submit
-        </button>
-        {error && <div className="error">{error}</div>}
-      </form>
+	const [todo, error] = useUnit([$todo, $error]);
+	const list = useList($todos, (todo, index) => (
+		<li style={{ textDecoration: todo.completed ? 'line-through' : '' }}>
+			<input
+				type='checkbox'
+				checked={todo.completed}
+				onChange={() => completed(index)}
+			/>
+			{todo.text}
+			<button
+				type='button'
+				onClick={() => removed(index)}
+				className='delete'
+			>
+				x
+			</button>
+		</li>
+	));
+	return (
+		<div>
+			<h1>Todos</h1>
+			<form>
+				<input
+					className='text'
+					type='text'
+					name='todo'
+					value={todo}
+					onChange={(e) => changed(e.target.value)}
+				/>
+				<button
+					type='submit'
+					onClick={submit}
+					className='submit'
+				>
+					Submit
+				</button>
+				{error && <div className='error'>{error}</div>}
+			</form>
 
-      <ul style={{ listStyle: "none" }}>{list}</ul>
-    </div>
-  );
+			<ul style={{ listStyle: 'none' }}>{list}</ul>
+		</div>
+	);
 };
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(<App />, document.getElementById('root'));
 ```
-
 
 # How to Think in the Effector
 
@@ -18000,9 +18292,9 @@ To use Effector effectively, it's important to grasp a few key principles.
 
 An application is a stream of changes. Every change is an event. It's crucial to understand that an event **does not decide what to do** — it simply records that something happened. This is a key point that helps avoid tight dependencies.
 
-* **An event is just a fact**: "something happened."
-* **Events contain no logic** — they only declare an occurrence but do not decide how to respond.
-* **One fact can lead to multiple consequences** — a single event can trigger several independent processes.
+- **An event is just a fact**: "something happened."
+- **Events contain no logic** — they only declare an occurrence but do not decide how to respond.
+- **One fact can lead to multiple consequences** — a single event can trigger several independent processes.
 
 Example:
 
@@ -18025,8 +18317,8 @@ const buttonClicked = createEvent();
 
 A good architectural approach is to keep business logic separate from the user interface. Effector makes this easy, keeping the UI simple and the logic clean and reusable.
 
-* The UI only displays data.
-* Effector manages state and logic.
+- The UI only displays data.
+- Effector manages state and logic.
 
 ### How Does This Look in a Real Application?
 
@@ -18034,9 +18326,9 @@ Let's take GitHub as an example, with buttons like "Watch," "Fork," and "Star." 
 
 ![GitHub repository action buttons](/images/github-repo-actions.png)
 
-* The user toggled a star - `repoStarToggled`
-* The search input in the repository changed - `repoFileSearchChanged`
-* The repository was forked - `repoForked`
+- The user toggled a star - `repoStarToggled`
+- The search input in the repository changed - `repoFileSearchChanged`
+- The repository was forked - `repoForked`
 
 The logic is built around events and their reactions. The UI simply announces an action, while its handling is part of the business logic.
 
@@ -18062,29 +18354,29 @@ const $repoStarsCount = createStore(0);
 
 // Toggle star logic
 sample({
-  clock: repoStarToggled,
-  source: $isRepoStarred,
-  fn: (isRepoStarred) => !isRepoStarred,
-  target: $isRepoStarred,
+	clock: repoStarToggled,
+	source: $isRepoStarred,
+	fn: (isRepoStarred) => !isRepoStarred,
+	target: $isRepoStarred,
 });
 
 // Send request to server when star is toggled
 sample({
-  clock: $isRepoStarred,
-  filter: (isRepoStarred) => isRepoStarred,
-  target: starRepoFx,
+	clock: $isRepoStarred,
+	filter: (isRepoStarred) => isRepoStarred,
+	target: starRepoFx,
 });
 
 sample({
-  clock: $isRepoStarred,
-  filter: (isRepoStarred) => !isRepoStarred,
-  target: unstarRepoFx,
+	clock: $isRepoStarred,
+	filter: (isRepoStarred) => !isRepoStarred,
+	target: unstarRepoFx,
 });
 
 // Update the star count
 sample({
-  clock: [starRepoFx.doneData, unstarRepoFx.doneData],
-  target: $repoStarsCount,
+	clock: [starRepoFx.doneData, unstarRepoFx.doneData],
+	target: $repoStarsCount,
 });
 ```
 
@@ -18092,21 +18384,27 @@ sample({
 <TabItem label="UI">
 
 ```tsx
-import { repoStarToggled, $isRepoStarred, $repoStarsCount } from "./repo.model.ts";
+import {
+	repoStarToggled,
+	$isRepoStarred,
+	$repoStarsCount,
+} from './repo.model.ts';
 
 const RepoStarButton = () => {
-  const [onStarToggle, isRepoStarred, repoStarsCount] = useUnit([
-    repoStarToggled,
-    $isRepoStarred,
-    $repoStarsCount,
-  ]);
+	const [onStarToggle, isRepoStarred, repoStarsCount] = useUnit([
+		repoStarToggled,
+		$isRepoStarred,
+		$repoStarsCount,
+	]);
 
-  return (
-    <div>
-      <button onClick={onStarToggle}>{isRepoStarred ? "unstar" : "star"}</button>
-      <span>{repoStarsCount}</span>
-    </div>
-  );
+	return (
+		<div>
+			<button onClick={onStarToggle}>
+				{isRepoStarred ? 'unstar' : 'star'}
+			</button>
+			<span>{repoStarsCount}</span>
+		</div>
+	);
 };
 ```
 
@@ -18114,7 +18412,6 @@ const RepoStarButton = () => {
 </Tabs>
 
 At the same time, the UI doesn't need to know what's happening internally — it's only responsible for triggering events and displaying data.
-
 
 # Releases policy
 
@@ -18128,8 +18425,8 @@ Before each breaking change, the effector must provide a deprecation warning for
 
 For example:
 
-* When version 22 was released, feature "A" was marked as deprecated. The library gives a warning to the console when it is used.
-* A year later, in version 23 release, feature "A" is removed.
+- When version 22 was released, feature "A" was marked as deprecated. The library gives a warning to the console when it is used.
+- A year later, in version 23 release, feature "A" is removed.
 
 ### Release cycle
 
@@ -18140,7 +18437,6 @@ Minor and patch updates (i.e., with fixes and new features) are released when re
 This is necessary to allow developers to plan their work smoothly, taking into account possible changes in effector.
 
 It also obliges effector maintainers to be extremely careful when designing new features and breaking changes to old library features, because the opportunity to remove or heavily modify something in the public API only appears once every two years.
-
 
 # Usage with effector-react
 
@@ -18174,15 +18470,15 @@ Let's define a simple type, that our improvised API will return.
 ```ts
 // File: /src/shared/api/message.ts
 interface Author {
-  id: string;
-  name: string;
+	id: string;
+	name: string;
 }
 
 export interface Message {
-  id: string;
-  author: Author;
-  text: string;
-  timestamp: number;
+	id: string;
+	author: Author;
+	text: string;
+	timestamp: number;
 }
 ```
 
@@ -18190,17 +18486,17 @@ Our API will load and save data to `localStorage`, and we need some functions to
 
 ```ts
 // File: /src/shared/api/message.ts
-const LocalStorageKey = "effector-example-history";
+const LocalStorageKey = 'effector-example-history';
 
 function loadHistory(): Message[] | void {
-  const source = localStorage.getItem(LocalStorageKey);
-  if (source) {
-    return JSON.parse(source);
-  }
-  return undefined;
+	const source = localStorage.getItem(LocalStorageKey);
+	if (source) {
+		return JSON.parse(source);
+	}
+	return undefined;
 }
 function saveHistory(messages: Message[]) {
-  localStorage.setItem(LocalStorageKey, JSON.stringify(messages));
+	localStorage.setItem(LocalStorageKey, JSON.stringify(messages));
 }
 ```
 
@@ -18209,14 +18505,16 @@ I also created some libraries to generate identifiers and wait to simulate netwo
 ```ts
 // File: /src/shared/lib/oid.ts
 export const createOid = () =>
-  ((new Date().getTime() / 1000) | 0).toString(16) +
-  "xxxxxxxxxxxxxxxx".replace(/[x]/g, () => ((Math.random() * 16) | 0).toString(16)).toLowerCase();
+	((new Date().getTime() / 1000) | 0).toString(16) +
+	'xxxxxxxxxxxxxxxx'
+		.replace(/[x]/g, () => ((Math.random() * 16) | 0).toString(16))
+		.toLowerCase();
 ```
 
 ```ts
 // File: /src/shared/lib/wait.ts
 export function wait(timeout = Math.random() * 1500) {
-  return new Promise((resolve) => setTimeout(resolve, timeout));
+	return new Promise((resolve) => setTimeout(resolve, timeout));
 }
 ```
 
@@ -18228,39 +18526,41 @@ OK. Now we can create effects that will load messages.
 // Second type argument defines a successful result type.
 // Third argument is optional and defines a failure result type.
 export const messagesLoadFx = createEffect<void, Message[], Error>(async () => {
-  const history = loadHistory();
-  await wait();
-  return history ?? [];
+	const history = loadHistory();
+	await wait();
+	return history ?? [];
 });
 
 interface SendMessage {
-  text: string;
-  author: Author;
+	text: string;
+	author: Author;
 }
 
 // But we can use type inferring and set arguments types in the handler defintion.
 // Hover your cursor on `messagesLoadFx` to see the inferred types:
 // `Effect<{ text: string; authorId: string; authorName: string }, void, Error>`
-export const messageSendFx = createEffect(async ({ text, author }: SendMessage) => {
-  const message: Message = {
-    id: createOid(),
-    author,
-    timestamp: Date.now(),
-    text,
-  };
-  const history = await messagesLoadFx();
-  saveHistory([...history, message]);
-  await wait();
-});
+export const messageSendFx = createEffect(
+	async ({ text, author }: SendMessage) => {
+		const message: Message = {
+			id: createOid(),
+			author,
+			timestamp: Date.now(),
+			text,
+		};
+		const history = await messagesLoadFx();
+		saveHistory([...history, message]);
+		await wait();
+	},
+);
 
 // Please, note that we will `wait()` for `messagesLoadFx` and `wait()` in the current effect
 // Also, note that `saveHistory` and `loadHistory` can throw exceptions,
 // in that case effect will trigger `messageDeleteFx.fail` event.
 export const messageDeleteFx = createEffect(async (message: Message) => {
-  const history = await messagesLoadFx();
-  const updated = history.filter((found) => found.id !== message.id);
-  await wait();
-  saveHistory(updated);
+	const history = await messagesLoadFx();
+	const updated = history.filter((found) => found.id !== message.id);
+	await wait();
+	saveHistory(updated);
 });
 ```
 
@@ -18272,8 +18572,8 @@ Really, I prefer to start design code from implementing interfaces:
 // File: /src/shared/api/session.ts
 // It is called session because it describes current user session, not the User at all.
 export interface Session {
-  id: string;
-  name: string;
+	id: string;
+	name: string;
 }
 ```
 
@@ -18281,7 +18581,7 @@ Also, to generate usernames and don't require to type it by themselves, import `
 
 ```ts
 // File: /src/shared/api/session.ts
-import { uniqueNamesGenerator, Config, starWars } from "unique-names-generator";
+import { uniqueNamesGenerator, Config, starWars } from 'unique-names-generator';
 
 const nameGenerator: Config = { dictionaries: [starWars] };
 const createName = () => uniqueNamesGenerator(nameGenerator);
@@ -18291,37 +18591,37 @@ Let's create effects to manage session:
 
 ```ts
 // File: /src/shared/api/session.ts
-const LocalStorageKey = "effector-example-session";
+const LocalStorageKey = 'effector-example-session';
 
 // Note, that we need explicit types definition in that case, because `JSON.parse()` returns `any`
 export const sessionLoadFx = createEffect<void, Session | null>(async () => {
-  const source = localStorage.getItem(LocalStorageKey);
-  await wait();
-  if (!source) {
-    return null;
-  }
-  return JSON.parse(source);
+	const source = localStorage.getItem(LocalStorageKey);
+	await wait();
+	if (!source) {
+		return null;
+	}
+	return JSON.parse(source);
 });
 
 // By default, if there are no arguments, no explicit type arguments, and no return statement provided
 // effect will have type: `Effect<void, void, Error>`
 export const sessionDeleteFx = createEffect(async () => {
-  localStorage.removeItem(LocalStorageKey);
-  await wait();
+	localStorage.removeItem(LocalStorageKey);
+	await wait();
 });
 
 // Look at the type of the `sessionCreateFx` constant.
 // It will be `Effect<void, Session, Error>` because TypeScript can infer type from `session` constant
 export const sessionCreateFx = createEffect(async () => {
-  // I explicitly set type for the next constant, because it allows TypeScript help me
-  // If I forgot to set property, I'll see error in the place of definition
-  // Also it allows IDE to autocomplete property names
-  const session: Session = {
-    id: createOid(),
-    name: createName(),
-  };
-  localStorage.setItem(LocalStorageKey, JSON.stringify(session));
-  return session;
+	// I explicitly set type for the next constant, because it allows TypeScript help me
+	// If I forgot to set property, I'll see error in the place of definition
+	// Also it allows IDE to autocomplete property names
+	const session: Session = {
+		id: createOid(),
+		name: createName(),
+	};
+	localStorage.setItem(LocalStorageKey, JSON.stringify(session));
+	return session;
 });
 ```
 
@@ -18333,12 +18633,12 @@ and don't worry about refactoring other imports and unnecessary changes in the g
 
 ```ts
 // File: /src/shared/api/index.ts
-export * as messageApi from "./message";
-export * as sessionApi from "./session";
+export * as messageApi from './message';
+export * as sessionApi from './session';
 
 // Types reexports made just for convenience
-export type { Message } from "./message";
-export type { Session } from "./session";
+export type { Message } from './message';
+export type { Session } from './session';
 ```
 
 ### Create a page with the logic
@@ -18360,28 +18660,28 @@ Let's model our view layer. We will have two main sections at the page: messages
 ```tsx
 // File: /src/pages/chat/page.tsx
 export function ChatPage() {
-  return (
-    <div className="parent">
-      <ChatHistory />
-      <MessageForm />
-    </div>
-  );
+	return (
+		<div className='parent'>
+			<ChatHistory />
+			<MessageForm />
+		</div>
+	);
 }
 
 function ChatHistory() {
-  return (
-    <div className="chat-history">
-      <div>There will be messages list</div>
-    </div>
-  );
+	return (
+		<div className='chat-history'>
+			<div>There will be messages list</div>
+		</div>
+	);
 }
 
 function MessageForm() {
-  return (
-    <div className="message-form">
-      <div>There will be message form</div>
-    </div>
-  );
+	return (
+		<div className='message-form'>
+			<div>There will be message form</div>
+		</div>
+	);
 }
 ```
 
@@ -18391,7 +18691,7 @@ The view layer doesn't know how data are loaded, how it should be converted and 
 
 ```ts
 // File: /src/pages/chat/model.ts
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 // And the events report just what happened
 export const messageDeleteClicked = createEvent<Message>();
@@ -18403,9 +18703,9 @@ export const logoutClicked = createEvent();
 
 // At the moment, there is just raw data without any knowledge how to load
 export const $loggedIn = createStore<boolean>(false);
-export const $userName = createStore("");
+export const $userName = createStore('');
 export const $messages = createStore<Message[]>([]);
-export const $messageText = createStore("");
+export const $messageText = createStore('');
 
 // Page should NOT know where the data came from.
 // That's why we just reexport them.
@@ -18419,30 +18719,36 @@ Now we can implement components.
 
 ```tsx
 // File: /src/pages/chat/page.tsx
-import { useList, useUnit } from "effector-react";
-import * as model from "./model";
+import { useList, useUnit } from 'effector-react';
+import * as model from './model';
 
 // export function ChatPage { ... }
 
 function ChatHistory() {
-  const [messageDeleting, onMessageDelete] = useUnit([
-    model.$messageDeleting,
-    model.messageDeleteClicked,
-  ]);
+	const [messageDeleting, onMessageDelete] = useUnit([
+		model.$messageDeleting,
+		model.messageDeleteClicked,
+	]);
 
-  // Hook `useList` allows React not rerender messages really doesn't changed
-  const messages = useList(model.$messages, (message) => (
-    <div className="message-item" key={message.timestamp}>
-      <h3>From: {message.author.name}</h3>
-      <p>{message.text}</p>
-      <button onClick={() => onMessageDelete(message)} disabled={messageDeleting}>
-        {messageDeleting ? "Deleting" : "Delete"}
-      </button>
-    </div>
-  ));
-  // We don't need `useCallback` here because we pass function to an HTML-element, not a custom component
+	// Hook `useList` allows React not rerender messages really doesn't changed
+	const messages = useList(model.$messages, (message) => (
+		<div
+			className='message-item'
+			key={message.timestamp}
+		>
+			<h3>From: {message.author.name}</h3>
+			<p>{message.text}</p>
+			<button
+				onClick={() => onMessageDelete(message)}
+				disabled={messageDeleting}
+			>
+				{messageDeleting ? 'Deleting' : 'Delete'}
+			</button>
+		</div>
+	));
+	// We don't need `useCallback` here because we pass function to an HTML-element, not a custom component
 
-  return <div className="chat-history">{messages}</div>;
+	return <div className='chat-history'>{messages}</div>;
 }
 ```
 
@@ -18451,57 +18757,63 @@ I split `MessageForm` to the different components, to simplify code:
 ```tsx
 // File: /src/pages/chat/page.tsx
 function MessageForm() {
-  const isLogged = useUnit(model.$loggedIn);
-  return isLogged ? <SendMessage /> : <LoginForm />;
+	const isLogged = useUnit(model.$loggedIn);
+	return isLogged ? <SendMessage /> : <LoginForm />;
 }
 
 function SendMessage() {
-  const [userName, messageText, messageSending] = useUnit([
-    model.$userName,
-    model.$messageText,
-    model.$messageSending,
-  ]);
+	const [userName, messageText, messageSending] = useUnit([
+		model.$userName,
+		model.$messageText,
+		model.$messageSending,
+	]);
 
-  const [handleLogout, handleTextChange, handleEnterPress, handleSendClick] = useUnit([
-    model.logoutClicked,
-    model.messageTextChanged,
-    model.messageEnterPressed,
-    model.messageSendClicked,
-  ]);
+	const [handleLogout, handleTextChange, handleEnterPress, handleSendClick] =
+		useUnit([
+			model.logoutClicked,
+			model.messageTextChanged,
+			model.messageEnterPressed,
+			model.messageSendClicked,
+		]);
 
-  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
-      handleEnterPress();
-    }
-  };
+	const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+		if (event.key === 'Enter') {
+			handleEnterPress();
+		}
+	};
 
-  return (
-    <div className="message-form">
-      <h3>{userName}</h3>
-      <input
-        value={messageText}
-        onChange={(event) => handleTextChange(event.target.value)}
-        onKeyPress={handleKeyPress}
-        className="chat-input"
-        placeholder="Type a message..."
-      />
-      <button onClick={() => handleSendClick()} disabled={messageSending}>
-        {messageSending ? "Sending..." : "Send"}
-      </button>
-      <button onClick={() => handleLogout()}>Log out</button>
-    </div>
-  );
+	return (
+		<div className='message-form'>
+			<h3>{userName}</h3>
+			<input
+				value={messageText}
+				onChange={(event) => handleTextChange(event.target.value)}
+				onKeyPress={handleKeyPress}
+				className='chat-input'
+				placeholder='Type a message...'
+			/>
+			<button
+				onClick={() => handleSendClick()}
+				disabled={messageSending}
+			>
+				{messageSending ? 'Sending...' : 'Send'}
+			</button>
+			<button onClick={() => handleLogout()}>Log out</button>
+		</div>
+	);
 }
 
 function LoginForm() {
-  const handleLogin = useUnit(model.loginClicked);
+	const handleLogin = useUnit(model.loginClicked);
 
-  return (
-    <div className="message-form">
-      <div>Please, log in to be able to send messages</div>
-      <button onClick={() => handleLogin()}>Login as a random user</button>
-    </div>
-  );
+	return (
+		<div className='message-form'>
+			<div>Please, log in to be able to send messages</div>
+			<button onClick={() => handleLogin()}>
+				Login as a random user
+			</button>
+		</div>
+	);
 }
 ```
 
@@ -18511,8 +18823,8 @@ Let's create a session entity. An entity is a business unit.
 
 ```ts
 // File: /src/entities/session/index.ts
-import { Session } from "shared/api";
-import { createStore } from "effector";
+import { Session } from 'shared/api';
+import { createStore } from 'effector';
 
 // Entity just stores session and some internal knowledge about it
 export const $session = createStore<Session | null>(null);
@@ -18547,18 +18859,18 @@ Just add `useEffect` and call bound event inside.
 ```tsx
 // File: /src/pages/chat/page.tsx
 export function ChatPage() {
-  const handlePageMount = useUnit(model.pageMounted);
+	const handlePageMount = useUnit(model.pageMounted);
 
-  React.useEffect(() => {
-    handlePageMount();
-  }, [handlePageMount]);
+	React.useEffect(() => {
+		handlePageMount();
+	}, [handlePageMount]);
 
-  return (
-    <div className="parent">
-      <ChatHistory />
-      <MessageForm />
-    </div>
-  );
+	return (
+		<div className='parent'>
+			<ChatHistory />
+			<MessageForm />
+		</div>
+	);
 }
 ```
 
@@ -18571,8 +18883,8 @@ Just add reaction to the event, and any other code should be written in chronolo
 ```ts
 // File: /src/pages/chat/model.ts
 // Don't forget to import { sample } from "effector"
-import { Message, messageApi, sessionApi } from "shared/api";
-import { $session } from "entities/session";
+import { Message, messageApi, sessionApi } from 'shared/api';
+import { $session } from 'entities/session';
 
 // export stores
 // export events
@@ -18582,8 +18894,8 @@ import { $session } from "entities/session";
 // You can read this code like:
 // When page mounted, call messages load and session load simultaneously
 sample({
-  clock: pageMounted,
-  target: [messageApi.messagesLoadFx, sessionApi.sessionLoadFx],
+	clock: pageMounted,
+	target: [messageApi.messagesLoadFx, sessionApi.sessionLoadFx],
 });
 ```
 
@@ -18605,19 +18917,19 @@ OK. Session and messages loaded. Let's allow the users to log in.
 // File: /src/pages/chat/model.ts
 // When login clicked we need to create a new session
 sample({
-  clock: loginClicked,
-  target: sessionApi.sessionCreateFx,
+	clock: loginClicked,
+	target: sessionApi.sessionCreateFx,
 });
 // When session created, just write it to a session store
 sample({
-  clock: sessionApi.sessionCreateFx.doneData,
-  target: $session,
+	clock: sessionApi.sessionCreateFx.doneData,
+	target: $session,
 });
 // If session create is failed, just reset the session
 sample({
-  clock: sessionApi.sessionCreateFx.fail,
-  fn: () => null,
-  target: $session,
+	clock: sessionApi.sessionCreateFx.fail,
+	fn: () => null,
+	target: $session,
 });
 ```
 
@@ -18627,14 +18939,14 @@ Now we'll implement a logout process:
 // File: /src/pages/chat/model.ts
 // When logout clicked we need to reset session and clear our storage
 sample({
-  clock: logoutClicked,
-  target: sessionApi.sessionDeleteFx,
+	clock: logoutClicked,
+	target: sessionApi.sessionDeleteFx,
 });
 // In any case, failed or not, we need to reset session store
 sample({
-  clock: sessionApi.sessionDeleteFx.finally,
-  fn: () => null,
-  target: $session,
+	clock: sessionApi.sessionDeleteFx.finally,
+	fn: () => null,
+	target: $session,
 });
 ```
 
@@ -18645,11 +18957,11 @@ This is because we created `$loggedIn` store in the model, but don't change it. 
 
 ```ts
 // File: /src/pages/chat/model.ts
-import { $isLogged, $session } from "entities/session";
+import { $isLogged, $session } from 'entities/session';
 
 // At the moment, there is just raw data without any knowledge how to load
 export const $loggedIn = $isLogged;
-export const $userName = $session.map((session) => session?.name ?? "");
+export const $userName = $session.map((session) => session?.name ?? '');
 ```
 
 Here we just reexported our custom store from the session entity, but our View layer doesn't change.
@@ -18669,9 +18981,9 @@ const messageSend = merge([messageEnterPressed, messageSendClicked]);
 
 // We need to take a message text and author info then send it to the effect
 sample({
-  clock: messageSend,
-  source: { author: $session, text: $messageText },
-  target: messageApi.messageSendFx,
+	clock: messageSend,
+	source: { author: $session, text: $messageText },
+	target: messageApi.messageSendFx,
 });
 ```
 
@@ -18684,12 +18996,12 @@ To fix this strange behaviour, we need to use `filter` there:
 ```ts
 // File: /src/pages/chat/model.ts
 sample({
-  clock: messageSend,
-  source: { author: $session, text: $messageText },
-  filter: (form): form is { author: Session; text: string } => {
-    return form.author !== null;
-  },
-  target: messageApi.messageSendFx,
+	clock: messageSend,
+	source: { author: $session, text: $messageText },
+	filter: (form): form is { author: Session; text: string } => {
+		return form.author !== null;
+	},
+	target: messageApi.messageSendFx,
 });
 ```
 
@@ -18706,18 +19018,20 @@ The easiest way is to return the sent message from the effect.
 
 ```ts
 // File: /src/shared/api/message.ts
-export const messageSendFx = createEffect(async ({ text, author }: SendMessage) => {
-  const message: Message = {
-    id: createOid(),
-    author,
-    timestamp: Date.now(),
-    text,
-  };
-  const history = await messagesLoadFx();
-  await wait();
-  saveHistory([...history, message]);
-  return message;
-});
+export const messageSendFx = createEffect(
+	async ({ text, author }: SendMessage) => {
+		const message: Message = {
+			id: createOid(),
+			author,
+			timestamp: Date.now(),
+			text,
+		};
+		const history = await messagesLoadFx();
+		await wait();
+		saveHistory([...history, message]);
+		return message;
+	},
+);
 ```
 
 Now we can just append a message to the end of the list:
@@ -18725,8 +19039,8 @@ Now we can just append a message to the end of the list:
 ```ts
 // File: /src/pages/chat/model.ts
 $messages.on(messageApi.messageSendFx.doneData, (messages, newMessage) => [
-  ...messages,
-  newMessage,
+	...messages,
+	newMessage,
 ]);
 ```
 
@@ -18734,13 +19048,13 @@ But at the moment, sent a message still left in the input.
 
 ```ts
 // File: /src/pages/chat/model.ts
-$messageText.on(messageSendFx, () => "");
+$messageText.on(messageSendFx, () => '');
 
 // If message sending is failed, just restore the message
 sample({
-  clock: messageSendFx.fail,
-  fn: ({ params }) => params.text,
-  target: $messageText,
+	clock: messageSendFx.fail,
+	fn: ({ params }) => params.text,
+	target: $messageText,
 });
 ```
 
@@ -18751,12 +19065,14 @@ It is pretty simple.
 ```ts
 // File: /src/pages/chat/model.ts
 sample({
-  clock: messageDeleteClicked,
-  target: messageApi.messageDeleteFx,
+	clock: messageDeleteClicked,
+	target: messageApi.messageDeleteFx,
 });
 
-$messages.on(messageApi.messageDeleteFx.done, (messages, { params: toDelete }) =>
-  messages.filter((message) => message.id !== toDelete.id),
+$messages.on(
+	messageApi.messageDeleteFx.done,
+	(messages, { params: toDelete }) =>
+		messages.filter((message) => message.id !== toDelete.id),
 );
 ```
 
@@ -18767,16 +19083,22 @@ To fix it, we need to provide `keys`:
 ```tsx
 // File: /src/pages/chat/page.tsx
 const messages = useList(model.$messages, {
-  keys: [messageDeleting],
-  fn: (message) => (
-    <div className="message-item" key={message.timestamp}>
-      <h3>From: {message.author.name}</h3>
-      <p>{message.text}</p>
-      <button onClick={() => handleMessageDelete(message)} disabled={messageDeleting}>
-        {messageDeleting ? "Deleting" : "Delete"}
-      </button>
-    </div>
-  ),
+	keys: [messageDeleting],
+	fn: (message) => (
+		<div
+			className='message-item'
+			key={message.timestamp}
+		>
+			<h3>From: {message.author.name}</h3>
+			<p>{message.text}</p>
+			<button
+				onClick={() => handleMessageDelete(message)}
+				disabled={messageDeleting}
+			>
+				{messageDeleting ? 'Deleting' : 'Delete'}
+			</button>
+		</div>
+	),
 });
 ```
 
@@ -18785,7 +19107,6 @@ const messages = useList(model.$messages, {
 This is a simple example of an application on effector with React and TypeScript.
 
 You can clone this [effector/examples/react-and-ts](https://github.com/effector/effector/tree/master/examples/react-and-ts) and run this example on your computer.
-
 
 # FAQ
 
@@ -18800,7 +19121,6 @@ You can clone this [effector/examples/react-and-ts](https://github.com/effector/
 Это поможет в будущем, при разработке инструментов Effector Devtools, и сейчас используется в [плейграунде](https://share.effector.dev) на боковой панели слева.\
 Если вы не хотите этого делать, вы можете использовать [Babel плагин](https://www.npmjs.com/package/@effector/babel-plugin). Он автоматически сгенерирует имя для событий и эффектов из имени переменной.
 
-
 # Изолированный контекст
 
 import Tabs from "@components/Tabs/Tabs.astro";
@@ -18812,7 +19132,7 @@ import SideBySide from "@components/SideBySide/SideBySide.astro";
 С помощью скоупов вы можете создать изолированный экземпляр всего приложения, который содержит независимую копию всех юнитов (включая их связи), а также базовые методы для работы с ними:
 
 ```ts "fork" "allSettled"
-import { fork, allSettled } from "effector";
+import { fork, allSettled } from 'effector';
 
 // Создаем новый скоуп
 const scope = fork();
@@ -18839,8 +19159,8 @@ console.log($counter.getState()); // 0 - оригинальный стор ос�
 
 В effector все состояние хранится глобально. В клиентском приложении (SPA) это не проблема: каждый пользователь получает собственный экземпляр кода и работает со своим состоянием. Но при серверном рендеринге (SSR) или параллельном тестировании глобальное состояние становится проблемой: данные одного запроса или теста могут “протечь” в другой. Поэтому нам необходим скоуп.
 
-* **SSR** — сервер работает как единый процесс и обслуживает запросы множества пользователей. Для каждого запроса можно создать скоуп, который изолирует данные от глобального контекста Effector и предотвращает утечку состояния одного пользователя в запрос другого.
-* **Тестирование** — при параллельном запуске тестов возможны гонки данных и коллизии состояний. Скоуп позволяет каждому тесту выполняться со своим собственным изолированным состоянием.
+- **SSR** — сервер работает как единый процесс и обслуживает запросы множества пользователей. Для каждого запроса можно создать скоуп, который изолирует данные от глобального контекста Effector и предотвращает утечку состояния одного пользователя в запрос другого.
+- **Тестирование** — при параллельном запуске тестов возможны гонки данных и коллизии состояний. Скоуп позволяет каждому тесту выполняться со своим собственным изолированным состоянием.
 
 У нас есть подробные гайды по работе с серверным рендерингом (SSR) и тестировании, а здесь мы сосредоточимся на основных принципах работы со скоупом, его правилах и способах избежать распространенных ошибок.
 
@@ -18863,14 +19183,14 @@ console.log($counter.getState()); // 0 - оригинальный стор ос�
 ```ts wrap data-border="good" data-height="full"
 // ✅ правильное использование эффекта без вложенных эффектов
 const delayFx = createEffect(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 80));
+	await new Promise((resolve) => setTimeout(resolve, 80));
 });
 
 // ✅ правильное использование эффекта с вложенными эффектами
 const authFx = createEffect(async () => {
-  await loginFx();
+	await loginFx();
 
-  await Promise.all([loadProfileFx(), loadSettingsFx()]);
+	await Promise.all([loadProfileFx(), loadSettingsFx()]);
 });
 ```
 
@@ -18882,13 +19202,13 @@ const authFx = createEffect(async () => {
 // ❌ неправильное использование эффекта с вложенными эффектами
 
 const sendWithAuthFx = createEffect(async () => {
-  await authUserFx();
+	await authUserFx();
 
-  //неправильно! Это должно быть обернуто в эффект.
-  await new Promise((resolve) => setTimeout(resolve, 80));
+	//неправильно! Это должно быть обернуто в эффект.
+	await new Promise((resolve) => setTimeout(resolve, 80));
 
-  // здесь скоуп теряется.
-  await sendMessageFx();
+	// здесь скоуп теряется.
+	await sendMessageFx();
 });
 ```
 
@@ -18905,18 +19225,22 @@ const sendWithAuthFx = createEffect(async () => {
 Всегда используйте хук `useUnit` в связке с фреймворками, чтобы effector сам вызвал юнит в нужном ему скоупе:
 
 ```tsx wrap "useUnit"
-import { useUnit } from "effector-react";
-import { $counter, increased, sendToServerFx } from "./model";
+import { useUnit } from 'effector-react';
+import { $counter, increased, sendToServerFx } from './model';
 
 const Component = () => {
-  const [counter, increase, sendToServer] = useUnit([$counter, increased, sendToServerFx]);
+	const [counter, increase, sendToServer] = useUnit([
+		$counter,
+		increased,
+		sendToServerFx,
+	]);
 
-  return (
-    <div>
-      <button onClick={increase}>{counter}</button>
-      <button onClick={sendToServer}>send data to server</button>
-    </div>
-  );
+	return (
+		<div>
+			<button onClick={increase}>{counter}</button>
+			<button onClick={sendToServer}>send data to server</button>
+		</div>
+	);
 };
 ```
 
@@ -18926,9 +19250,9 @@ const Component = () => {
 
 Представим ситуацию: у нас есть сайт с SSR, где на странице профиля показывается список личных уведомлений пользователя. Если мы не будем использовать скоуп, то получится следующее:
 
-* Пользователь А делает запрос → на сервере в `$notifications` загружаются его уведомления.
-* Почти одновременно Пользователь B делает запрос → стор перезаписывается его данными.
-* В результате оба получат список уведомлений Пользователя B.
+- Пользователь А делает запрос → на сервере в `$notifications` загружаются его уведомления.
+- Почти одновременно Пользователь B делает запрос → стор перезаписывается его данными.
+- В результате оба получат список уведомлений Пользователя B.
 
 Получилось явно не то, что мы хотели, да ? Это и есть [состояние гонки](https://ru.wikipedia.org/wiki/%D0%A1%D0%BE%D1%81%D1%82%D0%BE%D1%8F%D0%BD%D0%B8%D0%B5_%D0%B3%D0%BE%D0%BD%D0%BA%D0%B8), ведущее к утечке приватных данных.
 В этой ситуации скоуп обеспечит нам изолированный контекст, который будет работать только для текущего пользователя: Пользователь сделал запрос -> создался скоуп и теперь мы меняем состояние только в нашем скоупе, так будет работать для каждого запроса.
@@ -18938,28 +19262,28 @@ const Component = () => {
 
 ```tsx "fork" "allSettled" "serialize"
 // server.tsx
-import { renderToString } from "react-dom/server";
-import { fork, serialize, allSettled } from "effector";
-import { Provider } from "effector-react";
-import { fetchNotificationsFx } from "./model";
+import { renderToString } from 'react-dom/server';
+import { fork, serialize, allSettled } from 'effector';
+import { Provider } from 'effector-react';
+import { fetchNotificationsFx } from './model';
 
 async function serverRender() {
-  const scope = fork();
+	const scope = fork();
 
-  // Загружаем данные на сервере
-  await allSettled(fetchNotificationsFx, { scope });
+	// Загружаем данные на сервере
+	await allSettled(fetchNotificationsFx, { scope });
 
-  // Рендерим приложение
-  const html = renderToString(
-    <Provider value={scope}>
-      <App />
-    </Provider>,
-  );
+	// Рендерим приложение
+	const html = renderToString(
+		<Provider value={scope}>
+			<App />
+		</Provider>,
+	);
 
-  // Сериализуем состояние для передачи на клиент
-  const data = serialize(scope);
+	// Сериализуем состояние для передачи на клиент
+	const data = serialize(scope);
 
-  return `
+	return `
 	<html>
 	  <body>
 		<div id="root">${html}</div>
@@ -18975,19 +19299,19 @@ async function serverRender() {
 
 ```tsx
 // client.tsx
-import { hydrateRoot } from "react-dom/client";
-import { fork } from "effector";
+import { hydrateRoot } from 'react-dom/client';
+import { fork } from 'effector';
 
 // гидрируем скоуп начальными значениями
 const scope = fork({
-  values: window.INITIAL_DATA,
+	values: window.INITIAL_DATA,
 });
 
 hydrateRoot(
-  document.getElementById("root"),
-  <Provider value={scope}>
-    <App />
-  </Provider>,
+	document.getElementById('root'),
+	<Provider value={scope}>
+		<App />
+	</Provider>,
 );
 ```
 
@@ -19001,19 +19325,18 @@ hydrateRoot(
 
 ### Связанные API и статьи
 
-* **API**
-    * Scope - Описание скоупа и его методов
-    * scopeBind - Метод для привязки юнита к скоупу
-    * fork - Оператор для создания скоупа
-    * allSettled - Метод для вызова юнита в предоставленном скоупе и ожидания завершения всей цепочки эффектов
-    * serialize - Метод для получения сериализованного значения сторов
-    * hydrate - Метод для гидрации сериализованных данных
-* **Статьи**
-    * Что такое потеря скоупа и как исправить эту проблему
-    * Гайд по работе с SSR
-    * Гайд по тестированию
-    * Важность SID для гидрации сторов
-
+- **API**
+    - Scope - Описание скоупа и его методов
+    - scopeBind - Метод для привязки юнита к скоупу
+    - fork - Оператор для создания скоупа
+    - allSettled - Метод для вызова юнита в предоставленном скоупе и ожидания завершения всей цепочки эффектов
+    - serialize - Метод для получения сериализованного значения сторов
+    - hydrate - Метод для гидрации сериализованных данных
+- **Статьи**
+    - Что такое потеря скоупа и как исправить эту проблему
+    - Гайд по работе с SSR
+    - Гайд по тестированию
+    - Важность SID для гидрации сторов
 
 # Справочник по API
 
@@ -19021,24 +19344,23 @@ hydrateRoot(
 
 ### Хуки
 
-* useStore(store)
-* useStoreMap({ store, keys, fn })
-* useList(store, renderItem)
-* useUnit(units)
-* useEvent(unit)
+- useStore(store)
+- useStoreMap({ store, keys, fn })
+- useList(store, renderItem)
+- useUnit(units)
+- useEvent(unit)
 
 ### Gate API
 
-* Gate
-* createGate()
-* useGate(GateComponent, props)
+- Gate
+- createGate()
+- useGate(GateComponent, props)
 
 ### Higher Order Components API
 
-* createComponent(store, render)
-* createStoreConsumer(store)
-* connect(store)(Component)
-
+- createComponent(store, render)
+- createStoreConsumer(store)
+- connect(store)(Component)
 
 # useEvent
 
@@ -19050,7 +19372,7 @@ hydrateRoot(
 
 Используется с серверным рендерингом и в тестировании, импортируется из `effector-react/scope`
 
-### *useEvent(unit)*
+### _useEvent(unit)_
 
 Привязывает юнит к скоупу компонента
 
@@ -19078,37 +19400,37 @@ const fxFn = useEvent(/*unit*/ fx)
 #### Пример
 
 ```jsx
-import ReactDOM from "react-dom";
-import { createEvent, createStore, fork } from "effector";
-import { useStore, useEvent, Provider } from "effector-react";
+import ReactDOM from 'react-dom';
+import { createEvent, createStore, fork } from 'effector';
+import { useStore, useEvent, Provider } from 'effector-react';
 
 const inc = createEvent();
 const $count = createStore(0).on(inc, (x) => x + 1);
 
 const App = () => {
-  const count = useStore($count);
-  const incFn = useEvent(inc);
-  return (
-    <>
-      <p>Count: {count}</p>
-      <button onClick={() => incFn()}>increment</button>
-    </>
-  );
+	const count = useStore($count);
+	const incFn = useEvent(inc);
+	return (
+		<>
+			<p>Count: {count}</p>
+			<button onClick={() => incFn()}>increment</button>
+		</>
+	);
 };
 
 const scope = fork();
 
 ReactDOM.render(
-  <Provider value={scope}>
-    <App />
-  </Provider>,
-  document.getElementById("root"),
+	<Provider value={scope}>
+		<App />
+	</Provider>,
+	document.getElementById('root'),
 );
 ```
 
 Запустить пример
 
-### *useEvent(\[a, b])*
+### _useEvent(\[a, b])_
 
 Привязывает массив событий или эффектов к скоупу компонента
 
@@ -19133,41 +19455,41 @@ const [aFn, bFn] = useEvent(/*list*/ [a, bFx])
 #### Пример
 
 ```jsx
-import ReactDOM from "react-dom";
-import { createEvent, createStore, fork } from "effector";
-import { useStore, useEvent, Provider } from "effector-react";
+import ReactDOM from 'react-dom';
+import { createEvent, createStore, fork } from 'effector';
+import { useStore, useEvent, Provider } from 'effector-react';
 
 const inc = createEvent();
 const dec = createEvent();
 const $count = createStore(0)
-  .on(inc, (x) => x + 1)
-  .on(dec, (x) => x - 1);
+	.on(inc, (x) => x + 1)
+	.on(dec, (x) => x - 1);
 
 const App = () => {
-  const count = useStore($count);
-  const [incFn, decFn] = useEvent([inc, dec]);
-  return (
-    <>
-      <p>Count: {count}</p>
-      <button onClick={() => incFn()}>increment</button>
-      <button onClick={() => decFn()}>decrement</button>
-    </>
-  );
+	const count = useStore($count);
+	const [incFn, decFn] = useEvent([inc, dec]);
+	return (
+		<>
+			<p>Count: {count}</p>
+			<button onClick={() => incFn()}>increment</button>
+			<button onClick={() => decFn()}>decrement</button>
+		</>
+	);
 };
 
 const scope = fork();
 
 ReactDOM.render(
-  <Provider value={scope}>
-    <App />
-  </Provider>,
-  document.getElementById("root"),
+	<Provider value={scope}>
+		<App />
+	</Provider>,
+	document.getElementById('root'),
 );
 ```
 
 Запустить пример
 
-### *useEvent({a, b})*
+### _useEvent({a, b})_
 
 Привязывает объект событий или эффектов к скоупу компонента
 
@@ -19192,40 +19514,39 @@ const {a: aFn, b: bFn} = useEvent(/*shape*/ {a, b: bFx})
 #### Пример
 
 ```jsx
-import ReactDOM from "react-dom";
-import { createEvent, createStore, fork } from "effector";
-import { useStore, useEvent, Provider } from "effector-react";
+import ReactDOM from 'react-dom';
+import { createEvent, createStore, fork } from 'effector';
+import { useStore, useEvent, Provider } from 'effector-react';
 
 const inc = createEvent();
 const dec = createEvent();
 const $count = createStore(0)
-  .on(inc, (x) => x + 1)
-  .on(dec, (x) => x - 1);
+	.on(inc, (x) => x + 1)
+	.on(dec, (x) => x - 1);
 
 const App = () => {
-  const count = useStore($count);
-  const handlers = useEvent({ inc, dec });
-  return (
-    <>
-      <p>Count: {count}</p>
-      <button onClick={() => handlers.inc()}>increment</button>
-      <button onClick={() => handlers.dec()}>decrement</button>
-    </>
-  );
+	const count = useStore($count);
+	const handlers = useEvent({ inc, dec });
+	return (
+		<>
+			<p>Count: {count}</p>
+			<button onClick={() => handlers.inc()}>increment</button>
+			<button onClick={() => handlers.dec()}>decrement</button>
+		</>
+	);
 };
 
 const scope = fork();
 
 ReactDOM.render(
-  <Provider value={scope}>
-    <App />
-  </Provider>,
-  document.getElementById("root"),
+	<Provider value={scope}>
+		<App />
+	</Provider>,
+	document.getElementById('root'),
 );
 ```
 
 Запустить пример
-
 
 # useList
 
@@ -19247,7 +19568,10 @@ React-хук для эффективного рендеринга сторов �
 #### Формула
 
 ```ts
-function useList(store: Store<T[]>, fn: (item: T, key: number) => React.ReactNode): React.ReactNode;
+function useList(
+	store: Store<T[]>,
+	fn: (item: T, key: number) => React.ReactNode,
+): React.ReactNode;
 ```
 
 #### Аргументы
@@ -19255,14 +19579,13 @@ function useList(store: Store<T[]>, fn: (item: T, key: number) => React.ReactNod
 1. **`store`**: Стор с массивом данных
 2. **`fn`**: `(item: T, key: number) => React.ReactNode`
 
-   Рендер-функция для отображения в ui отдельного элемента массива. Явная простановка `key` реакт-элементам внутри рендер-функции не требуется, ключ элемента проставляется автоматически
+    Рендер-функция для отображения в ui отдельного элемента массива. Явная простановка `key` реакт-элементам внутри рендер-функции не требуется, ключ элемента проставляется автоматически
 
-   **Аргументы**
+    **Аргументы**
+    - **`item`**: Элемент массива
+    - **`key`**: Индекс элемента, выступает как ключ для React
 
-    * **`item`**: Элемент массива
-    * **`key`**: Индекс элемента, выступает как ключ для React
-
-   **Возвращает**: `React.ReactNode`
+    **Возвращает**: `React.ReactNode`
 
 #### Возвращает
 
@@ -19280,12 +19603,12 @@ function useList(store: Store<T[]>, fn: (item: T, key: number) => React.ReactNod
 
 ```ts
 function useList(
-  store: Store<T[]>,
-  config: {
-    keys: any[];
-    fn: (item: T, key: React.Key) => React.ReactNode;
-    getKey?: (item: T) => React.Key;
-  },
+	store: Store<T[]>,
+	config: {
+		keys: any[];
+		fn: (item: T, key: React.Key) => React.ReactNode;
+		getKey?: (item: T) => React.Key;
+	},
 ): React.ReactNode;
 ```
 
@@ -19293,31 +19616,28 @@ function useList(
 
 1. **`store`**: Стор с массивом данных
 2. **`config`**: Объект конфигурации
+    - **`keys`**: Массив зависимостей, которые будут переданы в React
 
-    * **`keys`**: Массив зависимостей, которые будут переданы в React
+    - **`fn`**: `(item: T, key: React.Key) => React.ReactNode`
 
-    * **`fn`**: `(item: T, key: React.Key) => React.ReactNode`
+        Рендер-функция для отображения в ui отдельного элемента массива. Явная простановка `key` реакт-элементам внутри рендер-функции не требуется, ключ элемента проставляется автоматически
 
-      Рендер-функция для отображения в ui отдельного элемента массива. Явная простановка `key` реакт-элементам внутри рендер-функции не требуется, ключ элемента проставляется автоматически
+        **Аргументы**
+        - **`item`**: Элемент массива
+        - **`key`**: Ключ элемента, вычисляется с помощью `getKey`, если есть, в противном случае используется индекс элемента
 
-      **Аргументы**
+        **Возвращает**: `React.ReactNode`
 
-        * **`item`**: Элемент массива
-        * **`key`**: Ключ элемента, вычисляется с помощью `getKey`, если есть, в противном случае используется индекс элемента
+    - **`getKey?`**: `(item: T) => React.Key`
 
-      **Возвращает**: `React.ReactNode`
+        Функция для вычисления ключа элемента на основе данных. Полученный ключ будет передан в React
 
-    * **`getKey?`**: `(item: T) => React.Key`
+        **Аргументы**
+        - **`item`**: Элемент массива
 
-      Функция для вычисления ключа элемента на основе данных. Полученный ключ будет передан в React
+        **Возвращает**: `React.Key`
 
-      **Аргументы**
-
-        * **`item`**: Элемент массива
-
-      **Возвращает**: `React.Key`
-
-    * **`placeholder?`**: `React.ReactNode` Опциональный реакт-элемент который будет использован в случае пустого массива
+    - **`placeholder?`**: `React.ReactNode` Опциональный реакт-элемент который будет использован в случае пустого массива
 
 #### Возвращает
 
@@ -19336,24 +19656,24 @@ function useList(
 #### Пример 1
 
 ```jsx
-import { createStore } from "effector";
-import { useList } from "effector-react";
+import { createStore } from 'effector';
+import { useList } from 'effector-react';
 
 const $users = createStore([
-  { id: 1, name: "Yung" },
-  { id: 2, name: "Lean" },
-  { id: 3, name: "Kyoto" },
-  { id: 4, name: "Sesh" },
+	{ id: 1, name: 'Yung' },
+	{ id: 2, name: 'Lean' },
+	{ id: 3, name: 'Kyoto' },
+	{ id: 4, name: 'Sesh' },
 ]);
 
 const App = () => {
-  const list = useList($users, ({ name }, index) => (
-    <li>
-      [{index}] {name}
-    </li>
-  ));
+	const list = useList($users, ({ name }, index) => (
+		<li>
+			[{index}] {name}
+		</li>
+	));
 
-  return <ul>{list}</ul>;
+	return <ul>{list}</ul>;
 };
 ```
 
@@ -19362,61 +19682,67 @@ const App = () => {
 #### Пример 2
 
 ```jsx
-import { createStore, createEvent } from "effector";
-import { useList } from "effector-react";
+import { createStore, createEvent } from 'effector';
+import { useList } from 'effector-react';
 
 const addTodo = createEvent();
 const toggleTodo = createEvent();
 
 const $todoList = createStore([
-  { text: "write useList example", done: true },
-  { text: "update readme", done: false },
+	{ text: 'write useList example', done: true },
+	{ text: 'update readme', done: false },
 ])
-  .on(toggleTodo, (list, id) =>
-    list.map((todo, i) => {
-      if (i === id)
-        return {
-          ...todo,
-          done: !todo.done,
-        };
-      return todo;
-    }),
-  )
-  .on(addTodo, (list, e) => [
-    ...list,
-    {
-      text: e.currentTarget.elements.content.value,
-      done: false,
-    },
-  ]);
+	.on(toggleTodo, (list, id) =>
+		list.map((todo, i) => {
+			if (i === id)
+				return {
+					...todo,
+					done: !todo.done,
+				};
+			return todo;
+		}),
+	)
+	.on(addTodo, (list, e) => [
+		...list,
+		{
+			text: e.currentTarget.elements.content.value,
+			done: false,
+		},
+	]);
 
 addTodo.watch((e) => {
-  e.preventDefault();
+	e.preventDefault();
 });
 
 const TodoList = () =>
-  useList($todoList, ({ text, done }, i) => {
-    const todo = done ? (
-      <del>
-        <span>{text}</span>
-      </del>
-    ) : (
-      <span>{text}</span>
-    );
-    return <li onClick={() => toggleTodo(i)}>{todo}</li>;
-  });
+	useList($todoList, ({ text, done }, i) => {
+		const todo =
+			done ?
+				<del>
+					<span>{text}</span>
+				</del>
+			:	<span>{text}</span>;
+		return <li onClick={() => toggleTodo(i)}>{todo}</li>;
+	});
 const App = () => (
-  <div>
-    <h1>todo list</h1>
-    <form onSubmit={addTodo}>
-      <label htmlFor="content">New todo</label>
-      <input type="text" name="content" required />
-      <input type="submit" value="Add" />
-    </form>
-    <ul>
-      <TodoList />
-    </ul>
-  </div>
+	<div>
+		<h1>todo list</h1>
+		<form onSubmit={addTodo}>
+			<label htmlFor='content'>New todo</label>
+			<input
+				type='text'
+				name='content'
+				required
+			/>
+			<input
+				type='submit'
+				value='Add'
+			/>
+		</form>
+		<ul>
+			<TodoList />
+		</ul>
+	</div>
 );
 ```
 
@@ -19425,37 +19751,36 @@ const App = () => (
 #### Пример с конфигурацией
 
 ```jsx
-import ReactDOM from "react-dom";
-import { createEvent, createStore, restore } from "effector";
-import { useUnit, useList } from "effector-react";
+import ReactDOM from 'react-dom';
+import { createEvent, createStore, restore } from 'effector';
+import { useUnit, useList } from 'effector-react';
 
 const renameUser = createEvent();
-const $user = restore(renameUser, "alice");
-const $friends = createStore(["bob"]);
+const $user = restore(renameUser, 'alice');
+const $friends = createStore(['bob']);
 
 const App = () => {
-  const user = useUnit($user);
-  return useList($friends, {
-    keys: [user],
-    fn: (friend) => (
-      <div>
-        {friend} is a friend of {user}
-      </div>
-    ),
-  });
+	const user = useUnit($user);
+	return useList($friends, {
+		keys: [user],
+		fn: (friend) => (
+			<div>
+				{friend} is a friend of {user}
+			</div>
+		),
+	});
 };
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(<App />, document.getElementById('root'));
 // => <div> bob is a friend of alice </div>
 
 setTimeout(() => {
-  renameUser("carol");
-  // => <div> bob is a friend of carol </div>
+	renameUser('carol');
+	// => <div> bob is a friend of carol </div>
 }, 500);
 ```
 
 Запустить пример
-
 
 # useProvidedScope
 
@@ -19471,7 +19796,7 @@ setTimeout(() => {
 
 #### Возвращает
 
-* Scope или `null`, если `Scope` не передан.
+- Scope или `null`, если `Scope` не передан.
 
 #### Пример
 
@@ -19481,12 +19806,11 @@ setTimeout(() => {
 
 ```tsx
 const useCustomLibraryInternals = () => {
-  const scope = useProvidedScope();
+	const scope = useProvidedScope();
 
-  // ...
+	// ...
 };
 ```
-
 
 # useStore
 
@@ -19506,35 +19830,34 @@ useStore(store: Store<T>): T
 
 **Возвращает**
 
-(*`State`*): Значение из стора
+(_`State`_): Значение из стора
 
 #### Пример
 
 ```jsx
-import { createStore, createApi } from "effector";
-import { useStore } from "effector-react";
+import { createStore, createApi } from 'effector';
+import { useStore } from 'effector-react';
 
 const $counter = createStore(0);
 
 const { increment, decrement } = createApi($counter, {
-  increment: (state) => state + 1,
-  decrement: (state) => state - 1,
+	increment: (state) => state + 1,
+	decrement: (state) => state - 1,
 });
 
 const App = () => {
-  const counter = useStore($counter);
-  return (
-    <div>
-      {counter}
-      <button onClick={increment}>Increment</button>
-      <button onClick={decrement}>Decrement</button>
-    </div>
-  );
+	const counter = useStore($counter);
+	return (
+		<div>
+			{counter}
+			<button onClick={increment}>Increment</button>
+			<button onClick={decrement}>Decrement</button>
+		</div>
+	);
 };
 ```
 
 Запустить пример
-
 
 # useStoreMap
 
@@ -19556,11 +19879,11 @@ useStoreMap<State, Result>(
 **Аргументы**
 
 1. `store`: Используемый стор
-2. `fn` (*(state) => result*): Функция-селектор
+2. `fn` (_(state) => result_): Функция-селектор
 
 **Возвращает**
 
-(*Result*)
+(_Result_)
 
 ```ts
 useStoreMap<Source, Result>({
@@ -19576,16 +19899,16 @@ useStoreMap<Source, Result>({
 
 **Аргументы**
 
-1. `params` (*Object*): Объект конфигурации
-    * `store`: Используемый стор
-    * `keys` (*Array*): Массив, который будет передан в React.useMemo
-    * `fn` (*(state, keys) => result*): Функция-селектор
-    * `updateFilter` (*(newResult, oldResult) => boolean*): *Опционально* функция, используемая для сравнения старого и нового результата работы хука, предназначено для избежания лишних ререндеров. Реализация опции для работы использует createStore updateFilter
-    * `defaultValue`: Опциональное значение по умолчанию, используется когда `fn` возвращает undefined
+1. `params` (_Object_): Объект конфигурации
+    - `store`: Используемый стор
+    - `keys` (_Array_): Массив, который будет передан в React.useMemo
+    - `fn` (_(state, keys) => result_): Функция-селектор
+    - `updateFilter` (_(newResult, oldResult) => boolean_): _Опционально_ функция, используемая для сравнения старого и нового результата работы хука, предназначено для избежания лишних ререндеров. Реализация опции для работы использует createStore updateFilter
+    - `defaultValue`: Опциональное значение по умолчанию, используется когда `fn` возвращает undefined
 
 **Возвращает**
 
-(*Result*)
+(_Result_)
 
 > INFO:
 >
@@ -19600,53 +19923,57 @@ useStoreMap<Source, Result>({
 Этот хук полезен для работы со списками, особенно с большими
 
 ```jsx
-import { createStore } from "effector";
-import { useUnit, useStoreMap } from "effector-react";
+import { createStore } from 'effector';
+import { useUnit, useStoreMap } from 'effector-react';
 
 const data = [
-  {
-    id: 1,
-    name: "Yung",
-  },
-  {
-    id: 2,
-    name: "Lean",
-  },
-  {
-    id: 3,
-    name: "Kyoto",
-  },
-  {
-    id: 4,
-    name: "Sesh",
-  },
+	{
+		id: 1,
+		name: 'Yung',
+	},
+	{
+		id: 2,
+		name: 'Lean',
+	},
+	{
+		id: 3,
+		name: 'Kyoto',
+	},
+	{
+		id: 4,
+		name: 'Sesh',
+	},
 ];
 
 const $users = createStore(data);
 const $ids = createStore(data.map(({ id }) => id));
 
 const User = ({ id }) => {
-  const user = useStoreMap({
-    store: $users,
-    keys: [id],
-    fn: (users, [userId]) => users.find(({ id }) => id === userId),
-  });
+	const user = useStoreMap({
+		store: $users,
+		keys: [id],
+		fn: (users, [userId]) => users.find(({ id }) => id === userId),
+	});
 
-  return (
-    <div>
-      <strong>[{user.id}]</strong> {user.name}
-    </div>
-  );
+	return (
+		<div>
+			<strong>[{user.id}]</strong> {user.name}
+		</div>
+	);
 };
 
 const UserList = () => {
-  const ids = useUnit($ids);
-  return ids.map((id) => <User key={id} id={id} />);
+	const ids = useUnit($ids);
+	return ids.map((id) => (
+		<User
+			key={id}
+			id={id}
+		/>
+	));
 };
 ```
 
 Запустить пример
-
 
 # useUnit
 
@@ -19654,7 +19981,7 @@ React hook, который принимает любой юнит (стор, с�
 
 В случае сторов этот хук подписывает компонент на предоставленный стор и возвращает его текущее значение, поэтому при обновлении стора компонент будет обновлен автоматически.
 
-В случае событий или эффектов – привязка к текущему  для использования в обработчиках браузерных событий.
+В случае событий или эффектов – привязка к текущему для использования в обработчиках браузерных событий.
 Только версия `effector-react/scope` работает таким образом, `useUnit` из `effector-react` является no-op для событий и не требует `Provider` с scope.
 
 > INFO:
@@ -19674,32 +20001,32 @@ React hook, который принимает любой юнит (стор, с�
 #### Example
 
 ```jsx
-import { createEvent, createStore, fork } from "effector";
-import { useUnit, Provider } from "effector-react";
+import { createEvent, createStore, fork } from 'effector';
+import { useUnit, Provider } from 'effector-react';
 
 const inc = createEvent();
 const $count = createStore(0).on(inc, (x) => x + 1);
 
 const App = () => {
-  const [count, incFn] = useUnit([$count, inc]);
+	const [count, incFn] = useUnit([$count, inc]);
 
-  return (
-    <>
-      <p>Count: {count}</p>
-      <button onClick={() => incFn()}>increment</button>
-    </>
-  );
+	return (
+		<>
+			<p>Count: {count}</p>
+			<button onClick={() => incFn()}>increment</button>
+		</>
+	);
 };
 
 const scope = fork();
 
 render(
-  () => (
-    <Provider value={scope}>
-      <App />
-    </Provider>
-  ),
-  document.getElementById("root"),
+	() => (
+		<Provider value={scope}>
+			<App />
+		</Provider>
+	),
+	document.getElementById('root'),
 );
 ```
 
@@ -19716,26 +20043,26 @@ render(
 ##### Example
 
 ```js
-import { createStore, createApi } from "effector";
-import { useUnit } from "effector-react";
+import { createStore, createApi } from 'effector';
+import { useUnit } from 'effector-react';
 
 const $counter = createStore(0);
 
 const { increment, decrement } = createApi($counter, {
-  increment: (state) => state + 1,
-  decrement: (state) => state - 1,
+	increment: (state) => state + 1,
+	decrement: (state) => state - 1,
 });
 
 const App = () => {
-  const counter = useUnit($counter);
+	const counter = useUnit($counter);
 
-  return (
-    <div>
-      {counter}
-      <button onClick={increment}>Increment</button>
-      <button onClick={decrement}>Decrement</button>
-    </div>
-  );
+	return (
+		<div>
+			{counter}
+			<button onClick={increment}>Increment</button>
+			<button onClick={decrement}>Decrement</button>
+		</div>
+	);
 };
 ```
 
@@ -19743,59 +20070,58 @@ const App = () => {
 
 #### Arguments
 
-1. `shape` Объект или массив содержащий любые (,  или )
+1. `shape` Объект или массив содержащий любые (, или )
 
 **Returns**
 
 (Объект или Массив):
 
-* В случае событий и эффектов: функции с теми же именами или ключами в качестве аргумента для передачи обработчикам событий. Эти функции запустят события и эффекты в текущем скоупе. *Примечание: события или эффекты будут привязаны к скоупу **только**, если `useUnit` импортирован из `effector-react/scope`*.
-* В случае сторов: текущее значение стора.
+- В случае событий и эффектов: функции с теми же именами или ключами в качестве аргумента для передачи обработчикам событий. Эти функции запустят события и эффекты в текущем скоупе. _Примечание: события или эффекты будут привязаны к скоупу **только**, если `useUnit` импортирован из `effector-react/scope`_.
+- В случае сторов: текущее значение стора.
 
 #### Example
 
 ```jsx
-import { createStore, createEvent, fork } from "effector";
-import { useUnit, Provider } from "effector-react";
+import { createStore, createEvent, fork } from 'effector';
+import { useUnit, Provider } from 'effector-react';
 
 const inc = createEvent();
 const dec = createEvent();
 
 const $count = createStore(0)
-  .on(inc, (x) => x + 1)
-  .on(dec, (x) => x - 1);
+	.on(inc, (x) => x + 1)
+	.on(dec, (x) => x - 1);
 
 const App = () => {
-  const count = useUnit($count);
-  const handler = useUnit({ inc, dec });
-  // or
-  const [a, b] = useUnit([inc, dec]);
+	const count = useUnit($count);
+	const handler = useUnit({ inc, dec });
+	// or
+	const [a, b] = useUnit([inc, dec]);
 
-  return (
-    <>
-      <p>Count: {count}</p>
-      <button onClick={() => handler.inc()}>increment</button>
-      <button onClick={() => handler.dec()}>decrement</button>
-    </>
-  );
+	return (
+		<>
+			<p>Count: {count}</p>
+			<button onClick={() => handler.inc()}>increment</button>
+			<button onClick={() => handler.dec()}>decrement</button>
+		</>
+	);
 };
 
 const scope = fork();
 
 render(
-  () => (
-    <Provider value={scope}>
-      <App />
-    </Provider>
-  ),
-  document.getElementById("root"),
+	() => (
+		<Provider value={scope}>
+			<App />
+		</Provider>
+	),
+	document.getElementById('root'),
 );
 ```
 
-
 # Domain
 
-*Domain (домен)* - это способ группировки и массовой обработки юнитов.
+_Domain (домен)_ - это способ группировки и массовой обработки юнитов.
 
 Домен может подписываться на создание события, эффекта, стор или вложенного домена с помощью методов `onCreateEvent`, `onCreateStore`, `onCreateEffect`, `onCreateDomain`.
 
@@ -19811,7 +20137,7 @@ render(
 
 #### Аргументы
 
-1. `name`? (*string*): имя события
+1. `name`? (_string_): имя события
 
 **Возвращает**
 
@@ -19823,7 +20149,7 @@ render(
 
 #### Аргументы
 
-1. `handler`? (*Function*): функция для обработки вызова эффектов, также может быть установленна с помощью use(handler)
+1. `handler`? (_Function_): функция для обработки вызова эффектов, также может быть установленна с помощью use(handler)
 
 **Возвращает**
 
@@ -19837,7 +20163,7 @@ render(
 
 #### Аргументы
 
-1. `name`? (*string*): имя эффекта
+1. `name`? (_string_): имя эффекта
 
 **Возвращает**
 
@@ -19847,7 +20173,7 @@ render(
 
 #### Аргументы
 
-1. `defaultState` (*State*): дефолтное состояние стора
+1. `defaultState` (_State_): дефолтное состояние стора
 
 **Возвращает**
 
@@ -19857,7 +20183,7 @@ render(
 
 #### Аргументы
 
-1. `name`? (*string*): имя домена
+1. `name`? (_string_): имя домена
 
 **Возвращает**
 
@@ -19873,14 +20199,14 @@ render(
 const { stores, events, domains, effects } = domain.history;
 ```
 
-* Когда любой из юнитов создается внутри домена, он появляется в наборе с именем типа в порядке создания.
+- Когда любой из юнитов создается внутри домена, он появляется в наборе с именем типа в порядке создания.
 
 > INFO since:
 >
 > [effector 20.3.0](https://changelog.effector.dev/#effector-20-3-0)
 
 ```js
-import { createDomain } from "effector";
+import { createDomain } from 'effector';
 const domain = createDomain();
 const eventA = domain.event();
 const $storeB = domain.store(0);
@@ -19918,27 +20244,27 @@ console.log(domain.history);
 domain.onCreateEvent((event) => {});
 ```
 
-* Функция переданная в `onCreateEvent` вызывается каждый раз, когда создается новое событие в `domain`
-* Первый аргумент вызываемой функции `event`
-* Результат вызова функции игнорируется
+- Функция переданная в `onCreateEvent` вызывается каждый раз, когда создается новое событие в `domain`
+- Первый аргумент вызываемой функции `event`
+- Результат вызова функции игнорируется
 
 #### Аргументы
 
-1. `hook` ([*Watcher*][_Watcher_]): Функция, которая принимает Event и будет вызвана во время каждого вызова domain.createEvent
+1. `hook` ([_Watcher_][_Watcher_]): Функция, которая принимает Event и будет вызвана во время каждого вызова domain.createEvent
 
 **Возвращает**
 
-[*Subscription*][_Subscription_]: Функция для отписки.
+[_Subscription_][_Subscription_]: Функция для отписки.
 
 #### Пример
 
 ```js
-import { createDomain } from "effector";
+import { createDomain } from 'effector';
 
 const domain = createDomain();
 
 domain.onCreateEvent((event) => {
-  console.log("новое событие создано");
+	console.log('новое событие создано');
 });
 
 const a = domain.createEvent();
@@ -19958,27 +20284,27 @@ const b = domain.createEvent();
 domain.onCreateEffect((effect) => {});
 ```
 
-* Функция переданная в `onCreateEffect` вызывается каждый раз, когда создается новый эффект в `domain`
-* Первый аргумент вызываемой функции `effect`
-* Результат вызова функции игнорируется
+- Функция переданная в `onCreateEffect` вызывается каждый раз, когда создается новый эффект в `domain`
+- Первый аргумент вызываемой функции `effect`
+- Результат вызова функции игнорируется
 
 #### Аргументы
 
-1. `hook` ([*Watcher*][_Watcher_]): Функция, которая принимает Effect и будет вызвана во время каждого вызова domain.createEffect
+1. `hook` ([_Watcher_][_Watcher_]): Функция, которая принимает Effect и будет вызвана во время каждого вызова domain.createEffect
 
 **Возвращает**
 
-[*Subscription*][_Subscription_]: Функция для отписки.
+[_Subscription_][_Subscription_]: Функция для отписки.
 
 #### Пример
 
 ```js
-import { createDomain } from "effector";
+import { createDomain } from 'effector';
 
 const domain = createDomain();
 
 domain.onCreateEffect((effect) => {
-  console.log("новый эффект создан");
+	console.log('новый эффект создан');
 });
 
 const fooFx = domain.createEffect();
@@ -19998,27 +20324,27 @@ const barFx = domain.createEffect();
 domain.onCreateStore(($store) => {});
 ```
 
-* Функция переданная в `onCreateStore` вызывается каждый раз, когда создается новый стор в `domain`
-* Первый аргумент вызываемой функции `$store`
-* Результат вызова функции игнорируется
+- Функция переданная в `onCreateStore` вызывается каждый раз, когда создается новый стор в `domain`
+- Первый аргумент вызываемой функции `$store`
+- Результат вызова функции игнорируется
 
 #### Аргументы
 
-1. `hook` ([*Watcher*][_Watcher_]): Функция, которая принимает Store и будет вызвана во время каждого вызова domain.createStore
+1. `hook` ([_Watcher_][_Watcher_]): Функция, которая принимает Store и будет вызвана во время каждого вызова domain.createStore
 
 **Возвращает**
 
-[*Subscription*][_Subscription_]: Функция для отписки.
+[_Subscription_][_Subscription_]: Функция для отписки.
 
 #### Пример
 
 ```js
-import { createDomain } from "effector";
+import { createDomain } from 'effector';
 
 const domain = createDomain();
 
 domain.onCreateStore((store) => {
-  console.log("новый стор создан");
+	console.log('новый стор создан');
 });
 
 const $a = domain.createStore(null);
@@ -20035,27 +20361,27 @@ const $a = domain.createStore(null);
 domain.onCreateDomain((domain) => {});
 ```
 
-* Функция переданная в `onCreateDomain` вызывается каждый раз, когда создается новый поддомен в `domain`
-* Первый аргумент вызываемой функции `domain`
-* Результат вызова функции игнорируется
+- Функция переданная в `onCreateDomain` вызывается каждый раз, когда создается новый поддомен в `domain`
+- Первый аргумент вызываемой функции `domain`
+- Результат вызова функции игнорируется
 
 #### Аргументы
 
-1. `hook` ([*Watcher*][_Watcher_]): Функция, которая принимает Domain и будет вызвана во время каждого вызова domain.createDomain
+1. `hook` ([_Watcher_][_Watcher_]): Функция, которая принимает Domain и будет вызвана во время каждого вызова domain.createDomain
 
 **Возвращает**
 
-[*Subscription*][_Subscription_]: Функция для отписки.
+[_Subscription_][_Subscription_]: Функция для отписки.
 
 #### Пример
 
 ```js
-import { createDomain } from "effector";
+import { createDomain } from 'effector';
 
 const domain = createDomain();
 
 domain.onCreateDomain((domain) => {
-  console.log("новый домен создан");
+	console.log('новый домен создан');
 });
 
 const a = domain.createDomain();
@@ -20068,27 +20394,24 @@ const b = domain.createDomain();
 Запустить пример
 
 [_watcher_]: /ru/explanation/glossary#watcher
-
 [_subscription_]: /ru/explanation/glossary#subscription
-
 
 # Effect API
 
 [eventTypes]: /ru/api/effector/Event#event-types
-
 [storeTypes]: /ru/essentials/typescript#store-types
 
 ## Effect API
 
 ```ts
-import { type Effect, createEffect } from "effector";
+import { type Effect, createEffect } from 'effector';
 
 const effectFx = createEffect();
 ```
 
 Эффект – это контейнер для сайд-эффектов, как синхронных, так и асинхронных. В комплекте имеет ряд заранее созданных событий и сторов, облегчающих стандартные действия. Является юнитом.
 
-Эффекты можно вызывать как обычные функции (*императивный вызов*) а также подключать их и их свойства в различные методы api включая sample, и split (*декларативное подключение*).
+Эффекты можно вызывать как обычные функции (_императивный вызов_) а также подключать их и их свойства в различные методы api включая sample, и split (_декларативное подключение_).
 
 > TIP эффективный эффект:
 >
@@ -20139,14 +20462,14 @@ const effectFx = createEffect();
 >
 > Если на момент вызова эффект уже имел имплементацию, то она будет заменена на новую.
 
-* **Формула**
+- **Формула**
 
 ```ts
 const fx: Effect<Params, Done>;
 fx.use(handler);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 effect.use(handler: (params: Params) => Promise<Done> | Done): Effect<
@@ -20156,32 +20479,32 @@ effect.use(handler: (params: Params) => Promise<Done> | Done): Effect<
 >
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchUserReposFx = createEffect();
 
 fetchUserReposFx.use(async ({ name }) => {
-  console.log("fetchUserReposFx вызван для github пользователя", name);
+	console.log('fetchUserReposFx вызван для github пользователя', name);
 
-  const url = `https://api.github.com/users/${name}/repos`;
-  const req = await fetch(url);
-  return req.json();
+	const url = `https://api.github.com/users/${name}/repos`;
+	const req = await fetch(url);
+	return req.json();
 });
 
-await fetchUserReposFx({ name: "zerobias" });
+await fetchUserReposFx({ name: 'zerobias' });
 // => fetchUserReposFx вызван для github пользователя zerobias
 ```
 
 Запустить пример
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает текущий эффект.
 
-***
+---
 
 #### `.use.getCurrent()`
 
@@ -20189,24 +20512,24 @@ await fetchUserReposFx({ name: "zerobias" });
 
 Если у эффекта ещё не была установлена имплементация, то будет возвращена функция по умолчанию, при срабатывании она выбрасывает ошибку.
 
-* **Формула**
+- **Формула**
 
 ```ts
 const fx: Effect<Params, Done>;
 const handler = fx.use.getCurrent();
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 effect.use.getCurrent(): (params: Params) => Promise<Done>
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```js
-const handlerA = () => "A";
-const handlerB = () => "B";
+const handlerA = () => 'A';
+const handlerB = () => 'B';
 
 const fx = createEffect(handlerA);
 
@@ -20220,38 +20543,38 @@ console.log(fx.use.getCurrent() === handlerB);
 
 Запустить пример
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает функцию-имплементацию эффекта, которая была установлена через createEffect или с помощью метода use.
 
-***
+---
 
 #### `.watch(watcher)`
 
 Вызывает дополнительную функцию с сайд-эффектами при каждом срабатывании эффекта. Не стоит использовать для логики, лучше заменить на sample.
 
-* **Формула**
+- **Формула**
 
 ```ts
 const fx: Effect<Params, Done>;
 const unwatch = fx.watch(watcher);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 effect.watch(watcher: (payload: Params) => any): Subscription
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fx = createEffect((params) => params);
 
 fx.watch((params) => {
-  console.log("эффект вызван с аргументом", params);
+	console.log('эффект вызван с аргументом', params);
 });
 
 await fx(10);
@@ -20260,85 +20583,85 @@ await fx(10);
 
 Запустить пример
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Функция отмены подписки, после её вызова `watcher` перестаёт получать обновления и удаляется из памяти.
 
-***
+---
 
 #### `.map(fn)`
 
 Метод `map` создает [производное событие][eventTypes]. Событие вызывается в момент выполнения эффекта, с теми же аргументами, что и у эффекта, и результатом, возвращаемым функцией `fn`. Работает по аналогии с Event.map(fn).
 
-* **Формула**
+- **Формула**
 
 ```ts
 const fx: Effect<Params, Done>;
 const eventB = fx.map(fn);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 effect.map<T>(fn: (params: Params) => T): Event<T>
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 interface User {
-  // ...
+	// ...
 }
 
 const saveUserFx = createEffect(async ({ id, name, email }: User) => {
-  // ...
-  return response.json();
+	// ...
+	return response.json();
 });
 
 const userNameSaving = saveUserFx.map(({ name }) => {
-  console.log("Начинаем сохранение пользователя: ", name);
-  return name;
+	console.log('Начинаем сохранение пользователя: ', name);
+	return name;
 });
 
 const savingNotification = saveUserFx.map(({ name, email }) => {
-  console.log("Оповещение о сохранении");
-  return `Сохранение пользователя: ${name} (${email})`;
+	console.log('Оповещение о сохранении');
+	return `Сохранение пользователя: ${name} (${email})`;
 });
 
 // При вызове эффекта сработают оба производных события
-await saveUserFx({ id: 1, name: "Иван", email: "ivan@example.com" });
+await saveUserFx({ id: 1, name: 'Иван', email: 'ivan@example.com' });
 // => Начинаем сохранение пользователя: Иван
 // => Сохранение пользователя: Иван (ivan@example.com)
 ```
 
 Запустить пример
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает новое [производное событие][eventTypes].
 
-***
+---
 
 #### `.prepend(fn)`
 
-Создаёт новое событие для преобразования данных *перед* запуском эффекта. По сравнению с map, работает в обратном направлении. Работает по аналогии с Event.prepend(fn).
+Создаёт новое событие для преобразования данных _перед_ запуском эффекта. По сравнению с map, работает в обратном направлении. Работает по аналогии с Event.prepend(fn).
 
-* **Формула**
+- **Формула**
 
 ```ts
 const fx: Effect<Params, Done>;
 const trigger = fx.prepend(fn);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 effect.prepend<Before>(fn: (_: Before) => Params): EventCallable<Before>
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```js
 import { createEffect } from "effector";
@@ -20358,68 +20681,68 @@ saveForm({ name: "John", email: "john@example.com" });
 // => saveFx вызван с : { name: "John", email: "john@example.com", modified: true }
 ```
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает новое [событие][eventTypes].
 
-***
+---
 
 #### `.filterMap(fn)`
 
 Метод `filterMap` создаёт [производное событие][eventTypes]. Вычисление функции `fn` запускается одновременно с эффектом, однако если функция возвращает `undefined`, событие не срабатывает. Работает аналогично методу .map(fn), но с фильтрацией по возвращаемому значению.
 
-* **Формула**
+- **Формула**
 
 ```ts
 const fx: Effect<Params, Done>;
 const filtered = fx.filterMap(fn);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 effect.filterMap<T>(fn: (payload: Params) => T | undefined): Event<T>
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const validateAndSaveFx = createEffect(async (userData) => {
-  if (!userData.isValid) {
-    throw new Error("Invalid data");
-  }
+	if (!userData.isValid) {
+		throw new Error('Invalid data');
+	}
 
-  return await saveToDatabase(userData);
+	return await saveToDatabase(userData);
 });
 
 // Создаем событие только для валидных данных
 const validDataProcessing = validateAndSaveFx.filterMap((userData) => {
-  if (userData.isValid && userData.priority === "high") {
-    return {
-      id: userData.id,
-      timestamp: Date.now(),
-    };
-  }
-  // Если данные не валидны или приоритет не высокий, событие не сработает
+	if (userData.isValid && userData.priority === 'high') {
+		return {
+			id: userData.id,
+			timestamp: Date.now(),
+		};
+	}
+	// Если данные не валидны или приоритет не высокий, событие не сработает
 });
 
 validDataProcessing.watch(({ id, timestamp }) => {
-  console.log(`Обработка высокоприоритетных данных ID: ${id} в ${timestamp}`);
+	console.log(`Обработка высокоприоритетных данных ID: ${id} в ${timestamp}`);
 });
 
 // Примеры вызовов
 await validateAndSaveFx({
-  id: 1,
-  isValid: true,
-  priority: "high",
-  role: "user",
+	id: 1,
+	isValid: true,
+	priority: 'high',
+	role: 'user',
 });
 // => Обработка высокоприоритетных данных ID: 1 в 1703123456789
 ```
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает новое [производное событие][eventTypes].
 
@@ -20429,23 +20752,23 @@ await validateAndSaveFx({
 
 [Производное событие][eventTypes], которое срабатывает с результатом выполнения эффекта и аргументом, переданным при вызове.
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Effect<Params, Done> {
-  done: Event<{ params: Params; result: Done }>;
+	done: Event<{ params: Params; result: Done }>;
 }
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fx = createEffect((value) => value + 1);
 
 fx.done.watch(({ params, result }) => {
-  console.log("Вызов с аргументом", params, "завершён со значением", result);
+	console.log('Вызов с аргументом', params, 'завершён со значением', result);
 });
 
 await fx(2);
@@ -20454,29 +20777,29 @@ await fx(2);
 
 Запустить пример.
 
-***
+---
 
 #### `.doneData`
 
 [Производное событие][eventTypes], которое срабатывает с результатом успешного выполнения эффекта.
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Effect<any, Done> {
-  doneData: Event<Done>;
+	doneData: Event<Done>;
 }
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fx = createEffect((value) => value + 1);
 
 fx.doneData.watch((result) => {
-  console.log(`Эффект успешно выполнился, вернув ${result}`);
+	console.log(`Эффект успешно выполнился, вернув ${result}`);
 });
 
 await fx(2);
@@ -20485,31 +20808,36 @@ await fx(2);
 
 Запустить пример.
 
-***
+---
 
 #### `.fail`
 
 [Производное событие][eventTypes], которое срабатывает с ошибкой, возникшей при выполнении эффекта и аргументом, переданным при вызове.
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Effect<Params, any, Fail> {
-  fail: Event<{ params: Params; error: Fail }>;
+	fail: Event<{ params: Params; error: Fail }>;
 }
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fx = createEffect(async (value) => {
-  throw new Error(value - 1);
+	throw new Error(value - 1);
 });
 
 fx.fail.watch(({ params, error }) => {
-  console.log("Вызов с аргументом", params, "завершился с ошибкой", error.message);
+	console.log(
+		'Вызов с аргументом',
+		params,
+		'завершился с ошибкой',
+		error.message,
+	);
 });
 
 fx(2);
@@ -20518,31 +20846,31 @@ fx(2);
 
 Запустить пример.
 
-***
+---
 
 #### `.failData`
 
 [Производное событие][eventTypes], которое срабатывает с ошибкой, возникшей при выполнении эффекта.
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Effect<any, any, Fail> {
-  failData: Event<Fail>;
+	failData: Event<Fail>;
 }
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fx = createEffect(async (value) => {
-  throw new Error(value - 1);
+	throw new Error(value - 1);
 });
 
 fx.failData.watch((error) => {
-  console.log(`Вызов завершился с ошибкой ${error.message}`);
+	console.log(`Вызов завершился с ошибкой ${error.message}`);
 });
 
 fx(2);
@@ -20551,55 +20879,65 @@ fx(2);
 
 Запустить пример.
 
-***
+---
 
 #### `.finally`
 
 [Производное событие][eventTypes], которое срабатывает как при успехе, так и в случае ошибки завершении эффекта с подробной информацией об аргументах, результатах и статусе выполнения.
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Effect<Params, Done, Fail> {
-  finally: Event<
-    | {
-        status: "done";
-        params: Params;
-        result: Done;
-      }
-    | {
-        status: "fail";
-        params: Params;
-        error: Fail;
-      }
-  >;
+	finally: Event<
+		| {
+				status: 'done';
+				params: Params;
+				result: Done;
+		  }
+		| {
+				status: 'fail';
+				params: Params;
+				error: Fail;
+		  }
+	>;
 }
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchApiFx = createEffect(async ({ time, ok }) => {
-  await new Promise((resolve) => setTimeout(resolve, time));
+	await new Promise((resolve) => setTimeout(resolve, time));
 
-  if (ok) {
-    return `${time} ms`;
-  }
+	if (ok) {
+		return `${time} ms`;
+	}
 
-  throw Error(`${time} ms`);
+	throw Error(`${time} ms`);
 });
 
 fetchApiFx.finally.watch((value) => {
-  switch (value.status) {
-    case "done":
-      console.log("Вызов с аргументом", value.params, "завершён со значением", value.result);
-      break;
-    case "fail":
-      console.log("Вызов с аргументом", value.params, "завершён с ошибкой", value.error.message);
-      break;
-  }
+	switch (value.status) {
+		case 'done':
+			console.log(
+				'Вызов с аргументом',
+				value.params,
+				'завершён со значением',
+				value.result,
+			);
+			break;
+		case 'fail':
+			console.log(
+				'Вызов с аргументом',
+				value.params,
+				'завершён с ошибкой',
+				value.error.message,
+			);
+			break;
+	}
 });
 
 await fetchApiFx({ time: 100, ok: true });
@@ -20611,48 +20949,48 @@ fetchApiFx({ time: 100, ok: false });
 
 Запустить пример.
 
-***
+---
 
 #### `.pending`
 
 [Производный стор][storeTypes], который показывает, что эффект находится в процессе выполнения.
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Effect<any, any> {
-  pending: Store<boolean>;
+	pending: Store<boolean>;
 }
 ```
 
-* **Детальное описание**
+- **Детальное описание**
 
 Это свойство избавляет от необходимости писать подобный код:
 
 ```js
 const $isRequestPending = createStore(false)
-  .on(requestFx, () => true)
-  .on(requestFx.done, () => false)
-  .on(requestFx.fail, () => false);
+	.on(requestFx, () => true)
+	.on(requestFx.done, () => false)
+	.on(requestFx.fail, () => false);
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```jsx
-import React from "react";
-import { createEffect } from "effector";
-import { useUnit } from "effector-react";
+import React from 'react';
+import { createEffect } from 'effector';
+import { useUnit } from 'effector-react';
 
 const fetchApiFx = createEffect(async (ms) => {
-  await new Promise((resolve) => setTimeout(resolve, ms));
+	await new Promise((resolve) => setTimeout(resolve, ms));
 });
 
 fetchApiFx.pending.watch(console.log);
 // => false
 
 const App = () => {
-  const loading = useUnit(fetchApiFx.pending);
-  return <div>{loading ? "Загрузка..." : "Загрузка завершена"}</div>;
+	const loading = useUnit(fetchApiFx.pending);
+	return <div>{loading ? 'Загрузка...' : 'Загрузка завершена'}</div>;
 };
 
 fetchApiFx(1000);
@@ -20662,42 +21000,42 @@ fetchApiFx(1000);
 
 Запустить пример.
 
-***
+---
 
 #### `.inFlight`
 
 [Производный стор][storeTypes], который показывает число запущенных эффектов, которые находятся в процессе выполнения. Может использоваться для ограничения числа одновременных запросов.
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Effect<any, any> {
-  inFlight: Store<number>;
+	inFlight: Store<number>;
 }
 ```
 
-* **Детальное описание**
+- **Детальное описание**
 
 Это свойство избавляет от необходимости писать подобный код:
 
 ```js
 const $requestsInFlight = createStore(0)
-  .on(requestFx, (n) => n + 1)
-  .on(requestFx.done, (n) => n - 1)
-  .on(requestFx.fail, (n) => n - 1);
+	.on(requestFx, (n) => n + 1)
+	.on(requestFx.done, (n) => n - 1)
+	.on(requestFx.fail, (n) => n - 1);
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fx = createEffect(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
+	await new Promise((resolve) => setTimeout(resolve, 500));
 });
 
 fx.inFlight.watch((amount) => {
-  console.log("выполняется запросов:", amount);
+	console.log('выполняется запросов:', amount);
 });
 // => выполняется запросов: 0
 
@@ -20715,56 +21053,56 @@ await Promise.all([req1, req2]);
 
 Запустить пример.
 
-***
+---
 
 #### `.sid`
 
 Уникальный идентификатор юнита. Важно отметить, что SID не изменяется при каждом запуске приложения, он статически записывается в пакет вашего приложения для абсолютной идентификации юнитов. Задаётся автоматически через Babel plugin.
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Effect<any, any> {
-  sid: string | null;
+	sid: string | null;
 }
 ```
 
-***
+---
 
 #### `.shortName`
 
 Свойство типа `string`, содержащее имя переменной, в которой объявлен эффект. Имя эффекта. Задаётся либо явно, через поле `name` в createEffect, либо автоматически через babel plugin.
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Effect<any, any> {
-  shortName: string;
+	shortName: string;
 }
 ```
 
-***
+---
 
 #### `.compositeName`
 
 Комплексное имя эффекта (включая домен и короткое имя) — удобно для логирования и трассировки.
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Effect<any, any> {
-  compositeName: {
-    shortName: string;
-    fullName: string;
-    path: Array<string>;
-  };
+	compositeName: {
+		shortName: string;
+		fullName: string;
+		path: Array<string>;
+	};
 }
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```ts
-import { createEffect, createDomain } from "effector";
+import { createEffect, createDomain } from 'effector';
 
 const first = createEffect();
 const domain = createDomain();
@@ -20792,17 +21130,16 @@ console.log(second.compositeName);
 
 ### Связанные API и статьи
 
-* **API**
-    * createEffect - Создание нового эффекта
-    * Event API - Описание событий, его методов и свойств
-    * Store API - Описание сторов, его методов и свойств
-    * sample - Ключевой оператор для построения связей между юнитами
-    * attach - Создает новые эффекты на основе других эффектов
-* **Статьи**
-    * Работа с эффектами
-    * Как типизировать эффекты и не только
-    * Гайд по тестированию эффектов и других юнитов
-
+- **API**
+    - createEffect - Создание нового эффекта
+    - Event API - Описание событий, его методов и свойств
+    - Store API - Описание сторов, его методов и свойств
+    - sample - Ключевой оператор для построения связей между юнитами
+    - attach - Создает новые эффекты на основе других эффектов
+- **Статьи**
+    - Работа с эффектами
+    - Как типизировать эффекты и не только
+    - Гайд по тестированию эффектов и других юнитов
 
 # Event
 
@@ -20812,7 +21149,7 @@ import TabItem from "@components/Tabs/TabItem.astro";
 ## Event API
 
 ```ts
-import { type Event, type EventCallable, createEvent } from "effector";
+import { type Event, type EventCallable, createEvent } from 'effector';
 
 const event = createEvent();
 ```
@@ -20835,17 +21172,17 @@ const event = createEvent();
 
 Доступные методы и свойства событий:
 
-| <div style="width:170px">Метод/Свойство</div>                            | Описание                                                                                                       |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| prepend(fn) | Создаёт новое событие `EventCallable`, трансформируют входные данные через `fn` и передает в исходное событие. |
+| <div style="width:170px">Метод/Свойство</div> | Описание                                                                                                       |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| prepend(fn)                                   | Создаёт новое событие `EventCallable`, трансформируют входные данные через `fn` и передает в исходное событие. |
 | map(fn)                                       | Создаёт новое событие типа `Event` с результатом вызова `fn` после срабатывания исходного события.             |
-| filter({fn})                              | Создаёт новое событие типа `Event`, срабатывающий только если `fn` возвращает `true`.                          |
-| filterMap(fn)                           | Создаёт событие типа `Event`, срабатывающий с результатом `fn`, если тот не вернул `undefined`.                |
-| watch(watcher)                         | Добавляет слушатель, вызывающий `watcher` при каждом срабатывании события.                                     |
-| subscribe(observer)               | Низкоуровневый метод для интеграции события со стандартным шаблоном `Observable`.                              |
+| filter({fn})                                  | Создаёт новое событие типа `Event`, срабатывающий только если `fn` возвращает `true`.                          |
+| filterMap(fn)                                 | Создаёт событие типа `Event`, срабатывающий с результатом `fn`, если тот не вернул `undefined`.                |
+| watch(watcher)                                | Добавляет слушатель, вызывающий `watcher` при каждом срабатывании события.                                     |
+| subscribe(observer)                           | Низкоуровневый метод для интеграции события со стандартным шаблоном `Observable`.                              |
 | sid                                           | Уникальный идентификатор юнита (`unit`).                                                                       |
-| shortName                               | Свойство типа `string`, содержащее имя переменной, в которой объявлено событие.                                |
-| compositeName                       | Комплексное имя Event (включая домен и короткое имя) — удобно для логирования и трассировки.                   |
+| shortName                                     | Свойство типа `string`, содержащее имя переменной, в которой объявлено событие.                                |
+| compositeName                                 | Комплексное имя Event (включая домен и короткое имя) — удобно для логирования и трассировки.                   |
 
 ### Методы событий
 
@@ -20857,13 +21194,13 @@ const event = createEvent();
 
 Создает новое событие `EventCallable`, который можно вызвать. При его срабатывании вызвает `fn` и передает преобразованные данные в исходное событие.
 
-* **Формула**
+- **Формула**
 
 ```ts
 const second = first.prepend(fn);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 event.prepend<Before = void>(
@@ -20871,34 +21208,34 @@ event.prepend<Before = void>(
 ): EventCallable<Before>
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 // исходное событие
 const userPropertyChanged = createEvent();
 
 const changeName = userPropertyChanged.prepend((name) => ({
-  field: "name",
-  value: name,
+	field: 'name',
+	value: name,
 }));
 const changeRole = userPropertyChanged.prepend((role) => ({
-  field: "role",
-  value: role.toUpperCase(),
+	field: 'role',
+	value: role.toUpperCase(),
 }));
 
 userPropertyChanged.watch(({ field, value }) => {
-  console.log(`Свойство пользователя "${field}" изменилось на ${value}`);
+	console.log(`Свойство пользователя "${field}" изменилось на ${value}`);
 });
 
-changeName("john");
+changeName('john');
 // => Свойство пользователя "name" изменилось на john
 
-changeRole("admin");
+changeRole('admin');
 // => Свойство пользователя "role" изменилось на ADMIN
 
-changeName("alice");
+changeName('alice');
 // => Свойство пользователя "name" изменилось на alice
 ```
 
@@ -20907,41 +21244,41 @@ changeName("alice");
 Вы можете считать этот метод функцией-обёрткой. Допустим, у нас есть функция с неидеальным API, но нам нужно часто её вызывать:
 
 ```ts
-import { sendAnalytics } from "./analytics";
+import { sendAnalytics } from './analytics';
 
 export function reportClick(item: string) {
-  const argument = { type: "click", container: { items: [arg] } };
-  return sendAnalytics(argument);
+	const argument = { type: 'click', container: { items: [arg] } };
+	return sendAnalytics(argument);
 }
 ```
 
 Это именно то, как работает `.prepend()`:
 
 ```ts
-import { sendAnalytics } from "./analytics";
+import { sendAnalytics } from './analytics';
 
 export const reportClick = sendAnalytics.prepend((item: string) => {
-  return { type: "click", container: { items: [arg] } };
+	return { type: 'click', container: { items: [arg] } };
 });
 
-reportClick("example");
+reportClick('example');
 // reportClick сработал "example"
 // sendAnalytics сработал с { type: "click", container: { items: ["example"] } }
 ```
 
-* **Детальное описание**
+- **Детальное описание**
 
 Работает как обратный .map. В случае `.prepend` данные преобразуются **до срабатывания** исходного события, а в случае .map данные преобразуются **после срабатывания**.
 
 Если исходное событие принадлежит какому-либо домену, то новое событие также будет ему принадлежать.
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает новое событие `EventCallable`.
 
 Ознакомьтесь со всеми другими методами в Event.
 
-***
+---
 
 #### `.map(fn)`
 
@@ -20951,7 +21288,7 @@ reportClick("example");
 >
 > Функция `fn` **должна быть чистой**.
 
-* **Формула**
+- **Формула**
 
 ```ts
 // Событие любого типа, как производное так и обычное
@@ -20959,16 +21296,16 @@ const first: Event<T> | EventCallable<T>;
 const second: Event<F> = first.map(fn);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 event.map<T>(fn: (payload: Payload) => T): Event<T>
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const userUpdated = createEvent<{ name: string; role: string }>();
 
@@ -20978,25 +21315,29 @@ const userNameUpdated = userUpdated.map(({ user }) => name);
 // либо преобразовать данные
 const userRoleUpdated = userUpdated.map((user) => user.role.toUpperCase());
 
-userNameUpdated.watch((name) => console.log(`Имя пользователя теперь [${name}]`));
-userRoleUpdated.watch((role) => console.log(`Роль пользователя теперь [${role}]`));
+userNameUpdated.watch((name) =>
+	console.log(`Имя пользователя теперь [${name}]`),
+);
+userRoleUpdated.watch((role) =>
+	console.log(`Роль пользователя теперь [${role}]`),
+);
 
-userUpdated({ name: "john", role: "admin" });
+userUpdated({ name: 'john', role: 'admin' });
 // => Имя пользователя теперь [john]
 // => Роль пользователя теперь [ADMIN]
 ```
 
 Открыть пример
 
-* **Детальное описание**
+- **Детальное описание**
 
 Метод `.map` позволяет вам разбивать и управлять потоком данных, а также извлекать или преобразовывать данные в рамках вашей модели бизнес-логики.
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает новое производное событие.
 
-***
+---
 
 #### `.filter({ fn })`
 
@@ -21008,15 +21349,15 @@ userUpdated({ name: "john", role: "admin" });
 > const event = createEvent();
 >
 > const filteredEvent = sample({
->   clock: event,
->   filter: () => true,
+> 	clock: event,
+> 	filter: () => true,
 > });
 > ```
 
 Метод `.filter` генерирует новое производное событие, которое будет вызвано после исходного события,в случае если функция `fn` вернет `true`. Эта специальная функция позволяет вам разбить поток данных на ветви и подписаться на них в рамках модели бизнес-логики.<br />
 Это очень удобно, если мы хотим на события которые срабатывают по условию.
 
-* **Формула**
+- **Формула**
 
 ```ts
 // Событие любого типа, как производное так и обычное
@@ -21024,7 +21365,7 @@ const first: Event<T> | EventCallable<T>;
 const second: Event<T> = first.filter({ fn });
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 event.filter(config: {
@@ -21032,17 +21373,17 @@ event.filter(config: {
 }): Event<Payload>
 ```
 
-* **Примеры**
+- **Примеры**
 
 <Tabs>
 <TabItem label="😕 filter">
 
 ```js
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const numbers = createEvent();
 const positiveNumbers = numbers.filter({
-  fn: ({ x }) => x > 0,
+	fn: ({ x }) => x > 0,
 });
 
 const $lastPositive = createStore(0);
@@ -21050,7 +21391,7 @@ const $lastPositive = createStore(0);
 $lastPositive.on(positiveNumbers, (n, { x }) => x);
 
 $lastPositive.watch((x) => {
-  console.log("последнее положительное:", x);
+	console.log('последнее положительное:', x);
 });
 
 // => последнее положительное: 0
@@ -21072,12 +21413,12 @@ numbers({ x: 10 });
 <TabItem label="🤩 sample + filter">
 
 ```js
-import { createEvent, createStore, sample } from "effector";
+import { createEvent, createStore, sample } from 'effector';
 
 const numbers = createEvent();
 const positiveNumbers = sample({
-  clock: numbers,
-  filter: ({ x }) => x > 0,
+	clock: numbers,
+	filter: ({ x }) => x > 0,
 });
 
 const $lastPositive = createStore(0);
@@ -21085,7 +21426,7 @@ const $lastPositive = createStore(0);
 $lastPositive.on(positiveNumbers, (n, { x }) => x);
 
 $lastPositive.watch((x) => {
-  console.log("последнее положительное:", x);
+	console.log('последнее положительное:', x);
 });
 
 // => последнее положительное: 0
@@ -21103,11 +21444,11 @@ numbers({ x: 10 });
 </TabItem>
 </Tabs>
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает новое производное событие.
 
-***
+---
 
 #### `.filterMap(fn)`
 
@@ -21119,9 +21460,9 @@ numbers({ x: 10 });
 > const event = createEvent();
 >
 > const filteredAndMappedEvent = sample({
->   clock: event,
->   filter: () => true,
->   fn: () => "value",
+> 	clock: event,
+> 	filter: () => true,
+> 	fn: () => 'value',
 > });
 > ```
 
@@ -21129,7 +21470,7 @@ numbers({ x: 10 });
 
 Этот метод наиболее полезен с API JavaScript, которые иногда возвращают `undefined`.
 
-* **Формула**
+- **Формула**
 
 ```ts
 // Событие любого типа, как производное так и обычное
@@ -21137,28 +21478,28 @@ const first: Event<T> | EventCallable<T>;
 const second: Event<F> = first.filterMap(fn);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 event.filterMap<T>(fn: (payload: Payload) => T | undefined): Event<T>
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```tsx
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const listReceived = createEvent<string[]>();
 
 // Array.prototype.find() возвращает `undefined`, когда элемент не найден
 const effectorFound = listReceived.filterMap((list) => {
-  return list.find((name) => name === "effector");
+	return list.find((name) => name === 'effector');
 });
 
-effectorFound.watch((name) => console.info("найден", name));
+effectorFound.watch((name) => console.info('найден', name));
 
-listReceived(["redux", "effector", "mobx"]); // => найден effector
-listReceived(["redux", "mobx"]);
+listReceived(['redux', 'effector', 'mobx']); // => найден effector
+listReceived(['redux', 'mobx']);
 ```
 
 > INFO Внимание:
@@ -21167,11 +21508,11 @@ listReceived(["redux", "mobx"]);
 
 Открыть пример
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает новое производное событие.
 
-***
+---
 
 #### `.watch(watcher)`
 
@@ -21185,7 +21526,7 @@ listReceived(["redux", "mobx"]);
 
 Подробнее в разделе изучения.
 
-* **Формула**
+- **Формула**
 
 ```ts
 // Событие любого типа, как производное так и обычное
@@ -21193,33 +21534,33 @@ const event: Event<T> | EventCallable<T>;
 const unwatch: () => void = event.watch(fn);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
   event.watch(watcher: (payload: Payload) => any): Subscription
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```js
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const sayHi = createEvent();
 const unwatch = sayHi.watch((name) => console.log(`${name}, привет!`));
 
-sayHi("Питер"); // => Питер, привет!
+sayHi('Питер'); // => Питер, привет!
 unwatch();
 
-sayHi("Дрю"); // => ничего не произошло
+sayHi('Дрю'); // => ничего не произошло
 ```
 
 Открыть пример
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает функцию для отмены подписки.
 
-***
+---
 
 #### `.subscribe(observer)`
 
@@ -21227,14 +21568,14 @@ sayHi("Дрю"); // => ничего не произошло
 
 Подробнее:
 
-* https://rxjs.dev/guide/observable
-* https://github.com/tc39/proposal-observable
+- https://rxjs.dev/guide/observable
+- https://github.com/tc39/proposal-observable
 
 > INFO Помните:
 >
 > Вам не нужно использовать этот метод самостоятельно. Он используется под капотом движками рендеринга и так далее.
 
-* **Формула**
+- **Формула**
 
 ```ts
 const event = createEvent();
@@ -21242,29 +21583,29 @@ const event = createEvent();
 event.subscribe(observer);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 event.subscribe(observer: Observer<Payload>): Subscription
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const userLoggedIn = createEvent<string>();
 
 const subscription = userLoggedIn.subscribe({
-  next: (login) => {
-    console.log("User login:", login);
-  },
+	next: (login) => {
+		console.log('User login:', login);
+	},
 });
 
-userLoggedIn("alice"); // => User login: alice
+userLoggedIn('alice'); // => User login: alice
 
 subscription.unsubscribe();
-userLoggedIn("bob"); // ничего не произойдет
+userLoggedIn('bob'); // ничего не произойдет
 ```
 
 ### Свойства
@@ -21280,22 +21621,22 @@ userLoggedIn("bob"); // ничего не произойдет
 Это может быть полезно для отправки событий между рабочими или
 сервером/браузером: [examples/worker-rpc](https://github.com/effector/effector/tree/master/examples/worker-rpc).
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Event {
-  sid: string | null;
+	sid: string | null;
 }
 ```
 
-***
+---
 
 #### `.shortName`
 
 Это свойство содержащее имя переменной, в которой объявлено событие.
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const demo = createEvent();
 // demo.shortName === 'demo'
@@ -21308,15 +21649,15 @@ const another = demo;
 // another.shortName === 'demo'
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Event {
-  shortName: string;
+	shortName: string;
 }
 ```
 
-***
+---
 
 #### `.compositeName`
 
@@ -21327,7 +21668,7 @@ interface Event {
 > Обычно, если требуется длинное имя, лучше передать его явно в поле `name`.
 
 ```ts
-import { createEvent, createDomain } from "effector";
+import { createEvent, createDomain } from 'effector';
 
 const first = createEvent();
 const domain = createDomain();
@@ -21353,15 +21694,15 @@ console.log(second.compositeName);
 // }
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 interface Event {
-  compositeName: {
-    shortName: string;
-    fullName: string;
-    path: Array<string>;
-  };
+	compositeName: {
+		shortName: string;
+		fullName: string;
+		path: Array<string>;
+	};
 }
 ```
 
@@ -21373,23 +21714,22 @@ interface Event {
 
 ### Связанные API и статьи
 
-* **API**
-    * createEvent - Создание нового события
-    * createApi - Создание набора событий для стора
-    * merge - Слияние событий в одно
-    * sample - Ключевой оператор для построения связей между юнитами
-* **Статьи**
-    * Как работать с событиями
-    * Как мыслить в effector и почему события важны
-    * Гайд по типизации событий и юнитов
-
+- **API**
+    - createEvent - Создание нового события
+    - createApi - Создание набора событий для стора
+    - merge - Слияние событий в одно
+    - sample - Ключевой оператор для построения связей между юнитами
+- **Статьи**
+    - Как работать с событиями
+    - Как мыслить в effector и почему события важны
+    - Гайд по типизации событий и юнитов
 
 # Scope API
 
 ## Scope API
 
 ```ts
-import { type Scope, fork } from "effector";
+import { type Scope, fork } from 'effector';
 
 const scope = fork();
 ```
@@ -21403,9 +21743,9 @@ const scope = fork();
 > Если вы хотите глубже разобраться в скоупах, ознакомьтесь с отличной статьёй про изолированыне контексты.<br/>
 > У нас также есть несколько гайдов связанных со скоупом:
 >
-> * Как исправить потерянный скоуп
-> * Использование скоупов с SSR
-> * Написание тестов
+> - Как исправить потерянный скоуп
+> - Использование скоупов с SSR
+> - Написание тестов
 
 ### Особенности скоупов
 
@@ -21418,7 +21758,7 @@ const scope = fork();
 
 Возвращает значение стора в данном скоупе:
 
-* **Формула**
+- **Формула**
 
 ```ts
 const scope: Scope;
@@ -21427,22 +21767,22 @@ const $value: Store<T> | StoreWritable<T>;
 const value: T = scope.getState($value);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 scope.getState<T>(store: Store<T>): T;
 ```
 
-* **Возвращает**
+- **Возвращает**
 
 Значение стора.
 
-* **Пример**
+- **Пример**
 
 Создадим два экземпляра приложения, вызовем события в каждом из них и проверим значение стора `$counter` в обоих случаях:
 
 ```js
-import { createStore, createEvent, fork, allSettled } from "effector";
+import { createStore, createEvent, fork, allSettled } from 'effector';
 
 const inc = createEvent();
 const dec = createEvent();
@@ -21466,32 +21806,29 @@ console.log(scopeB.getState($counter)); // => -1
 
 ### Связанные API и статьи
 
-* **API**
+- **API**
+    - scopeBind – Метод для привязки юнита к скоупу
+    - fork – Оператор для создания скоупа
+    - allSettled – Метод для вызова юнита в указанном скоупе и ожидания завершения всей цепочки эффектов
+    - serialize – Метод для получения сериализованных значений сторов
+    - hydrate – Метод для гидрации сериализованных данных
 
-    * scopeBind – Метод для привязки юнита к скоупу
-    * fork – Оператор для создания скоупа
-    * allSettled – Метод для вызова юнита в указанном скоупе и ожидания завершения всей цепочки эффектов
-    * serialize – Метод для получения сериализованных значений сторов
-    * hydrate – Метод для гидрации сериализованных данных
-
-* **Статьи**
-
-    * Что такое потеря скоупа и как её исправить
-    * Использование скоупов с SSR
-    * Как тестировать юниты
-
+- **Статьи**
+    - Что такое потеря скоупа и как её исправить
+    - Использование скоупов с SSR
+    - Как тестировать юниты
 
 # Store API
 
 ## Store API
 
 ```ts
-import { type Store, type StoreWritable, createStore } from "effector";
+import { type Store, type StoreWritable, createStore } from 'effector';
 
 const $store = createStore();
 ```
 
-*Store* — это объект, который хранит значение состояния. Обновление стора происходит когда новое значение не равно (`!==`) текущему, а также когда не равно `undefined` (если в конфигурации стора не указан `skipVoid:false`). Стор является Unit. Некоторые сторы могут быть производными.
+_Store_ — это объект, который хранит значение состояния. Обновление стора происходит когда новое значение не равно (`!==`) текущему, а также когда не равно `undefined` (если в конфигурации стора не указан `skipVoid:false`). Стор является Unit. Некоторые сторы могут быть производными.
 
 > TIP Кто такой этот ваш стор?:
 >
@@ -21501,18 +21838,18 @@ const $store = createStore();
 
 Доступные методы и свойства стора:
 
-| Метод/Свойство                                         | Описание                                                      |
-| ------------------------------------------------------ | ------------------------------------------------------------- |
-| map(fn)                           | Создает новый производный стор                                |
+| Метод/Свойство       | Описание                                                      |
+| -------------------- | ------------------------------------------------------------- |
+| map(fn)              | Создает новый производный стор                                |
 | on(trigger, reducer) | Обновление стейта c помощью `reducer`, когда вызван `trigger` |
-| watch(watcher)             | Вызывает функцию `watcher` каждый раз, когда стор обновляется |
-| reset(...triggers)        | Метод для сброса к начальному состоянию                       |
-| off(trigger)                 | Удаляет подписку на указанный триггер                         |
-| updates()                     | Событие срабатывающие при обновление стора                    |
-| reinit()                       | Событие для реинициализации стора                             |
-| shortName                   | ID или короткое имя store                                     |
-| defaultState             | Начальное состояние стора                                     |
-| getState()              | Возвращает текущий стейт                                      |
+| watch(watcher)       | Вызывает функцию `watcher` каждый раз, когда стор обновляется |
+| reset(...triggers)   | Метод для сброса к начальному состоянию                       |
+| off(trigger)         | Удаляет подписку на указанный триггер                         |
+| updates()            | Событие срабатывающие при обновление стора                    |
+| reinit()             | Событие для реинициализации стора                             |
+| shortName            | ID или короткое имя store                                     |
+| defaultState         | Начальное состояние стора                                     |
+| getState()           | Возвращает текущий стейт                                      |
 
 ### Иммутабельность
 
@@ -21522,10 +21859,10 @@ Store в effector иммутабелен. Это значит, что обнов
 
 ```ts
 $items.on(addItem, (items, newItem) => {
-  const updatedItems = [...items];
-  // ✅ метод .push вызывается на новом массиве
-  updatedItems.push(newItem);
-  return updatedItems;
+	const updatedItems = [...items];
+	// ✅ метод .push вызывается на новом массиве
+	updatedItems.push(newItem);
+	return updatedItems;
 });
 ```
 
@@ -21533,9 +21870,9 @@ $items.on(addItem, (items, newItem) => {
 
 ```ts
 $items.on(addItem, (items, newItem) => {
-  // ❌ ошибка! Ссылка на массив осталась та же, обновления стора не произойдёт
-  items.push(newItem);
-  return items;
+	// ❌ ошибка! Ссылка на массив осталась та же, обновления стора не произойдёт
+	items.push(newItem);
+	return items;
 });
 ```
 
@@ -21549,13 +21886,13 @@ $items.on(addItem, (items, newItem) => {
 
 Принимает функцию `fn` и возвращает производный стор, который автоматически обновляется, когда исходный стор изменяется.
 
-* **Формула**
+- **Формула**
 
 ```ts
 $source.map(fn, config?);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 const $derived = $source.map<T>(
@@ -21566,27 +21903,27 @@ const $derived = $source.map<T>(
 ): Store<T>
 ```
 
-* **Примеры**
+- **Примеры**
 
 Базовое использование:
 
 ```ts
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const changed = createEvent<string>();
 
-const $title = createStore("");
+const $title = createStore('');
 const $titleLength = $title.map((title) => title.length);
 
 $title.on(changed, (_, newTitle) => newTitle);
 
 $titleLength.watch((length) => {
-  console.log("new length", length);
+	console.log('new length', length);
 });
 
-changed("hello");
-changed("world");
-changed("hello world");
+changed('hello');
+changed('world');
+changed('hello world');
 ```
 
 Попробовать
@@ -21597,12 +21934,12 @@ changed("hello world");
 const $titleLength = $title.map((title) => title.length, { skipVoid: false });
 ```
 
-* **Детальное описание**
+- **Детальное описание**
 
 Метод `map` вызывает переданную функцию `fn` с состоянием исходного стора в аргументе, каждый раз когда оригинальный стор обновляется.<br/>
 Результат выполнения функции используется как значение стора.
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает новый производный стор.
 
@@ -21610,13 +21947,13 @@ const $titleLength = $title.map((title) => title.length, { skipVoid: false });
 
 Обновляет состояние используя reducer, при срабатывании `trigger`.
 
-* **Формула**
+- **Формула**
 
 ```ts
 $store.on(trigger, reducer);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 $store.on<T>(
@@ -21625,10 +21962,10 @@ $store.on<T>(
 ): this
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```ts
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const $counter = createStore(0);
 const incrementedBy = createEvent<number>();
@@ -21636,7 +21973,7 @@ const incrementedBy = createEvent<number>();
 $counter.on(incrementedBy, (value, incrementor) => value + incrementor);
 
 $counter.watch((value) => {
-  console.log("updated", value);
+	console.log('updated', value);
 });
 
 incrementedBy(2);
@@ -21645,7 +21982,7 @@ incrementedBy(2);
 
 Попробовать
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает текущий стор.
 
@@ -21653,22 +21990,22 @@ incrementedBy(2);
 
 Вызывает функцию `watcher` каждый раз, когда стор обновляется.
 
-* **Формула**
+- **Формула**
 
 ```ts
 const unwatch = $store.watch(watcher);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 $store.watch(watcher: (state: State) => any): Subscription
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```ts
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const add = createEvent<number>();
 const $store = createStore(0);
@@ -21683,7 +22020,7 @@ add(3);
 
 Попробовать
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает функцию для отмены подписки.
 
@@ -21691,31 +22028,31 @@ add(3);
 
 Сбрасывает состояние стора до значения по умолчанию при срабатывании любого `trigger`.
 
-* **Формула**
+- **Формула**
 
 ```ts
 $store.reset(...triggers);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 $store.reset(...triggers: Array<Unit<any>>): this
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```ts
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const increment = createEvent();
 const reset = createEvent();
 
 const $store = createStore(0)
-  .on(increment, (state) => state + 1)
-  .reset(reset);
+	.on(increment, (state) => state + 1)
+	.reset(reset);
 
-$store.watch((state) => console.log("changed", state));
+$store.watch((state) => console.log('changed', state));
 
 increment();
 increment();
@@ -21724,7 +22061,7 @@ reset();
 
 Попробовать
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает текущий стор.
 
@@ -21732,22 +22069,22 @@ reset();
 
 Удаляет reducer для указанного `trigger`.
 
-* **Формула**
+- **Формула**
 
 ```ts
 $store.off(trigger);
 ```
 
-* **Тип**
+- **Тип**
 
 ```ts
 $store.off(trigger: Unit<any>): this
 ```
 
-* **Примеры**
+- **Примеры**
 
 ```ts
-import { createEvent, createStore, merge } from "effector";
+import { createEvent, createStore, merge } from 'effector';
 
 const changedA = createEvent();
 const changedB = createEvent();
@@ -21761,7 +22098,7 @@ $store.off(changed);
 
 Попробовать
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает текущий стор.
 
@@ -21771,22 +22108,22 @@ $store.off(changed);
 
 Событие срабатывающие при обновление стора.
 
-* **Примеры**
+- **Примеры**
 
 ```ts
-import { createStore, is } from "effector";
+import { createStore, is } from 'effector';
 
 const $clicksAmount = createStore(0);
 is.event($clicksAmount.updates); // true
 
 $clicksAmount.updates.watch((amount) => {
-  console.log(amount);
+	console.log(amount);
 });
 ```
 
 Попробовать
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Производное событие, представляющее обновления данного стора.
 
@@ -21794,10 +22131,10 @@ $clicksAmount.updates.watch((amount) => {
 
 Событие для реинициализации стора.
 
-* **Примеры**
+- **Примеры**
 
 ```ts
-import { createStore, createEvent, sample, is } from "effector";
+import { createStore, createEvent, sample, is } from 'effector';
 
 const $counter = createStore(0);
 is.event($counter.reinit);
@@ -21810,7 +22147,7 @@ console.log($counter.getState());
 
 Попробовать
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Событие, которое может реинициализировать стор до значения по умолчанию.
 
@@ -21818,11 +22155,11 @@ console.log($counter.getState());
 
 Cтроковое свойство, которое содержит ID или короткое имя стора.
 
-* **Примеры**
+- **Примеры**
 
 ```ts
 const $store = createStore(0, {
-  name: "someName",
+	name: 'someName',
 });
 
 console.log($store.shortName); // someName
@@ -21830,7 +22167,7 @@ console.log($store.shortName); // someName
 
 Попробовать
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 ID или короткое имя store.
 
@@ -21838,15 +22175,15 @@ ID или короткое имя store.
 
 Свойство, которое содержит значение состояния по умолчанию стора.
 
-* **Пример**
+- **Пример**
 
 ```ts
-const $store = createStore("DEFAULT");
+const $store = createStore('DEFAULT');
 
-console.log($store.defaultState === "DEFAULT"); // true
+console.log($store.defaultState === 'DEFAULT'); // true
 ```
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Значение состояния по умолчанию.
 
@@ -21860,10 +22197,10 @@ console.log($store.defaultState === "DEFAULT"); // true
 >
 > `getState()` не рекомендуется использовать в бизнес-логике - лучше передавать данные через `sample`.
 
-* **Примеры**
+- **Примеры**
 
 ```ts
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const add = createEvent<number>();
 
@@ -21877,18 +22214,17 @@ console.log($number.getState());
 
 Попробовать
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Текущее состояние стора.
 
 ### Связанные API
 
-* createStore - Создает новый стор
-* combine - Комбинирует несколько сторов и возращает новый производный стор
-* sample - Ключевой оператор для построения связей между юнитами
-* createEvent - Создает события
-* createEffect - Создает эффекты
-
+- createStore - Создает новый стор
+- combine - Комбинирует несколько сторов и возращает новый производный стор
+- sample - Ключевой оператор для построения связей между юнитами
+- createEvent - Создает события
+- createEffect - Создает эффекты
 
 # allSettled
 
@@ -21911,8 +22247,8 @@ allSettled<T>(unit: Store<T>, {scope: Scope, params?: T}): Promise<void>
 
 #### Аргументы
 
-1. `unit`:  или , который нужно вызвать.
-2. `scope`:  — скоуп.
+1. `unit`: или , который нужно вызвать.
+2. `scope`: — скоуп.
 3. `params`: параметры, передаваемые в `unit`.
 
 > INFO Обратите внимание:
@@ -21958,7 +22294,7 @@ allSettled<T>(scope): Promise<void>
 
 #### Аргументы
 
-1. `scope`:  — скоуп.
+1. `scope`: — скоуп.
 
 > INFO Начиная с:
 >
@@ -21998,11 +22334,10 @@ test('интеграция с externalSource', async () => {
 })
 ```
 
-
 # attach
 
 ```ts
-import { attach } from "effector";
+import { attach } from 'effector';
 ```
 
 > INFO Начиная с:
@@ -22035,12 +22370,12 @@ import { attach } from "effector";
 const attachedFx = attach({ effect: originalFx });
 ```
 
-* Когда `attachedFx` вызывается, `originalFx` также вызывается.
-* Когда `originalFx` завершается (успешно/с ошибкой), `attachedFx` завершается с тем же состоянием.
+- Когда `attachedFx` вызывается, `originalFx` также вызывается.
+- Когда `originalFx` завершается (успешно/с ошибкой), `attachedFx` завершается с тем же состоянием.
 
 #### Аргументы
 
-* `effect` (): Обернутый эффект.
+- `effect` (): Обернутый эффект.
 
 #### Возвращает
 
@@ -22052,7 +22387,7 @@ const attachedFx = attach({ effect: originalFx });
 const originalFx: Effect<Params, Done, Fail>;
 
 const attachedFx: Effect<Params, Done, Fail> = attach({
-  effect: originalFx,
+	effect: originalFx,
 });
 ```
 
@@ -22060,29 +22395,29 @@ const attachedFx: Effect<Params, Done, Fail> = attach({
 
 #### Примеры
 
-Это позволяет создать *локальную* копию эффекта, чтобы реагировать только на вызовы из текущего *локального* кода.
+Это позволяет создать _локальную_ копию эффекта, чтобы реагировать только на вызовы из текущего _локального_ кода.
 
 ```ts
-import { createEffect, attach } from "effector";
+import { createEffect, attach } from 'effector';
 
 const originalFx = createEffect((word: string) => {
-  console.info("Напечатано:", word);
+	console.info('Напечатано:', word);
 });
 
 const attachedFx = attach({ effect: originalFx });
 
-originalFx.watch(() => console.log("originalFx"));
-originalFx.done.watch(() => console.log("originalFx.done"));
+originalFx.watch(() => console.log('originalFx'));
+originalFx.done.watch(() => console.log('originalFx.done'));
 
-attachedFx.watch(() => console.log("attachedFx"));
-attachedFx.done.watch(() => console.log("attachedFx.done"));
+attachedFx.watch(() => console.log('attachedFx'));
+attachedFx.done.watch(() => console.log('attachedFx.done'));
 
-originalFx("первый");
+originalFx('первый');
 // => originalFx
 // => Напечатано: первый
 // => originalFx.done
 
-attachedFx("второй");
+attachedFx('второй');
 // => attachedFx
 // => originalFx
 // Напечатано: второй
@@ -22100,18 +22435,18 @@ attachedFx("второй");
 
 ```ts
 const attachedFx = attach({
-  source,
-  effect: originalFx,
+	source,
+	effect: originalFx,
 });
 ```
 
-* Когда `attachedFx` вызывается, данные из `source` читаются, и `originalFx` вызывается с этими данными.
-* Когда `originalFx` завершается, то же состояние (успех/ошибка) передается в `attachedFx`, и он завершается.
+- Когда `attachedFx` вызывается, данные из `source` читаются, и `originalFx` вызывается с этими данными.
+- Когда `originalFx` завершается, то же состояние (успех/ошибка) передается в `attachedFx`, и он завершается.
 
 #### Аргументы
 
-* `source` ( | `{[key: string]: Store}`): Стор или объект с сторами, значения которых будут переданы во второй аргумент `mapParams`.
-* `effect` (): Исходный эффект.
+- `source` ( | `{[key: string]: Store}`): Стор или объект с сторами, значения которых будут переданы во второй аргумент `mapParams`.
+- `effect` (): Исходный эффект.
 
 #### Возвращает
 
@@ -22126,12 +22461,14 @@ const attachedFx = attach({
 В большинстве случаев вы будете писать код так, без явных типов для `let`/`const`:
 
 ```ts
-const originalFx = createEffect<OriginalParams, SomeResult, SomeError>(async () => {});
+const originalFx = createEffect<OriginalParams, SomeResult, SomeError>(
+	async () => {},
+);
 const $store = createStore(initialValue);
 
 const attachedFx = attach({
-  source: $store,
-  effect: originalFx,
+	source: $store,
+	effect: originalFx,
 });
 ```
 
@@ -22142,8 +22479,8 @@ const originalFx: Effect<T, Done, Fail>;
 const $store: Store<T>;
 
 const attachedFx: Effect<void, Done, Fail> = attach({
-  source: $store,
-  effect: originalFx,
+	source: $store,
+	effect: originalFx,
 });
 ```
 
@@ -22160,8 +22497,8 @@ const $a: Store<A>;
 const $b: Store<B>;
 
 const attachedFx: Effect<void, Done, Fail> = attach({
-  source: { a: $a, b: $b },
-  effect: originalFx,
+	source: { a: $a, b: $b },
+	effect: originalFx,
 });
 ```
 
@@ -22172,26 +22509,28 @@ const attachedFx: Effect<void, Done, Fail> = attach({
 #### Примеры
 
 ```ts
-import { createEffect, createStore, attach } from "effector";
+import { createEffect, createStore, attach } from 'effector';
 
 const requestPageFx = createEffect<{ page: number; size: number }, string[]>(
-  async ({ page, size }) => {
-    console.log("Запрошено", page);
-    return page * size;
-  },
+	async ({ page, size }) => {
+		console.log('Запрошено', page);
+		return page * size;
+	},
 );
 
 const $page = createStore(1);
 const $size = createStore(20);
 
 const requestNextPageFx = attach({
-  source: { page: $page, size: $size },
-  effect: requestPageFx,
+	source: { page: $page, size: $size },
+	effect: requestPageFx,
 });
 
 $page.on(requestNextPageFx.done, (page) => page + 1);
 
-requestPageFx.doneData.watch((position) => console.log("requestPageFx.doneData", position));
+requestPageFx.doneData.watch((position) =>
+	console.log('requestPageFx.doneData', position),
+);
 
 await requestNextPageFx();
 // => Запрошено 1
@@ -22220,19 +22559,19 @@ await requestNextPageFx();
 
 ```ts
 const attachedFx = attach({
-  source,
-  async effect(source, params) {},
+	source,
+	async effect(source, params) {},
 });
 ```
 
-* Когда `attachedFx` вызывается, данные из `source` читаются, и вызывается функция `effect`.
-* Когда функция `effect` возвращает успешный `Promise`, `attachedFx` завершается с данными из функции как `attachedFx.done`.
-* Когда функция `effect` выбрасывает исключение или возвращает отклоненный `Promise`, `attachedFx` завершается с данными из функции как `attachedFx.fail`.
+- Когда `attachedFx` вызывается, данные из `source` читаются, и вызывается функция `effect`.
+- Когда функция `effect` возвращает успешный `Promise`, `attachedFx` завершается с данными из функции как `attachedFx.done`.
+- Когда функция `effect` выбрасывает исключение или возвращает отклоненный `Promise`, `attachedFx` завершается с данными из функции как `attachedFx.fail`.
 
 #### Аргументы
 
-* `effect` (*Function*): `(source: Source, params: Params) => Promise<Result> | Result`
-* `source` ( | `{[key: string]: Store}`): Стор или объект с сторами, значения которых будут переданы в первый аргумент `effect`.
+- `effect` (_Function_): `(source: Source, params: Params) => Promise<Result> | Result`
+- `source` ( | `{[key: string]: Store}`): Стор или объект с сторами, значения которых будут переданы в первый аргумент `effect`.
 
 #### Возвращает
 
@@ -22244,13 +22583,13 @@ const attachedFx = attach({
 
 ```ts
 const outerFx = createEffect((count: number) => {
-  console.log("Попадание", count);
+	console.log('Попадание', count);
 });
 
 const $store = createStore(0);
 const attachedFx = attach({
-  source: $store,
-  async effect(count, _: void) {},
+	source: $store,
+	async effect(count, _: void) {},
 });
 ```
 
@@ -22258,15 +22597,15 @@ const attachedFx = attach({
 
 ```ts
 const attachedFx = attach({
-  source: $store,
-  async effect(source) {
-    // Здесь всё в порядке, эффект вызывается
-    const resultA = await anotherFx();
+	source: $store,
+	async effect(source) {
+		// Здесь всё в порядке, эффект вызывается
+		const resultA = await anotherFx();
 
-    // Будьте осторожны:
-    const resultB = await regularFunction();
-    // Здесь область видимости потеряна.
-  },
+		// Будьте осторожны:
+		const resultB = await regularFunction();
+		// Здесь область видимости потеряна.
+	},
 });
 ```
 
@@ -22284,8 +22623,8 @@ const regularFunctionFx = createEffect(regularFunction);
 const $store: Store<T>;
 
 const attachedFx: Effect<Params, Done, Fail> = attach({
-  source: $store,
-  async effect(source, params: Params): Done | Promise<Done> {},
+	source: $store,
+	async effect(source, params: Params): Done | Promise<Done> {},
 });
 ```
 
@@ -22295,8 +22634,8 @@ const attachedFx: Effect<Params, Done, Fail> = attach({
 
 ```ts
 const attachedFx: Effect<void, void, Fail> = attach({
-  source: $store,
-  async effect(source) {},
+	source: $store,
+	async effect(source) {},
 });
 ```
 
@@ -22309,13 +22648,13 @@ const attachedFx: Effect<void, void, Fail> = attach({
 ```ts
 // Пример пользовательского кода без явных объявлений типов
 const $foo = createStore(100);
-const $bar = createStore("demo");
+const $bar = createStore('demo');
 
 const attachedFx = attach({
-  source: { foo: $foo, bar: $bar },
-  async effect({ foo, bar }, { baz }: { baz: boolean }) {
-    console.log("Попадание!", { foo, bar, baz });
-  },
+	source: { foo: $foo, bar: $bar },
+	async effect({ foo, bar }, { baz }: { baz: boolean }) {
+		console.log('Попадание!', { foo, bar, baz });
+	},
 });
 
 attachedFx({ baz: true });
@@ -22338,19 +22677,19 @@ attachedFx({ baz: true });
 
 ```ts
 const attachedFx = attach({
-  effect: originalFx,
-  mapParams,
+	effect: originalFx,
+	mapParams,
 });
 ```
 
-* Когда `attachedFx` вызывается, параметры передаются в функцию `mapParams`, затем результат передается в `originalFx`.
-* Когда `originalFx` завершается, `attachedFx` завершается с тем же состоянием (успех/ошибка).
-* Если `mapParams` выбрасывает исключение, `attachedFx` завершается с ошибкой как `attachedFx.fail`. Но `originalFx` не будет вызван.
+- Когда `attachedFx` вызывается, параметры передаются в функцию `mapParams`, затем результат передается в `originalFx`.
+- Когда `originalFx` завершается, `attachedFx` завершается с тем же состоянием (успех/ошибка).
+- Если `mapParams` выбрасывает исключение, `attachedFx` завершается с ошибкой как `attachedFx.fail`. Но `originalFx` не будет вызван.
 
 #### Аргументы
 
-* `effect` (): Обернутый эффект.
-* `mapParams` (`(newParams) => effectParams`): Функция, которая принимает новые параметры и преобразует их в параметры для обернутого `effect`. Работает аналогично event.prepend. Ошибки в функции `mapParams` приведут к завершению прикрепленного эффекта с ошибкой.
+- `effect` (): Обернутый эффект.
+- `mapParams` (`(newParams) => effectParams`): Функция, которая принимает новые параметры и преобразует их в параметры для обернутого `effect`. Работает аналогично event.prepend. Ошибки в функции `mapParams` приведут к завершению прикрепленного эффекта с ошибкой.
 
 #### Возвращает
 
@@ -22396,18 +22735,18 @@ const attachedFx: Effect<void, Done, Fail> = attach({
 ##### Преобразование аргументов
 
 ```ts
-import { createEffect, attach } from "effector";
+import { createEffect, attach } from 'effector';
 
 const originalFx = createEffect((a: { input: number }) => a);
 
 const attachedFx = attach({
-  effect: originalFx,
-  mapParams(a: number) {
-    return { input: a * 100 };
-  },
+	effect: originalFx,
+	mapParams(a: number) {
+		return { input: a * 100 };
+	},
 });
 
-originalFx.watch((params) => console.log("originalFx started", params));
+originalFx.watch((params) => console.log('originalFx started', params));
 
 attachedFx(1);
 // => originalFx { input: 100 }
@@ -22418,19 +22757,19 @@ attachedFx(1);
 ##### Обработка исключений
 
 ```ts
-import { createEffect, attach } from "effector";
+import { createEffect, attach } from 'effector';
 
 const originalFx = createEffect((a: { a: number }) => a);
 
 const attachedFx = attach({
-  effect: originalFx,
-  mapParams(a: number) {
-    throw new Error("custom error");
-    return { a };
-  },
+	effect: originalFx,
+	mapParams(a: number) {
+		throw new Error('custom error');
+		return { a };
+	},
 });
 
-attachedFx.failData.watch((error) => console.log("attachedFx.failData", error));
+attachedFx.failData.watch((error) => console.log('attachedFx.failData', error));
 
 attachedFx(1);
 // => attachedFx.failData
@@ -22451,21 +22790,21 @@ attachedFx(1);
 
 ```ts
 const attachedFx = attach({
-  source,
-  mapParams,
-  effect: originalFx,
+	source,
+	mapParams,
+	effect: originalFx,
 });
 ```
 
-* Когда `attachedFx` вызывается, параметры передаются в функцию `mapParams` вместе с данными из `source`, затем результат передается в `originalFx`.
-* Когда `originalFx` завершается, `attachedFx` завершается с тем же состоянием (успех/ошибка).
-* Если `mapParams` выбрасывает исключение, `attachedFx` завершается с ошибкой как `attachedFx.fail`. Но `originalFx` не будет вызван.
+- Когда `attachedFx` вызывается, параметры передаются в функцию `mapParams` вместе с данными из `source`, затем результат передается в `originalFx`.
+- Когда `originalFx` завершается, `attachedFx` завершается с тем же состоянием (успех/ошибка).
+- Если `mapParams` выбрасывает исключение, `attachedFx` завершается с ошибкой как `attachedFx.fail`. Но `originalFx` не будет вызван.
 
 #### Аргументы
 
-* `source` ( | `{[key: string]: Store}`): Стор или объект с сторами, значения которых будут переданы во второй аргумент `mapParams`.
-* `mapParams` (`(newParams, values) => effectParams`): Функция, которая принимает новые параметры и текущее значение `source` и объединяет их в параметры для обернутого `effect`. Ошибки в функции `mapParams` приведут к завершению прикрепленного эффекта с ошибкой.
-* `effect` (): Обернутый эффект.
+- `source` ( | `{[key: string]: Store}`): Стор или объект с сторами, значения которых будут переданы во второй аргумент `mapParams`.
+- `mapParams` (`(newParams, values) => effectParams`): Функция, которая принимает новые параметры и текущее значение `source` и объединяет их в параметры для обернутого `effect`. Ошибки в функции `mapParams` приведут к завершению прикрепленного эффекта с ошибкой.
+- `effect` (): Обернутый эффект.
 
 #### Возвращает
 
@@ -22483,17 +22822,19 @@ const attachedFx = attach({
 
 ```ts
 // ./api/request.ts
-import { createEffect, createStore } from "effector";
+import { createEffect, createStore } from 'effector';
 
-export const backendRequestFx = createEffect(async ({ token, data, resource }) => {
-  return fetch(`https://example.com/api${resource}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
-});
+export const backendRequestFx = createEffect(
+	async ({ token, data, resource }) => {
+		return fetch(`https://example.com/api${resource}`, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(data),
+		});
+	},
+);
 
 export const $requestsSent = createStore(0);
 
@@ -22502,37 +22843,37 @@ $requestsSent.on(backendRequestFx, (total) => total + 1);
 
 ```ts
 // ./api/authorized.ts
-import { attach, createStore } from "effector";
+import { attach, createStore } from 'effector';
 
-const $token = createStore("guest_token");
+const $token = createStore('guest_token');
 
 export const authorizedRequestFx = attach({
-  effect: backendRequestFx,
-  source: $token,
-  mapParams: ({ data, resource }, token) => ({ data, resource, token }),
+	effect: backendRequestFx,
+	source: $token,
+	mapParams: ({ data, resource }, token) => ({ data, resource, token }),
 });
 
 export function createRequest(resource) {
-  return attach({
-    effect: authorizedRequestFx,
-    mapParams: (data) => ({ data, resource }),
-  });
+	return attach({
+		effect: authorizedRequestFx,
+		mapParams: (data) => ({ data, resource }),
+	});
 }
 ```
 
 ```ts
 // ./api/index.ts
-import { createRequest } from "./authorized";
-import { $requestsSent } from "./request";
+import { createRequest } from './authorized';
+import { $requestsSent } from './request';
 
-const getUserFx = createRequest("/user");
-const getPostsFx = createRequest("/posts");
+const getUserFx = createRequest('/user');
+const getPostsFx = createRequest('/posts');
 
 $requestsSent.watch((total) => {
-  console.log(`Аналитика клиента: отправлено ${total} запросов`);
+	console.log(`Аналитика клиента: отправлено ${total} запросов`);
 });
 
-const user = await getUserFx({ name: "alice" });
+const user = await getUserFx({ name: 'alice' });
 /*
 POST https://example.com/api/user
 {"name": "alice"}
@@ -22556,14 +22897,14 @@ Authorization: Bearer guest_token
 ```json5
 // .babelrc
 {
-  plugins: [
-    [
-      "effector/babel-plugin",
-      {
-        factories: ["src/path-to-your-entity/api/authorized"],
-      },
-    ],
-  ],
+	plugins: [
+		[
+			'effector/babel-plugin',
+			{
+				factories: ['src/path-to-your-entity/api/authorized'],
+			},
+		],
+	],
 }
 ```
 
@@ -22580,14 +22921,14 @@ attach({ name: string });
 Позволяет явно задать имя созданного прикрепленного эффекта:
 
 ```ts
-import { attach } from "effector";
+import { attach } from 'effector';
 
 const attachedFx = attach({
-  name: "anotherUsefulName",
-  source: $store,
-  async effect(source, params: Type) {
-    // ...
-  },
+	name: 'anotherUsefulName',
+	source: $store,
+	async effect(source, params: Type) {
+		// ...
+	},
 });
 
 attachedFx.shortName; // "anotherUsefulName"
@@ -22606,20 +22947,19 @@ attach({ domain: Domain });
 > Примечание: это свойство может использоваться только с обычной функцией `effect`.
 
 ```ts
-import { createDomain, createStore, attach } from "effector";
+import { createDomain, createStore, attach } from 'effector';
 
 const reportErrors = createDomain();
 const $counter = createStore(0);
 
 const attachedFx = attach({
-  domain: reportErrors,
-  source: $counter,
-  async effect(counter) {
-    // ...
-  },
+	domain: reportErrors,
+	source: $counter,
+	async effect(counter) {
+		// ...
+	},
 });
 ```
-
 
 # Babel плагин
 
@@ -22630,7 +22970,7 @@ const attachedFx = attach({
 показывая, в каком именно эффекте произошла ошибка.
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchFx = createEffect();
 
@@ -22648,7 +22988,7 @@ fetchFx();
 ```json
 // .babelrc
 {
-  "plugins": ["effector/babel-plugin"]
+	"plugins": ["effector/babel-plugin"]
 }
 ```
 
@@ -22671,49 +23011,49 @@ fetchFx();
 
 ```js
 // common.js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
-export const getUser = createEffect({ sid: "GET /user" });
+export const getUser = createEffect({ sid: 'GET /user' });
 console.log(getUsers.sid);
 // => GET /user
 ```
 
 ```js
 // worker.js
-import { getUsers } from "./common.js";
+import { getUsers } from './common.js';
 
 getUsers.use((userID) => fetch(userID));
 
 getUsers.done.watch(({ result }) => {
-  postMessage({ sid: getUsers.sid, result });
+	postMessage({ sid: getUsers.sid, result });
 });
 
 onmessage = async ({ data }) => {
-  if (data.sid !== getUsers.sid) return;
-  getUsers(data.userID);
+	if (data.sid !== getUsers.sid) return;
+	getUsers(data.userID);
 };
 ```
 
 ```js
 // client.js
-import { createEvent } from "effector";
-import { getUsers } from "./common.js";
+import { createEvent } from 'effector';
+import { getUsers } from './common.js';
 
 const onMessage = createEvent();
 
-const worker = new Worker("worker.js");
+const worker = new Worker('worker.js');
 worker.onmessage = onMessage;
 
 getUsers.use(
-  (userID) =>
-    new Promise((rs) => {
-      worker.postMessage({ sid: getUsers.sid, userID });
-      const unwatch = onMessage.watch(({ data }) => {
-        if (data.sid !== getUsers.sid) return;
-        unwatch();
-        rs(data.result);
-      });
-    }),
+	(userID) =>
+		new Promise((rs) => {
+			worker.postMessage({ sid: getUsers.sid, userID });
+			const unwatch = onMessage.watch(({ data }) => {
+				if (data.sid !== getUsers.sid) return;
+				unwatch();
+				rs(data.result);
+			});
+		}),
 );
 ```
 
@@ -22741,12 +23081,12 @@ getUsers.use(
 ]
 ```
 
-* Тип: `boolean` | `"es"` | `"cjs"`
-    * `true`: Использует API HMR с автоопределением необходимого варианта работы. Работает на базе функциональности бабеля [supportsStaticESM](https://babeljs.io/docs/options#caller), которая широко поддерживается в сборщиках
-    * `"es"`: Использует API HMR `import.meta.hot` в сборщиках, соответствующих ESM, таких как Vite и Rollup
-    * `"cjs"`: Использует API HMR `module.hot` в сборщиках, использующих CommonJS модули, таких как Webpack, Next.js и React Native
-    * `false`: Отключает Hot Module Replacement.
-* По умолчанию: `false`
+- Тип: `boolean` | `"es"` | `"cjs"`
+    - `true`: Использует API HMR с автоопределением необходимого варианта работы. Работает на базе функциональности бабеля [supportsStaticESM](https://babeljs.io/docs/options#caller), которая широко поддерживается в сборщиках
+    - `"es"`: Использует API HMR `import.meta.hot` в сборщиках, соответствующих ESM, таких как Vite и Rollup
+    - `"cjs"`: Использует API HMR `module.hot` в сборщиках, использующих CommonJS модули, таких как Webpack, Next.js и React Native
+    - `false`: Отключает Hot Module Replacement.
+- По умолчанию: `false`
 
 > INFO Сборка для продакшна:
 >
@@ -22760,15 +23100,15 @@ getUsers.use(
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "importName": ["effector"]
-  }
+	"effector/babel-plugin",
+	{
+		"importName": ["effector"]
+	}
 ]
 ```
 
-* Тип: `string | string[]`
-* По умолчанию: `['effector', 'effector/compat']`
+- Тип: `string | string[]`
+- По умолчанию: `['effector', 'effector/compat']`
 
 ### `factories`
 
@@ -22783,52 +23123,54 @@ SSR (серверный рендеринг) и не требуется для к
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "factories": ["path/here"]
-  }
+	"effector/babel-plugin",
+	{
+		"factories": ["path/here"]
+	}
 ]
 ```
 
-* Тип: `string[]`
-* Фабрики могут иметь любое количество аргументов.
-* Фабрики могут создавать любое количество юнитов.
-* Фабрики могут вызывать любые методы effector.
-* Фабрики могут вызывать другие фабрики из других модулей.
-* Модули с фабриками могут экспортировать любое количество функций.
-* Фабрики должны быть скомпилированы с `effector/babel-plugin`, как и код, который их использует.
+- Тип: `string[]`
+- Фабрики могут иметь любое количество аргументов.
+- Фабрики могут создавать любое количество юнитов.
+- Фабрики могут вызывать любые методы effector.
+- Фабрики могут вызывать другие фабрики из других модулей.
+- Модули с фабриками могут экспортировать любое количество функций.
+- Фабрики должны быть скомпилированы с `effector/babel-plugin`, как и код, который их использует.
 
 #### Примеры
 
 ```json
 // .babelrc
 {
-  "plugins": [
-    [
-      "effector/babel-plugin",
-      {
-        "factories": ["src/createEffectStatus", "~/createCommonPending"]
-      }
-    ]
-  ]
+	"plugins": [
+		[
+			"effector/babel-plugin",
+			{
+				"factories": ["src/createEffectStatus", "~/createCommonPending"]
+			}
+		]
+	]
 }
 ```
 
 ```js
 // ./src/createEffectStatus.js
-import { rootDomain } from "./rootDomain";
+import { rootDomain } from './rootDomain';
 
 export function createEffectStatus(fx) {
-  const $status = rootDomain.createStore("init").on(fx.finally, (_, { status }) => status);
+	const $status = rootDomain
+		.createStore('init')
+		.on(fx.finally, (_, { status }) => status);
 
-  return $status;
+	return $status;
 }
 ```
 
 ```js
 // ./src/statuses.js
-import { createEffectStatus } from "./createEffectStatus";
-import { fetchUserFx, fetchFriendsFx } from "./api";
+import { createEffectStatus } from './createEffectStatus';
+import { fetchUserFx, fetchFriendsFx } from './api';
 
 export const $fetchUserStatus = createEffectStatus(fetchUserFx);
 export const $fetchFriendsStatus = createEffectStatus(fetchFriendsFx);
@@ -22851,15 +23193,15 @@ export const $fetchFriendsStatus = createEffectStatus(fetchFriendsFx);
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "reactSsr": false
-  }
+	"effector/babel-plugin",
+	{
+		"reactSsr": false
+	}
 ]
 ```
 
-* Тип: `boolean`
-* По умолчанию: `false`
+- Тип: `boolean`
+- По умолчанию: `false`
 
 ### `addNames`
 
@@ -22873,15 +23215,15 @@ export const $fetchFriendsStatus = createEffectStatus(fetchFriendsFx);
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "addNames": true
-  }
+	"effector/babel-plugin",
+	{
+		"addNames": true
+	}
 ]
 ```
 
-* Тип: `boolean`
-* По умолчанию: `true`
+- Тип: `boolean`
+- По умолчанию: `true`
 
 ### `addLoc`
 
@@ -22891,15 +23233,15 @@ export const $fetchFriendsStatus = createEffectStatus(fetchFriendsFx);
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "addLoc": false
-  }
+	"effector/babel-plugin",
+	{
+		"addLoc": false
+	}
 ]
 ```
 
-* Тип: `boolean`
-* По умолчанию: `false`
+- Тип: `boolean`
+- По умолчанию: `false`
 
 ### `debugSids`
 
@@ -22909,15 +23251,15 @@ export const $fetchFriendsStatus = createEffectStatus(fetchFriendsFx);
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "debugSids": false
-  }
+	"effector/babel-plugin",
+	{
+		"debugSids": false
+	}
 ]
 ```
 
-* Тип: `boolean`
-* По умолчанию: `false`
+- Тип: `boolean`
+- По умолчанию: `false`
 
 ### `noDefaults`
 
@@ -22931,51 +23273,51 @@ export const $fetchFriendsStatus = createEffectStatus(fetchFriendsFx);
 
 ```json
 [
-  "effector/babel-plugin",
-  {
-    "noDefaults": false
-  }
+	"effector/babel-plugin",
+	{
+		"noDefaults": false
+	}
 ]
 ```
 
-* Тип: `boolean`
-* По умолчанию: `false`
+- Тип: `boolean`
+- По умолчанию: `false`
 
 #### Примеры
 
 ```json
 // .babelrc
 {
-  "plugins": [
-    ["effector/babel-plugin", { "addLoc": true }],
-    [
-      "effector/babel-plugin",
-      {
-        "importName": "@lib/createInputField",
-        "storeCreators": ["createInputField"],
-        "noDefaults": true
-      },
-      "createInputField"
-    ]
-  ]
+	"plugins": [
+		["effector/babel-plugin", { "addLoc": true }],
+		[
+			"effector/babel-plugin",
+			{
+				"importName": "@lib/createInputField",
+				"storeCreators": ["createInputField"],
+				"noDefaults": true
+			},
+			"createInputField"
+		]
+	]
 }
 ```
 
 ```js
 // @lib/createInputField.js
-import { createStore } from "effector";
-import { resetForm } from "./form";
+import { createStore } from 'effector';
+import { resetForm } from './form';
 
 export function createInputField(defaultState, { sid, name }) {
-  return createStore(defaultState, { sid, name }).reset(resetForm);
+	return createStore(defaultState, { sid, name }).reset(resetForm);
 }
 ```
 
 ```js
 // src/state.js
-import { createInputField } from "@lib/createInputField";
+import { createInputField } from '@lib/createInputField';
 
-const foo = createInputField("-");
+const foo = createInputField('-');
 /*
 
 будет обработано как создатель стор и скомпилировано в
@@ -23001,24 +23343,23 @@ const foo = createInputField('-', {
 
 ```js
 // vite.config.js
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  plugins: [
-    react({
-      babel: {
-        plugins: ["effector/babel-plugin"],
-        // Использовать .babelrc файлы
-        babelrc: true,
-        // Использовать babel.config.js файлы
-        configFile: true,
-      },
-    }),
-  ],
+	plugins: [
+		react({
+			babel: {
+				plugins: ['effector/babel-plugin'],
+				// Использовать .babelrc файлы
+				babelrc: true,
+				// Использовать babel.config.js файлы
+				configFile: true,
+			},
+		}),
+	],
 });
 ```
-
 
 # clearNode
 
@@ -23035,26 +23376,25 @@ clearNode(unit: Unit, config: {deep?: boolean}): void
 
 1. **`unit`**: Любой юнит включая домены и scope. Переданный юнит будет уничтожен и удалён из памяти
 2. **`config?`**: Объект конфигурации
+    - **`deep?`**: _boolean_
 
-    * **`deep?`**: *boolean*
-
-      Глубокое удаление. Уничтожает юнит и *все* его производные
+        Глубокое удаление. Уничтожает юнит и _все_ его производные
 
 #### Возвращает
 
-*void*
+_void_
 
 ### Примеры
 
 #### Пример удаления стора
 
 ```js
-import { createStore, createEvent, clearNode } from "effector";
+import { createStore, createEvent, clearNode } from 'effector';
 
 const inc = createEvent();
 const store = createStore(0).on(inc, (x) => x + 1);
-inc.watch(() => console.log("inc called"));
-store.watch((x) => console.log("store state: ", x));
+inc.watch(() => console.log('inc called'));
+store.watch((x) => console.log('store state: ', x));
 // => store state: 0
 inc();
 // => inc called
@@ -23069,14 +23409,14 @@ inc();
 #### Пример с deep
 
 ```js
-import { createStore, createEvent, clearNode } from "effector";
+import { createStore, createEvent, clearNode } from 'effector';
 
 const inc = createEvent();
 const trigger = inc.prepend(() => {});
 const store = createStore(0).on(inc, (x) => x + 1);
-trigger.watch(() => console.log("trigger called"));
-inc.watch(() => console.log("inc called"));
-store.watch((x) => console.log("store state: ", x));
+trigger.watch(() => console.log('trigger called'));
+inc.watch(() => console.log('inc called'));
+store.watch((x) => console.log('store state: ', x));
 // => store state: 0
 trigger();
 // => trigger called
@@ -23092,7 +23432,6 @@ inc();
 ```
 
 Запустить пример
-
 
 # combine
 
@@ -23150,11 +23489,11 @@ $result: Store<D> = combine(
 )
 ```
 
-* После вызова `combine` состояние каждого стор извлекается и передается в качестве аргументов функции, результат вызова функции станет состоянием стор `$result`.
-* В `combine` можно передавать любое количество сторов, но последним аргументом всегда должна быть функция-редуктор, возвращающая новое состояние.
-* Если функция вернула то же значение `result`, что и предыдущее, стор `$result` не будет обновлен.
-* Если несколько сторов обновляются одновременно (за один тик), будет единый вызов функции и единое обновление стора `$result`.
-* Функция должна быть .
+- После вызова `combine` состояние каждого стор извлекается и передается в качестве аргументов функции, результат вызова функции станет состоянием стор `$result`.
+- В `combine` можно передавать любое количество сторов, но последним аргументом всегда должна быть функция-редуктор, возвращающая новое состояние.
+- Если функция вернула то же значение `result`, что и предыдущее, стор `$result` не будет обновлен.
+- Если несколько сторов обновляются одновременно (за один тик), будет единый вызов функции и единое обновление стора `$result`.
+- Функция должна быть .
 
 #### Возвращает
 
@@ -23162,7 +23501,7 @@ $result: Store<D> = combine(
 
 #### Примеры
 
-import demo\_combineStoresFn from "../../../../demo/combine/stores-fn.live.js?raw";
+import demo_combineStoresFn from "../../../../demo/combine/stores-fn.live.js?raw";
 
 <LiveDemo client:only="preact" demoFile={demo_combineStoresFn} />
 
@@ -23176,16 +23515,16 @@ const $b: StoreWritable<B>;
 const $c: Store<C> | StoreWritable<C>;
 
 $result: Store<D> = combine(
-  { a: $a, b: $b, c: $c },
-  ({ a, b, c }: { a: A; b: B; c: C }): D => result,
+	{ a: $a, b: $b, c: $c },
+	({ a, b, c }: { a: A; b: B; c: C }): D => result,
 );
 ```
 
-* Читает состояние из сторов `$a`, `$b`, `$c` и присваивает его соответствующим полям `a`, `b`, `c`, затем вызывает функцию с этим объектом.
-* Результат вызова функции сохраняется в сторе `$result`.
-* Если функция вернула то же значение `result`, что и предыдущее, стор `$result` не будет обновлен.
-* Если несколько сторов обновляются одновременно (за один тик), будет единый вызов функции и единое обновление стор `$result`.
-* Функция должна быть .
+- Читает состояние из сторов `$a`, `$b`, `$c` и присваивает его соответствующим полям `a`, `b`, `c`, затем вызывает функцию с этим объектом.
+- Результат вызова функции сохраняется в сторе `$result`.
+- Если функция вернула то же значение `result`, что и предыдущее, стор `$result` не будет обновлен.
+- Если несколько сторов обновляются одновременно (за один тик), будет единый вызов функции и единое обновление стор `$result`.
+- Функция должна быть .
 
 #### Возвращает
 
@@ -23193,7 +23532,7 @@ $result: Store<D> = combine(
 
 #### Примеры
 
-import demo\_combineObjectFn from "../../../../demo/combine/object-fn.live.js?raw";
+import demo_combineObjectFn from "../../../../demo/combine/object-fn.live.js?raw";
 
 <LiveDemo client:only="preact" demoFile={demo_combineObjectFn} />
 
@@ -23209,11 +23548,11 @@ const $c: Store<C> | StoreWritable<C>;
 $result: Store<D> = combine([$a, $b, $c], ([A, B, C]): D => result);
 ```
 
-* Читает состояние из сторов `$a`, `$b`, `$c` и присваивает его массиву в том порядке, в котором сторы были переданы, затем вызывает функцию с этим массивом.
-* Результат вызова функции сохраняется в сторе `$result`.
-* Если функция вернула то же значение `result`, что и предыдущее, стор `$result` не будет обновлен.
-* Если несколько сторов обновляются одновременно (за один тик), будет единый вызов функции и единое обновление стор `$result`.
-* Функция должна быть .
+- Читает состояние из сторов `$a`, `$b`, `$c` и присваивает его массиву в том порядке, в котором сторы были переданы, затем вызывает функцию с этим массивом.
+- Результат вызова функции сохраняется в сторе `$result`.
+- Если функция вернула то же значение `result`, что и предыдущее, стор `$result` не будет обновлен.
+- Если несколько сторов обновляются одновременно (за один тик), будет единый вызов функции и единое обновление стор `$result`.
+- Функция должна быть .
 
 #### Возвращает
 
@@ -23221,7 +23560,7 @@ $result: Store<D> = combine([$a, $b, $c], ([A, B, C]): D => result);
 
 #### Примеры
 
-import demo\_combineArrayFn from "../../../../demo/combine/array-fn.live.js?raw";
+import demo_combineArrayFn from "../../../../demo/combine/array-fn.live.js?raw";
 
 <LiveDemo client:only="preact" demoFile={demo_combineArrayFn} />
 
@@ -23245,9 +23584,9 @@ const $c: Store<C> | StoreWritable<C>;
 $result: Store<{ a: A; b: B; c: C }> = combine({ a: $a, b: $b, c: $c });
 ```
 
-* Читает состояние из сторов `$a`, `$b`, `$c` и присваивает его соответствующим полям `a`, `b`, `c`, этот объект сохраняется в сторе `$result`.
-* Стор `$result` содержит объект `{a, b, c}` и будет обновляться при каждом обновлении переданных сторов.
-* Если несколько сторов обновляются одновременно (за один тик), будет единое обновление стор `$result`.
+- Читает состояние из сторов `$a`, `$b`, `$c` и присваивает его соответствующим полям `a`, `b`, `c`, этот объект сохраняется в сторе `$result`.
+- Стор `$result` содержит объект `{a, b, c}` и будет обновляться при каждом обновлении переданных сторов.
+- Если несколько сторов обновляются одновременно (за один тик), будет единое обновление стор `$result`.
 
 #### Возвращает
 
@@ -23255,7 +23594,7 @@ $result: Store<{ a: A; b: B; c: C }> = combine({ a: $a, b: $b, c: $c });
 
 #### Примеры
 
-import demo\_combineObject from "../../../../demo/combine/object.live.js?raw";
+import demo_combineObject from "../../../../demo/combine/object.live.js?raw";
 
 <LiveDemo client:only="preact" demoFile={demo_combineObject} />
 
@@ -23271,9 +23610,9 @@ const $c: Store<C> | StoreWritable<C>;
 $result: Store<[A, B, C]> = combine([$a, $b, $c]);
 ```
 
-* Читает состояние из сторов `$a`, `$b`, `$c` и присваивает его массиву в том порядке, в котором сторы были переданы, этот массив сохраняется в сторе `$result`.
-* Стор `$result` будет обновляться при каждом обновлении переданных сторов.
-* Если несколько сторов обновляются одновременно (за один тик), будет единое обновление стор `$result`.
+- Читает состояние из сторов `$a`, `$b`, `$c` и присваивает его массиву в том порядке, в котором сторы были переданы, этот массив сохраняется в сторе `$result`.
+- Стор `$result` будет обновляться при каждом обновлении переданных сторов.
+- Если несколько сторов обновляются одновременно (за один тик), будет единое обновление стор `$result`.
 
 #### Возвращает
 
@@ -23281,7 +23620,7 @@ $result: Store<[A, B, C]> = combine([$a, $b, $c]);
 
 #### Примеры
 
-import demo\_combineArray from "../../../../demo/combine/array.live.js?raw";
+import demo_combineArray from "../../../../demo/combine/array.live.js?raw";
 
 <LiveDemo client:only="preact" demoFile={demo_combineArray} />
 
@@ -23293,7 +23632,7 @@ import demo\_combineArray from "../../../../demo/combine/array.live.js?raw";
 
 #### Примеры
 
-import demo\_combineNonStoresFn from "../../../../demo/combine/non-stores-fn.live.js?raw";
+import demo_combineNonStoresFn from "../../../../demo/combine/non-stores-fn.live.js?raw";
 
 <LiveDemo client:only="preact" demoFile={demo_combineNonStoresFn} />
 
@@ -23303,7 +23642,7 @@ import demo\_combineNonStoresFn from "../../../../demo/combine/non-stores-fn.liv
 
 ### `.skipVoid`
 
-Флаг для контроля обработки значений `undefined` в сторе *(начиная с версии `effector 23.0.0`)*. Если установить в `false`, стор будет использовать `undefined` как значение. Если установить в `true` (устарело), стор будет интерпретировать `undefined` как команду «пропустить обновление» и ничего не делать.
+Флаг для контроля обработки значений `undefined` в сторе _(начиная с версии `effector 23.0.0`)_. Если установить в `false`, стор будет использовать `undefined` как значение. Если установить в `true` (устарело), стор будет интерпретировать `undefined` как команду «пропустить обновление» и ничего не делать.
 
 #### Формула
 
@@ -23311,14 +23650,13 @@ import demo\_combineNonStoresFn from "../../../../demo/combine/non-stores-fn.liv
 combine($a, $b, callback, { skipVoid: true });
 ```
 
-* Тип: `boolean`
+- Тип: `boolean`
 
 #### Примеры
 
 ```js
 const $withFn = combine($a, $b, (a, b) => a || b, { skipVoid: false });
 ```
-
 
 # createApi
 
@@ -23330,14 +23668,14 @@ const $withFn = combine($a, $b, (a, b) => a || b, { skipVoid: false });
 declare const $store: Store<T>; // управляемый стор
 
 const api: {
-  event1: Event<S>; // созданное событие-команда
-  event2: Event<Q>; // созданное событие-команда
+	event1: Event<S>; // созданное событие-команда
+	event2: Event<Q>; // созданное событие-команда
 } = createApi(
-  /*store*/ $store,
-  /*handlers*/ {
-    event1: /*handler*/ (state: T, data: S) => T,
-    event2: /*handler*/ (state: T, data: Q) => T,
-  },
+	/*store*/ $store,
+	/*handlers*/ {
+		event1: /*handler*/ (state: T, data: S) => T,
+		event2: /*handler*/ (state: T, data: Q) => T,
+	},
 );
 ```
 
@@ -23346,18 +23684,17 @@ const api: {
 1. **`store`**: Стор, чьим значением требуется управлять
 2. **`handlers`**: Объект с функциями-обработчиками, на каждую функцию будет создано по событию
 
-   **`handler`**: `(state: T, data: S) => T`
+    **`handler`**: `(state: T, data: S) => T`
 
-   Функция-обработчик, которая будет вычислять новое состояние `стора` на основе его предыдущего состояния и данных, отправленных в полученное событие-команду, должна быть&#x20;
+    Функция-обработчик, которая будет вычислять новое состояние `стора` на основе его предыдущего состояния и данных, отправленных в полученное событие-команду, должна быть&#x20;
 
-   **Аргументы**
+    **Аргументы**
+    - **`state`**: Текущее состояние стора
+    - **`data`**: Значение, с которым было вызвано событие
 
-    * **`state`**: Текущее состояние стора
-    * **`data`**: Значение, с которым было вызвано событие
+    **Возвращает**
 
-   **Возвращает**
-
-   Новое значение для хранения в `сторе`. Если функция возвращает undefined или текущее состояние стора, то обновления не будет
+    Новое значение для хранения в `сторе`. Если функция возвращает undefined или текущее состояние стора, то обновления не будет
 
 #### Возвращает
 
@@ -23368,17 +23705,17 @@ const api: {
 #### Управление позицией игрока
 
 ```js
-import { createStore, createApi } from "effector";
+import { createStore, createApi } from 'effector';
 
 const playerPosition = createStore(0);
 
 const api = createApi(playerPosition, {
-  moveLeft: (pos, n) => pos - n,
-  moveRight: (pos, n) => pos + n,
+	moveLeft: (pos, n) => pos - n,
+	moveRight: (pos, n) => pos + n,
 });
 
 playerPosition.watch((pos) => {
-  console.log("position", pos);
+	console.log('position', pos);
 });
 // => position 0
 
@@ -23391,7 +23728,6 @@ api.moveLeft(5);
 
 Запустить пример
 
-
 # createDomain
 
 Метод для создания доменов
@@ -23402,7 +23738,7 @@ createDomain(name?)
 
 **Аргументы**
 
-1. `name`? (*string*): имя домена
+1. `name`? (_string_): имя домена
 
 **Возвращает**
 
@@ -23411,10 +23747,10 @@ createDomain(name?)
 #### Пример
 
 ```js
-import { createDomain } from "effector";
+import { createDomain } from 'effector';
 
 const domain = createDomain(); // безымянный домен
-const httpDomain = createDomain("http"); // именованный домен
+const httpDomain = createDomain('http'); // именованный домен
 
 const statusCodeChanged = httpDomain.createEvent();
 const downloadFx = httpDomain.createEffect();
@@ -23424,13 +23760,12 @@ const $data = httpDomain.createStore({ status: -1 });
 
 Запустить пример
 
-
 # createEffect
 
 ## createEffect
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const effectFx = createEffect();
 ```
@@ -23447,7 +23782,7 @@ const effectFx = createEffect();
 
 #### С обработчиком
 
-* **Тип**
+- **Тип**
 
 ```ts
 createEffect<Params, Done, Fail = Error>(
@@ -23455,52 +23790,52 @@ createEffect<Params, Done, Fail = Error>(
 ): Effect<Params, Done, Fail>
 ```
 
-* **Пример**
+- **Пример**
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchUserReposFx = createEffect(async ({ name }) => {
-  const url = `https://api.github.com/users/${name}/repos`;
-  const req = await fetch(url);
-  return req.json();
+	const url = `https://api.github.com/users/${name}/repos`;
+	const req = await fetch(url);
+	return req.json();
 });
 
 fetchUserReposFx.done.watch(({ params, result }) => {
-  console.log(result);
+	console.log(result);
 });
 
-await fetchUserReposFx({ name: "zerobias" });
+await fetchUserReposFx({ name: 'zerobias' });
 ```
 
 #### С конфигурацией
 
 Поле `name` используется для улучшения сообщений об ошибках и отладки.
 
-* **Тип**
+- **Тип**
 
 ```ts
 export function createEffect<Params, Done, Fail = Error>(config: {
-  name?: string;
-  handler?: (params: Params) => Promise<Done> | Done;
+	name?: string;
+	handler?: (params: Params) => Promise<Done> | Done;
 }): Effect<Params, Done, Fail>;
 ```
 
-* **Пример**
+- **Пример**
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchUserReposFx = createEffect({
-  name: "fetch user repositories",
-  async handler({ name }) {
-    const url = `https://api.github.com/users/${name}/repos`;
-    const req = await fetch(url);
-    return req.json();
-  },
+	name: 'fetch user repositories',
+	async handler({ name }) {
+		const url = `https://api.github.com/users/${name}/repos`;
+		const req = await fetch(url);
+		return req.json();
+	},
 });
 
-await fetchUserReposFx({ name: "zerobias" });
+await fetchUserReposFx({ name: 'zerobias' });
 ```
 
 #### Без обработчика
@@ -23511,91 +23846,91 @@ await fetchUserReposFx({ name: "zerobias" });
 >
 > Старайтесь не использовать `.use()`, так как это является антипаттерном и ухудшает вывод типов.
 
-* **Пример**
+- **Пример**
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchUserReposFx = createEffect();
 
 fetchUserReposFx.use(async ({ name }) => {
-  const url = `https://api.github.com/users/${name}/repos`;
-  const req = await fetch(url);
-  return req.json();
+	const url = `https://api.github.com/users/${name}/repos`;
+	const req = await fetch(url);
+	return req.json();
 });
 
-await fetchUserReposFx({ name: "zerobias" });
+await fetchUserReposFx({ name: 'zerobias' });
 ```
 
 ### Примеры
 
-* **Изменение состояния по завершению эффекта**:
+- **Изменение состояния по завершению эффекта**:
 
 ```ts
-import { createStore, createEffect } from "effector";
+import { createStore, createEffect } from 'effector';
 
 interface Repo {
-  // ...
+	// ...
 }
 
 const $repos = createStore<Repo[]>([]);
 
 const fetchUserReposFx = createEffect(async (name: string) => {
-  const url = `https://api.github.com/users/${name}/repos`;
-  const req = await fetch(url);
-  return req.json();
+	const url = `https://api.github.com/users/${name}/repos`;
+	const req = await fetch(url);
+	return req.json();
 });
 
 $repos.on(fetchUserReposFx.doneData, (_, repos) => repos);
 
 $repos.watch((repos) => {
-  console.log(`${repos.length} repos`);
+	console.log(`${repos.length} repos`);
 });
 // => 0 репозиториев
 
-await fetchUserReposFx("zerobias");
+await fetchUserReposFx('zerobias');
 // => 26 репозиториев
 ```
 
 Запустить пример
 
-* **Наблюдение за состоянием эффекта**:
+- **Наблюдение за состоянием эффекта**:
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchUserReposFx = createEffect(async ({ name }) => {
-  const url = `https://api.github.com/users/${name}/repos`;
-  const req = await fetch(url);
-  return req.json();
+	const url = `https://api.github.com/users/${name}/repos`;
+	const req = await fetch(url);
+	return req.json();
 });
 
 fetchUserReposFx.pending.watch((pending) => {
-  console.log(`effect is pending?: ${pending ? "yes" : "no"}`);
+	console.log(`effect is pending?: ${pending ? 'yes' : 'no'}`);
 });
 
 fetchUserReposFx.done.watch(({ params, result }) => {
-  console.log(params); // {name: 'zerobias'}
-  console.log(result); // разрешенное значение, результат
+	console.log(params); // {name: 'zerobias'}
+	console.log(result); // разрешенное значение, результат
 });
 
 fetchUserReposFx.fail.watch(({ params, error }) => {
-  console.error(params); // {name: 'zerobias'}
-  console.error(error); //  отклоненное значение, ошибка
+	console.error(params); // {name: 'zerobias'}
+	console.error(error); //  отклоненное значение, ошибка
 });
 
 fetchUserReposFx.finally.watch(({ params, status, result, error }) => {
-  console.log(params); // {name: 'zerobias'}
-  console.log(`handler status: ${status}`);
+	console.log(params); // {name: 'zerobias'}
+	console.log(`handler status: ${status}`);
 
-  if (error) {
-    console.log("handler rejected", error);
-  } else {
-    console.log("handler resolved", result);
-  }
+	if (error) {
+		console.log('handler rejected', error);
+	} else {
+		console.log('handler resolved', result);
+	}
 });
 
-await fetchUserReposFx({ name: "zerobias" });
+await fetchUserReposFx({ name: 'zerobias' });
 ```
 
 Запустить пример
@@ -23604,26 +23939,25 @@ await fetchUserReposFx({ name: "zerobias" });
 
 Ниже приведен список возможных ошибок, с которыми вы можете столкнуться при работе с эффектами:
 
-* no handler used in \[effect name]
+- no handler used in \[effect name]
 
 ### Связанные API и статьи
 
-* **API**
-    * Effect API - Описание эффектов, его методов и свойств
-    * sample - Ключевой оператор для построения связей между юнитами
-    * attach - Создает новые эффекты на основе других эффектов
-* **Статьи**
-    * Работа с эффектами
-    * Как типизировать эффекты и не только
-    * Гайд по тестированию эффектов и других юнитов
-
+- **API**
+    - Effect API - Описание эффектов, его методов и свойств
+    - sample - Ключевой оператор для построения связей между юнитами
+    - attach - Создает новые эффекты на основе других эффектов
+- **Статьи**
+    - Работа с эффектами
+    - Как типизировать эффекты и не только
+    - Гайд по тестированию эффектов и других юнитов
 
 # createEvent
 
 ## createEvent
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const event = createEvent();
 ```
@@ -23641,16 +23975,14 @@ createEvent<E = void>(config: {
 }): EventCallable<E>
 ```
 
-* **Аргументы**
+- **Аргументы**
+    - `eventName`: Опциональный аргумент. Имя события для отладки.
+    - `config`: Опциональный аргумент. Объект конфигурации.
+        - `name`: Имя события.
+        - `sid`: Стабильный идентификатор для SSR.
+        - `domain`: Домен для события.
 
-    * `eventName`: Опциональный аргумент. Имя события для отладки.
-    * `config`: Опциональный аргумент. Объект конфигурации.
-
-        * `name`: Имя события.
-        * `sid`: Стабильный идентификатор для SSR.
-        * `domain`: Домен для события.
-
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает новое вызываемое [событие][eventTypes].
 
@@ -23659,7 +23991,7 @@ createEvent<E = void>(config: {
 Обновление состояния с помощью вызова события:
 
 ```js
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const addNumber = createEvent();
 
@@ -23668,7 +24000,7 @@ const $counter = createStore(0);
 $counter.on(addNumber, (state, number) => state + number);
 
 $counter.watch((state) => {
-  console.log("state", state);
+	console.log('state', state);
 });
 // => 0
 
@@ -23690,13 +24022,13 @@ addNumber(10);
 Обработка данных с помощью производных событий:
 
 ```js
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const extractPartOfArray = createEvent();
 const array = extractPartOfArray.map((arr) => arr.slice(2));
 
 array.watch((part) => {
-  console.log(part);
+	console.log(part);
 });
 extractPartOfArray([1, 2, 3, 4, 5, 6]);
 // => [3, 4, 5, 6]
@@ -23708,46 +24040,37 @@ extractPartOfArray([1, 2, 3, 4, 5, 6]);
 
 Ниже приведён список возможных ошибок, с которыми вы можете столкнуться при работе с событиями:
 
-* call of derived event is not supported, use createEvent instead
-* unit call from pure function is not supported, use operators like sample instead
+- call of derived event is not supported, use createEvent instead
+- unit call from pure function is not supported, use operators like sample instead
 
 ### Связанные API и статьи
 
-* **API**
-    * [`Event API`][eventApi] - API стора, его методы, свойства и описание
-    * [`createApi`][createApi] - Создание набора событий для стора
-    * [`merge`][merge] - Метод для объединения массива юнитов в одно новое событие
-    * [`sample`][sample] - Связывание событий с другими юнитами
-* **Статьи**
-    * [Как работать с событиями][eventGuide]
-    * [Как мыслить в effector и почему события важны][mindset]
-    * [Гайд по типизации событий и других юнитов][typescript]
+- **API**
+    - [`Event API`][eventApi] - API стора, его методы, свойства и описание
+    - [`createApi`][createApi] - Создание набора событий для стора
+    - [`merge`][merge] - Метод для объединения массива юнитов в одно новое событие
+    - [`sample`][sample] - Связывание событий с другими юнитами
+- **Статьи**
+    - [Как работать с событиями][eventGuide]
+    - [Как мыслить в effector и почему события важны][mindset]
+    - [Гайд по типизации событий и других юнитов][typescript]
 
 [eventApi]: /ru/api/effector/Event
-
 [eventTypes]: /ru/api/effector/Event#event-types
-
 [merge]: /ru/api/effector/merge
-
 [eventGuide]: /ru/essentials/events
-
 [mindset]: /ru/resources/mindset
-
 [mindset]: /ru/resources/mindset
-
 [typescript]: /ru/essentials/typescript
-
 [sample]: /ru/api/effector/sample
-
 [createApi]: /ru/api/effector/createApi
-
 
 # createStore
 
 ## createStore
 
 ```ts
-import { createStore } from "effector";
+import { createStore } from 'effector';
 
 const $store = createStore();
 ```
@@ -23775,28 +24098,26 @@ createStore(
 ): StoreWritable<State>
 ```
 
-* **Аргументы**
+- **Аргументы**
 
 1. **`defaultState`**: Исходное состояние
 2. **`config`**: Опциональный объект конфигурации
+    - **`skipVoid`**: Опциональный аргумент. Определяет пропускает ли [стор][storeApi] `undefined` значения. По умолчанию `true`. В случае если передать в стор, у которого `skipVoid:true`, значение `undefined`, тогда вы получите [ошибку в консоль][storeUndefinedError].<br/><br/>
 
-    * **`skipVoid`**: Опциональный аргумент. Определяет пропускает ли [стор][storeApi] `undefined` значения. По умолчанию `true`. В случае если передать в стор, у которого `skipVoid:true`, значение `undefined`, тогда вы получите [ошибку в консоль][storeUndefinedError].<br/><br/>
+    - **`name`**: Опциональный аргумент. Имя стора. [Babel-plugin][babel] может определить его из имени переменной стора, если имя не передано явно в конфигурации.<br/><br/>
 
-    * **`name`**: Опциональный аргумент. Имя стора. [Babel-plugin][babel] может определить его из имени переменной стора, если имя не передано явно в конфигурации.<br/><br/>
+    - **`sid`**: Опциональный аргумент. Уникальный идентификатор стора. [Он используется для различения сторов между разными окружениями][storeSid]. При использовании [Babel-plugin][babel] проставляется автоматически.<br/><br/>
 
-    * **`sid`**: Опциональный аргумент. Уникальный идентификатор стора. [Он используется для различения сторов между разными окружениями][storeSid]. При использовании [Babel-plugin][babel] проставляется автоматически.<br/><br/>
-
-    * **`updateFilter`**:
+    - **`updateFilter`**:
       Опциональный аргумент. [Чистая функция][pureFn], которая предотвращает обновление стора, если она возвращает `false`. Следует использовать для случаев, когда стандартного запрета на обновление (если значение, которое предполагается записать в стор, равняется `undefined` или текущему значению стора) недостаточно. Если вызывать юниты внутри, то можно столкнуться с [ошибкой][unitCallError].
 
-      <br/>
+        <br/>
 
-    * **`serialize`**: Опциональный аргумент отвечающий за сериализацию стора.
+    - **`serialize`**: Опциональный аргумент отвечающий за сериализацию стора.
+        - `'ignore'`: исключает стор из сериализации при вызовах [serialize][serialize].
+        - Объект с методами `write` и `read` для кастомной сериализации. `write` вызывается при вызове serialize и приводит состояние стор к JSON-значению – примитив или простой объект/массив. `read` вызывается при fork, если предоставленные `values` – результат вызова [serialize][serialize].
 
-        * `'ignore'`: исключает стор из сериализации при вызовах [serialize][serialize].
-        * Объект с методами `write` и `read` для кастомной сериализации. `write` вызывается при вызове serialize и приводит состояние стор к JSON-значению – примитив или простой объект/массив. `read` вызывается при fork, если предоставленные `values` – результат вызова [serialize][serialize].
-
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращает новый [стор][storeApi].
 
@@ -23805,21 +24126,21 @@ createStore(
 Базовое использование стора:
 
 ```js
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const addTodo = createEvent();
 const clearTodos = createEvent();
 
 const $todos = createStore([])
-  .on(addTodo, (todos, newTodo) => [...todos, newTodo])
-  .reset(clearTodos);
+	.on(addTodo, (todos, newTodo) => [...todos, newTodo])
+	.reset(clearTodos);
 
 const $selectedTodos = $todos.map((todos) => {
-  return todos.filter((todo) => !!todo.selected);
+	return todos.filter((todo) => !!todo.selected);
 });
 
 $todos.watch((todos) => {
-  console.log("todos", todos);
+	console.log('todos', todos);
 });
 ```
 
@@ -23828,19 +24149,27 @@ $todos.watch((todos) => {
 Пример с кастомной конфигурацией `serialize`:
 
 ```ts
-import { createEvent, createStore, serialize, fork, allSettled } from "effector";
+import {
+	createEvent,
+	createStore,
+	serialize,
+	fork,
+	allSettled,
+} from 'effector';
 
 const saveDate = createEvent();
 const $date = createStore<null | Date>(null, {
-  // Объект Date автоматически приводится в строку ISO-даты при вызове JSON.stringify
-  // но не приводится обратно к Date при вызове JSON.parse – результатом будет та же строка ISO-даты
-  // Это приведет к расхождению состояния стора при гидрации состояния на клиенте при серверном рендеринге
-  //
-  // Кастомная конфигурация `serialize` решает эту проблему
-  serialize: {
-    write: (dateOrNull) => (dateOrNull ? dateOrNull.toISOString() : dateOrNull),
-    read: (isoStringOrNull) => (isoStringOrNull ? new Date(isoStringOrNull) : isoStringOrNull),
-  },
+	// Объект Date автоматически приводится в строку ISO-даты при вызове JSON.stringify
+	// но не приводится обратно к Date при вызове JSON.parse – результатом будет та же строка ISO-даты
+	// Это приведет к расхождению состояния стора при гидрации состояния на клиенте при серверном рендеринге
+	//
+	// Кастомная конфигурация `serialize` решает эту проблему
+	serialize: {
+		write: (dateOrNull) =>
+			dateOrNull ? dateOrNull.toISOString() : dateOrNull,
+		read: (isoStringOrNull) =>
+			isoStringOrNull ? new Date(isoStringOrNull) : isoStringOrNull,
+	},
 }).on(saveDate, (_, p) => p);
 
 const serverScope = fork();
@@ -23869,51 +24198,37 @@ console.log(currentDate);
 
 Ниже приведен список возможных ошибок, с которыми вы можете столкнуться при работе со сторами:
 
-* [`store: undefined is used to skip updates. To allow undefined as a value provide explicit { skipVoid: false } option`][storeUndefinedError].
-* [`serialize: One or more stores dont have sids, their values are omitted`][serializeError].
-* [`unit call from pure function is not supported, use operators like sample instead`][unitCallError].
+- [`store: undefined is used to skip updates. To allow undefined as a value provide explicit { skipVoid: false } option`][storeUndefinedError].
+- [`serialize: One or more stores dont have sids, their values are omitted`][serializeError].
+- [`unit call from pure function is not supported, use operators like sample instead`][unitCallError].
 
 ### Связанные API и статьи
 
-* **API**
-    * [`Store API`][storeApi] - API стора, его методы, свойства и описание
-    * [`createApi`][createApi] - Создание набора событий для стора
-    * [`combine`][combine] - Создание нового стора на основе других сторов
-    * [`sample`][sample] - Связывание сторов с другими юнитами
-* **Статьи**
-    * [Как управлять состоянием][storeGuide]
-    * [Гайд по работе с SSR][ssr]
-    * [Что такое SID и зачем они нужны сторам][storeSid]
-    * [Как типизировать сторы и другие юниты][typescript]
+- **API**
+    - [`Store API`][storeApi] - API стора, его методы, свойства и описание
+    - [`createApi`][createApi] - Создание набора событий для стора
+    - [`combine`][combine] - Создание нового стора на основе других сторов
+    - [`sample`][sample] - Связывание сторов с другими юнитами
+- **Статьи**
+    - [Как управлять состоянием][storeGuide]
+    - [Гайд по работе с SSR][ssr]
+    - [Что такое SID и зачем они нужны сторам][storeSid]
+    - [Как типизировать сторы и другие юниты][typescript]
 
 [storeApi]: /ru/api/effector/Store
-
 [storeUndefinedError]: /ru/guides/troubleshooting#store-undefined
-
 [storeSid]: /ru/explanation/sids
-
 [ssr]: /ru/guides/server-side-rendering
-
 [storeGuide]: /ru/essentials/manage-states
-
 [combine]: /ru/api/effector/combine
-
 [sample]: /ru/api/effector/sample
-
 [createApi]: /ru/api/effector/createApi
-
 [serialize]: /ru/api/effector/serialize
-
 [typescript]: /ru/essentials/typescript
-
 [babel]: /ru/api/effector/babel-plugin
-
 [pureFn]: /ru/explanation/glossary/#purity
-
 [unitCallError]: /ru/guides/troubleshooting#unit-call-from-pure-not-supported
-
 [serializeError]: /ru/guides/troubleshooting/#store-without-sid
-
 
 # createWatch
 
@@ -23929,10 +24244,10 @@ createWatch<T>(config: {
 
 **Аргументы**
 
-1. `config` (*Object*): Конфигурация
-    * `unit` (*Unit*): Целевой юнит (store, ивент или эффект), за которым нужно наблюдать
-    * `fn` (*Function*): Функция, которая будет вызываться при каждом обновлении юнита. Первым аргументом получает содержимое обновления.
-    * `scope` (): Опциональный скоуп. Если передан, то функция будет вызываться только при обновлении юнита именно на этом скоупе.
+1. `config` (_Object_): Конфигурация
+    - `unit` (_Unit_): Целевой юнит (store, ивент или эффект), за которым нужно наблюдать
+    - `fn` (_Function_): Функция, которая будет вызываться при каждом обновлении юнита. Первым аргументом получает содержимое обновления.
+    - `scope` (): Опциональный скоуп. Если передан, то функция будет вызываться только при обновлении юнита именно на этом скоупе.
 
 **Возвращает**
 
@@ -23941,7 +24256,7 @@ createWatch<T>(config: {
 ##### Пример (со скоупом)
 
 ```js
-import { createWatch, createEvent, fork, allSettled } from "effector";
+import { createWatch, createEvent, fork, allSettled } from 'effector';
 
 const changeName = createEvent();
 
@@ -23949,14 +24264,14 @@ const scope = fork();
 
 const unwatch = createWatch({ unit: changeName, scope, fn: console.log });
 
-await allSettled(changeName, { scope, params: "Иван" }); // output: Иван
-changeName("Иван"); // no output
+await allSettled(changeName, { scope, params: 'Иван' }); // output: Иван
+changeName('Иван'); // no output
 ```
 
 ##### Пример (без скоупа)
 
 ```js
-import { createWatch, createEvent, fork, allSettled } from "effector";
+import { createWatch, createEvent, fork, allSettled } from 'effector';
 
 const changeName = createEvent();
 
@@ -23964,15 +24279,14 @@ const scope = fork();
 
 const unwatch = createWatch({ unit: changeName, fn: console.log });
 
-await allSettled(changeName, { scope, params: "Иван" }); // output: Иван
-changeName("Иван"); // output: Иван
+await allSettled(changeName, { scope, params: 'Иван' }); // output: Иван
+changeName('Иван'); // output: Иван
 ```
-
 
 # fork
 
 ```ts
-import { fork, type Scope } from "effector";
+import { fork, type Scope } from 'effector';
 ```
 
 ## Методы
@@ -24001,7 +24315,7 @@ fork(): Scope
 ##### Создание двух экземпляров с независимым состоянием счетчика
 
 ```js
-import { createStore, createEvent, fork, allSettled } from "effector";
+import { createStore, createEvent, fork, allSettled } from 'effector';
 
 const inc = createEvent();
 const dec = createEvent();
@@ -24051,10 +24365,10 @@ fork(options: { values?, handlers? }): Scope
 
 ```ts
 fork({
-  values: [
-    [$user, "alice"],
-    [$age, 21],
-  ],
+	values: [
+		[$user, 'alice'],
+		[$age, 21],
+	],
 });
 ```
 
@@ -24062,7 +24376,7 @@ fork({
 
 ```ts
 fork({
-  values: new Map().set($user, "alice").set($age, 21),
+	values: new Map().set($user, 'alice').set($age, 21),
 });
 ```
 
@@ -24070,10 +24384,10 @@ fork({
 
 ```ts
 fork({
-  values: {
-    [$user.sid]: "alice",
-    [$age.sid]: 21,
-  },
+	values: {
+		[$user.sid]: 'alice',
+		[$age.sid]: 21,
+	},
 });
 ```
 
@@ -24093,10 +24407,10 @@ fork({
 
 ```ts
 fork({
-  handlers: [
-    [getMessageFx, (params) => ({ id: 0, text: "message" })],
-    [getUserFx, async (params) => ({ name: "alice", age: 21 })],
-  ],
+	handlers: [
+		[getMessageFx, (params) => ({ id: 0, text: 'message' })],
+		[getUserFx, async (params) => ({ name: 'alice', age: 21 })],
+	],
 });
 ```
 
@@ -24104,9 +24418,9 @@ fork({
 
 ```ts
 fork({
-  handlers: new Map()
-    .set(getMessageFx, (params) => ({ id: 0, text: "message" }))
-    .set(getUserFx, async (params) => ({ name: "alice", age: 21 })),
+	handlers: new Map()
+		.set(getMessageFx, (params) => ({ id: 0, text: 'message' }))
+		.set(getUserFx, async (params) => ({ name: 'alice', age: 21 })),
 });
 ```
 
@@ -24114,10 +24428,10 @@ fork({
 
 ```ts
 fork({
-  handlers: {
-    [getMessageFx.sid]: (params) => ({ id: 0, text: "message" }),
-    [getUserFx.sid]: async (params) => ({ name: "alice", age: 21 }),
-  },
+	handlers: {
+		[getMessageFx.sid]: (params) => ({ id: 0, text: 'message' }),
+		[getUserFx.sid]: async (params) => ({ name: 'alice', age: 21 }),
+	},
 });
 ```
 
@@ -24138,26 +24452,28 @@ fork({
 Это пример теста, который проверяет, что после запроса к серверу значение `$friends` заполняется.
 
 ```ts
-import { createEffect, createStore, fork, allSettled } from "effector";
+import { createEffect, createStore, fork, allSettled } from 'effector';
 
-const fetchFriendsFx = createEffect<{ limit: number }, string[]>(async ({ limit }) => {
-  /* получение данных на стороне клиента */
-  return [];
-});
-const $user = createStore("guest");
+const fetchFriendsFx = createEffect<{ limit: number }, string[]>(
+	async ({ limit }) => {
+		/* получение данных на стороне клиента */
+		return [];
+	},
+);
+const $user = createStore('guest');
 const $friends = createStore([]);
 
 $friends.on(fetchFriendsFx.doneData, (_, result) => result);
 
 const testScope = fork({
-  values: [[$user, "alice"]],
-  handlers: [[fetchFriendsFx, () => ["bob", "carol"]]],
+	values: [[$user, 'alice']],
+	handlers: [[fetchFriendsFx, () => ['bob', 'carol']]],
 });
 
 /* запускаем вычисления в scope и ожидаем завершения всех вызванных effects */
 await allSettled(fetchFriendsFx, {
-  scope: testScope,
-  params: { limit: 10 },
+	scope: testScope,
+	params: { limit: 10 },
 });
 
 /* проверяем значение стора в scope */
@@ -24197,7 +24513,6 @@ fork(domain: Domain, options?: { values?, handlers? }): Scope
 #### Примеры
 
 TBD
-
 
 # forward
 
@@ -24243,22 +24558,19 @@ forward({
 #### Аргументы
 
 1. **`config`**: Объект конфигурации
+    - **`from`**: Юнит или массив юнитов
 
-    * **`from`**: Юнит или массив юнитов
+        **Разновидности**:
+        - **событие или эффект**: срабатывание этого события/эффекта будет запускать юниты `to`
+        - **стор**: обновление этого стора будет запускать юниты `to`
+        - **массив юнитов**: срабатывание любого из юнитов будет запускать юниты `to`
 
-      **Разновидности**:
+    - **`to`**: Юнит или массив юнитов
 
-        * **событие или эффект**: срабатывание этого события/эффекта будет запускать юниты `to`
-        * **стор**: обновление этого стора будет запускать юниты `to`
-        * **массив юнитов**: срабатывание любого из юнитов будет запускать юниты `to`
-
-    * **`to`**: Юнит или массив юнитов
-
-      **Разновидности**:
-
-        * **событие или эффект**: при срабатывании `from` будет вызван данный юнит
-        * **стор**: при срабатывании `from` состояние юнита будет обновлено
-        * **массив юнитов**: при срабатывании `from` будут запущены все юниты
+        **Разновидности**:
+        - **событие или эффект**: при срабатывании `from` будет вызван данный юнит
+        - **стор**: при срабатывании `from` состояние юнита будет обновлено
+        - **массив юнитов**: при срабатывании `from` будут запущены все юниты
 
 #### Возвращает
 
@@ -24275,17 +24587,17 @@ Subscription: Функция отмены подписки, после её вы
 #### Сохранение в сторе данных из события
 
 ```js
-import { createStore, createEvent, forward } from "effector";
+import { createStore, createEvent, forward } from 'effector';
 
 const $store = createStore(1);
 const event = createEvent();
 
 forward({
-  from: event,
-  to: $store,
+	from: event,
+	to: $store,
 });
 
-$store.watch((state) => console.log("store changed: ", state));
+$store.watch((state) => console.log('store changed: ', state));
 // => store changed: 1
 
 event(200);
@@ -24297,7 +24609,7 @@ event(200);
 #### Создание связи между массивами юнитов
 
 ```js
-import { createEvent, forward } from "effector";
+import { createEvent, forward } from 'effector';
 
 const firstSource = createEvent();
 const secondSource = createEvent();
@@ -24306,23 +24618,22 @@ const firstTarget = createEvent();
 const secondTarget = createEvent();
 
 forward({
-  from: [firstSource, secondSource],
-  to: [firstTarget, secondTarget],
+	from: [firstSource, secondSource],
+	to: [firstTarget, secondTarget],
 });
 
-firstTarget.watch((e) => console.log("first target", e));
-secondTarget.watch((e) => console.log("second target", e));
+firstTarget.watch((e) => console.log('first target', e));
+secondTarget.watch((e) => console.log('second target', e));
 
-firstSource("A");
+firstSource('A');
 // => first target A
 // => second target A
-secondSource("B");
+secondSource('B');
 // => first target B
 // => second target B
 ```
 
 Запустить пример
-
 
 # fromObservable
 
@@ -24347,8 +24658,8 @@ function fromObservable(stream: Observable<T>): Event<T>;
 ### Пример
 
 ```js
-import { interval } from "rxjs";
-import { fromObservable } from "effector";
+import { interval } from 'rxjs';
+import { fromObservable } from 'effector';
 
 //emit value in sequence every 1 second
 const source = interval(1000);
@@ -24358,7 +24669,6 @@ const event = fromObservable(source);
 //output: 0,1,2,3,4,5....
 event.watch(console.log);
 ```
-
 
 # guard
 
@@ -24385,11 +24695,11 @@ guard({clock?, source?, filter, target?}): target
 
 При срабатывании `clock`, после проверки `filter` на [истинность](https://developer.mozilla.org/ru/docs/Glossary/Truthy), вызывается `target` с данными из `source`
 
-* Если `clock` не передан, `guard` будет срабатывать при каждом обновлении `source`
-* Если `source` не передан, `target` будет вызван с данными из `clock`
-* Если `target` не передан, будет создано новое событие и возвращено в качестве результата
-* Если `filter` это стор, то его значение будет проверено на [истинность](https://developer.mozilla.org/ru/docs/Glossary/Truthy)
-* Если `filter` это функция-предикат, то она будет вызвана с данными из `source` и `clock`, а результат проверен на [истинность](https://developer.mozilla.org/ru/docs/Glossary/Truthy)
+- Если `clock` не передан, `guard` будет срабатывать при каждом обновлении `source`
+- Если `source` не передан, `target` будет вызван с данными из `clock`
+- Если `target` не передан, будет создано новое событие и возвращено в качестве результата
+- Если `filter` это стор, то его значение будет проверено на [истинность](https://developer.mozilla.org/ru/docs/Glossary/Truthy)
+- Если `filter` это функция-предикат, то она будет вызвана с данными из `source` и `clock`, а результат проверен на [истинность](https://developer.mozilla.org/ru/docs/Glossary/Truthy)
 
 > INFO:
 >
@@ -24401,41 +24711,37 @@ guard({clock?, source?, filter, target?}): target
 
 **Аргументы**
 
-`params` (*Object*): Объект конфигурации
+`params` (_Object_): Объект конфигурации
 
-* **`filter`**: Стор или функция-предикат
+- **`filter`**: Стор или функция-предикат
 
-  **Разновидности**:
+    **Разновидности**:
+    - **стор**: `target` будет запущен только если в этом сторе [истинное значение](https://developer.mozilla.org/ru/docs/Glossary/Truthy)
+    - **функция-предикат** `(source, clock) => boolean`: `target` будет запущен только если эта функция вернёт [истинное значение](https://developer.mozilla.org/ru/docs/Glossary/Truthy). Функция должна быть&#x20;
 
-    * **стор**: `target` будет запущен только если в этом сторе [истинное значение](https://developer.mozilla.org/ru/docs/Glossary/Truthy)
-    * **функция-предикат** `(source, clock) => boolean`: `target` будет запущен только если эта функция вернёт [истинное значение](https://developer.mozilla.org/ru/docs/Glossary/Truthy). Функция должна быть&#x20;
+- **`clock?`**: Юнит или массив юнитов
 
-* **`clock?`**: Юнит или массив юнитов
+    **Разновидности**:
+    - **событие или эффект**: срабатывание этого события/эффекта, после проверки условия в `filter` будет запускать `target`
+    - **стор**: обновление этого стора, после проверки условия в `filter` будет запускать `target`
+    - **массив юнитов**: срабатывание любого из юнитов, после проверки условия в `filter` будет запускать `target`. Сокращение для вызова merge
+    - **поле отсутствует**: `source` будет использоваться в качестве `clock`
 
-  **Разновидности**:
+- **`source?`**: Юнит или массив/объект со сторами
 
-    * **событие или эффект**: срабатывание этого события/эффекта, после проверки условия в `filter` будет запускать `target`
-    * **стор**: обновление этого стора, после проверки условия в `filter` будет запускать `target`
-    * **массив юнитов**: срабатывание любого из юнитов, после проверки условия в `filter` будет запускать `target`. Сокращение для вызова merge
-    * **поле отсутствует**: `source` будет использоваться в качестве `clock`
+    **Разновидности**:
+    - **событие или эффект**: при срабатывании `clock` будет взято последнее значение с которым запускался этот юнит (перед этим он должен будет запуститься хотя бы раз)
+    - **стор**: при срабатывании `clock` будет взято текущее значение этого стора
+    - **массив или объект со сторами**: при срабатывании `clock` будут взяты текущие значения из заданных сторов, объединенных в объект или массив. Сокращение для вызова combine
+    - **поле отсутствует**: `clock` будет использоваться в качестве `source`
 
-* **`source?`**: Юнит или массив/объект со сторами
+- **`target?`**: Юнит или массив юнитов
 
-  **Разновидности**:
-
-    * **событие или эффект**: при срабатывании `clock` будет взято последнее значение с которым запускался этот юнит (перед этим он должен будет запуститься хотя бы раз)
-    * **стор**: при срабатывании `clock` будет взято текущее значение этого стора
-    * **массив или объект со сторами**: при срабатывании `clock` будут взяты текущие значения из заданных сторов, объединенных в объект или массив. Сокращение для вызова combine
-    * **поле отсутствует**: `clock` будет использоваться в качестве `source`
-
-* **`target?`**: Юнит или массив юнитов
-
-  **Разновидности**:
-
-    * **событие или эффект**: при срабатывании `clock`, после проверки условия в `filter` будет вызван данный юнит
-    * **стор**: при срабатывании `clock`, после проверки условия в `filter` состояние юнита будет обновлено
-    * **массив юнитов**: при срабатывании `clock`, после проверки условия в `filter` будут запущены все юниты
-    * **поле отсутствует**: новое событие будет создано и возвращено в результате вызова `guard`
+    **Разновидности**:
+    - **событие или эффект**: при срабатывании `clock`, после проверки условия в `filter` будет вызван данный юнит
+    - **стор**: при срабатывании `clock`, после проверки условия в `filter` состояние юнита будет обновлено
+    - **массив юнитов**: при срабатывании `clock`, после проверки условия в `filter` будут запущены все юниты
+    - **поле отсутствует**: новое событие будет создано и возвращено в результате вызова `guard`
 
 **Возвращает**
 
@@ -24444,10 +24750,12 @@ guard({clock?, source?, filter, target?}): target
 #### Пример со стором в `filter`
 
 ```js
-import { createStore, createEffect, createEvent, guard } from "effector";
+import { createStore, createEffect, createEvent, guard } from 'effector';
 
 const clickRequest = createEvent();
-const fetchRequest = createEffect((n) => new Promise((rs) => setTimeout(rs, 2500, n)));
+const fetchRequest = createEffect(
+	(n) => new Promise((rs) => setTimeout(rs, 2500, n)),
+);
 
 const clicks = createStore(0).on(clickRequest, (x) => x + 1);
 const requests = createStore(0).on(fetchRequest, (x) => x + 1);
@@ -24461,10 +24769,10 @@ const isIdle = fetchRequest.pending.map((pending) => !pending);
 4. и вызвать с ним эффект fetchRequest
 */
 guard({
-  clock: clickRequest /* 1 */,
-  filter: isIdle /* 2 */,
-  source: clicks /* 3 */,
-  target: fetchRequest /* 4 */,
+	clock: clickRequest /* 1 */,
+	filter: isIdle /* 2 */,
+	source: clicks /* 3 */,
+	target: fetchRequest /* 4 */,
 });
 ```
 
@@ -24473,19 +24781,19 @@ guard({
 #### Пример с функцией-предикатом в `filter`
 
 ```js
-import { createEffect, createEvent, guard } from "effector";
+import { createEffect, createEvent, guard } from 'effector';
 
 const searchUser = createEffect();
 const submitForm = createEvent();
 
 guard({
-  source: submitForm,
-  filter: (user) => user.length > 0,
-  target: searchUser,
+	source: submitForm,
+	filter: (user) => user.length > 0,
+	target: searchUser,
 });
 
-submitForm(""); // ничего не произошло
-submitForm("alice"); // ~> searchUser('alice')
+submitForm(''); // ничего не произошло
+submitForm('alice'); // ~> searchUser('alice')
 ```
 
 Запустить пример
@@ -24496,36 +24804,35 @@ submitForm("alice"); // ~> searchUser('alice')
 
 **Аргументы**
 
-* **`source`**: Юнит
-* **`filter`**: Стор или функция-предикат
+- **`source`**: Юнит
+- **`filter`**: Стор или функция-предикат
 
-  **Разновидности**:
-
-    * **стор**: `target` будет запущен только если в этом сторе [истинное значение](https://developer.mozilla.org/ru/docs/Glossary/Truthy)
-    * **функция-предикат** `(source) => boolean`: `target` будет запущен только если эта функция вернёт [истинное значение](https://developer.mozilla.org/ru/docs/Glossary/Truthy). Функция должна быть&#x20;
+    **Разновидности**:
+    - **стор**: `target` будет запущен только если в этом сторе [истинное значение](https://developer.mozilla.org/ru/docs/Glossary/Truthy)
+    - **функция-предикат** `(source) => boolean`: `target` будет запущен только если эта функция вернёт [истинное значение](https://developer.mozilla.org/ru/docs/Glossary/Truthy). Функция должна быть&#x20;
 
 ##### Пример со стором в `filter`
 
 ```js
-import { createEvent, createStore, createApi, guard } from "effector";
+import { createEvent, createStore, createApi, guard } from 'effector';
 
 const trigger = createEvent();
 const $unlocked = createStore(true);
 const { lock, unlock } = createApi($unlocked, {
-  lock: () => false,
-  unlock: () => true,
+	lock: () => false,
+	unlock: () => true,
 });
 
 const target = guard(trigger, {
-  filter: $unlocked,
+	filter: $unlocked,
 });
 
 target.watch(console.log);
-trigger("A");
+trigger('A');
 lock();
-trigger("B"); // ничего не произошло
+trigger('B'); // ничего не произошло
 unlock();
-trigger("C");
+trigger('C');
 ```
 
 Запустить пример
@@ -24533,15 +24840,15 @@ trigger("C");
 ##### Пример с функцией-предикатом в `filter`
 
 ```js
-import { createEvent, guard } from "effector";
+import { createEvent, guard } from 'effector';
 
 const source = createEvent();
 const target = guard(source, {
-  filter: (x) => x > 0,
+	filter: (x) => x > 0,
 });
 
 target.watch(() => {
-  console.log("target вызван");
+	console.log('target вызван');
 });
 
 source(0);
@@ -24552,11 +24859,10 @@ source(1);
 
 Запустить пример
 
-
 # hydrate
 
 ```ts
-import { hydrate } from "effector";
+import { hydrate } from 'effector';
 ```
 
 Сопутствующий метод для . Гидрирует предоставленные значения в соответствующие сторы в рамках предоставленного домена или скоупа. Основная цель — гидрация состояния приложения на стороне клиента после SSR (Server-Side Rendering).
@@ -24589,15 +24895,15 @@ hydrate(domainOrScope: Domain | Scope, { values: Map<Store<any>, any> | {[sid: s
 Заполнение стора предопределенным значением:
 
 ```js
-import { createStore, createDomain, fork, serialize, hydrate } from "effector";
+import { createStore, createDomain, fork, serialize, hydrate } from 'effector';
 
 const domain = createDomain();
 const $store = domain.createStore(0);
 
 hydrate(domain, {
-  values: {
-    [$store.sid]: 42,
-  },
+	values: {
+		[$store.sid]: 42,
+	},
 });
 
 console.log($store.getState()); // 42
@@ -24605,78 +24911,76 @@ console.log($store.getState()); // 42
 
 Запустить пример
 
-
 # effector
 
 Перечень методов API, по группам:
 
 ### Типы юнитов
 
-* Event\<T>
-* Effect\<Params, Done, Fail>
-* Store\<T>
-* Domain
-* Scope
+- Event\<T>
+- Effect\<Params, Done, Fail>
+- Store\<T>
+- Domain
+- Scope
 
 ### Создание юнитов
 
-* createEvent()
-* createStore(default)
-* createEffect(handler)
-* createDomain()
+- createEvent()
+- createStore(default)
+- createEffect(handler)
+- createDomain()
 
 ### Основные методы библиотеки
 
-* combine(...stores, f)
-* attach({effect, mapParams?, source?})
-* sample({clock, source, fn, target})
-* merge(\[eventA, eventB])
-* split(event, cases)
-* createApi(store, api)
+- combine(...stores, f)
+- attach({effect, mapParams?, source?})
+- sample({clock, source, fn, target})
+- merge(\[eventA, eventB])
+- split(event, cases)
+- createApi(store, api)
 
 ### Fork API
 
-* fork()
-* serialize(scope)
-* allSettled(unit, { scope })
-* scopeBind(event)
-* hydrate(domain)
+- fork()
+- serialize(scope)
+- allSettled(unit, { scope })
+- scopeBind(event)
+- hydrate(domain)
 
 ### Плагины для компилятора
 
-* effector/babel-plugin
-* @effector-swc-plugin
+- effector/babel-plugin
+- @effector-swc-plugin
 
 ### Служебные функции
 
-* is
-* fromObservable(observable)
+- is
+- fromObservable(observable)
 
 ### Низкоуровневый API
 
-* clearNode()
-* withRegion()
-* launch()
-* inspect()
+- clearNode()
+- withRegion()
+- launch()
+- inspect()
 
 ### Import Map
 
 Пакет `effector` предоставляет несколько дополнительных модулей, которые могут быть полезны в различных сценариях:
 
-* effector/compat
-* effector/inspect
-* effector/babel-plugin
+- effector/compat
+- effector/inspect
+- effector/babel-plugin
 
 ### Устаревшие методы
 
-* forward({from, to})
-* guard({source, filter, target})
-
+- forward({from, to})
+- guard({source, filter, target})
 
 # inspect
 
 ```ts
-import { inspect } from "effector/inspect";
+import { inspect } from 'effector/inspect';
 ```
 
 Специальные методы API, предназначенные для обработки сценариев отладки и мониторинга, не предоставляя слишком много доступа к внутренностям вашего приложения.
@@ -24692,20 +24996,20 @@ import { inspect } from "effector/inspect";
 #### Пример
 
 ```ts
-import { inspect, type Message } from "effector/inspect";
+import { inspect, type Message } from 'effector/inspect';
 
-import { someEvent } from "./app-code";
+import { someEvent } from './app-code';
 
 function logInspectMessage(m: Message) {
-  const { name, value, kind } = m;
+	const { name, value, kind } = m;
 
-  return console.log(`[${kind}] ${name} ${value}`);
+	return console.log(`[${kind}] ${name} ${value}`);
 }
 
 inspect({
-  fn: (m) => {
-    logInspectMessage(m);
-  },
+	fn: (m) => {
+		logInspectMessage(m);
+	},
 });
 
 someEvent(42);
@@ -24721,24 +25025,24 @@ someEvent(42);
 Scope ограничивает область, в которой можно отслеживать вычисления. Если scope не предоставлен — будут отслеживаться вычисления вне scope.
 
 ```ts
-import { fork, allSettled } from "effector";
-import { inspect, type Message } from "effector/inspect";
+import { fork, allSettled } from 'effector';
+import { inspect, type Message } from 'effector/inspect';
 
-import { someEvent } from "./app-code";
+import { someEvent } from './app-code';
 
 function logInspectMessage(m: Message) {
-  const { name, value, kind } = m;
+	const { name, value, kind } = m;
 
-  return console.log(`[${kind}] ${name} ${value}`);
+	return console.log(`[${kind}] ${name} ${value}`);
 }
 
 const myScope = fork();
 
 inspect({
-  scope: myScope,
-  fn: (m) => {
-    logInspectMessage(m);
-  },
+	scope: myScope,
+	fn: (m) => {
+		logInspectMessage(m);
+	},
 });
 
 someEvent(42);
@@ -24757,30 +25061,30 @@ allSettled(someEvent, { scope: myScope, params: 42 });
 #### Пример
 
 ```ts
-import { fork, allSettled } from "effector";
-import { inspect, type Message } from "effector/inspect";
+import { fork, allSettled } from 'effector';
+import { inspect, type Message } from 'effector/inspect';
 
-import { someEvent, $count } from "./app-code";
+import { someEvent, $count } from './app-code';
 
 function logInspectMessage(m: Message) {
-  const { name, value, kind } = m;
+	const { name, value, kind } = m;
 
-  return console.log(`[${kind}] ${name} ${value}`);
+	return console.log(`[${kind}] ${name} ${value}`);
 }
 
 const myScope = fork();
 
 inspect({
-  scope: myScope,
-  trace: true, // <- явная настройка
-  fn: (m) => {
-    if (m.kind === "store" && m.sid === $count.sid) {
-      m.trace.forEach((tracedMessage) => {
-        logInspectMessage(tracedMessage);
-        // ☝️ здесь мы логируем трассировку обновления конкретного стора
-      });
-    }
-  },
+	scope: myScope,
+	trace: true, // <- явная настройка
+	fn: (m) => {
+		if (m.kind === 'store' && m.sid === $count.sid) {
+			m.trace.forEach((tracedMessage) => {
+				logInspectMessage(tracedMessage);
+				// ☝️ здесь мы логируем трассировку обновления конкретного стора
+			});
+		}
+	},
 });
 
 allSettled(someEvent, { scope: myScope, params: 42 });
@@ -24797,12 +25101,14 @@ Effector не допускает исключений в чистых функц
 
 ```ts
 inspect({
-  fn: (m) => {
-    if (m.type === "error") {
-      // сделать что-то с этим
-      console.log(`${m.kind} ${m.name} computation has failed with ${m.error}`);
-    }
-  },
+	fn: (m) => {
+		if (m.type === 'error') {
+			// сделать что-то с этим
+			console.log(
+				`${m.kind} ${m.name} computation has failed with ${m.error}`,
+			);
+		}
+	},
 });
 ```
 
@@ -24813,17 +25119,17 @@ inspect({
 ### Пример
 
 ```ts
-import { createStore } from "effector";
-import { inspectGraph, type Declaration } from "effector/inspect";
+import { createStore } from 'effector';
+import { inspectGraph, type Declaration } from 'effector/inspect';
 
 function printDeclaration(d: Declaration) {
-  console.log(`${d.kind} ${d.name}`);
+	console.log(`${d.kind} ${d.name}`);
 }
 
 inspectGraph({
-  fn: (d) => {
-    printDeclaration(d);
-  },
+	fn: (d) => {
+		printDeclaration(d);
+	},
 });
 
 const $count = createStore(0);
@@ -24837,28 +25143,27 @@ const $count = createStore(0);
 #### Пример
 
 ```ts
-import { createNode, withRegion, createStore } from "effector";
-import { inspectGraph, type Declaration } from "effector/inspect";
+import { createNode, withRegion, createStore } from 'effector';
+import { inspectGraph, type Declaration } from 'effector/inspect';
 
 function createCustomSomething(config) {
-  const $something = createStore(0);
+	const $something = createStore(0);
 
-  withRegion(createNode({ meta: { hello: "world" } }), () => {
-    // какой-то код
-  });
+	withRegion(createNode({ meta: { hello: 'world' } }), () => {
+		// какой-то код
+	});
 
-  return $something;
+	return $something;
 }
 inspectGraph({
-  fn: (d) => {
-    if (d.type === "region") console.log(d.meta.hello);
-  },
+	fn: (d) => {
+		if (d.type === 'region') console.log(d.meta.hello);
+	},
 });
 
 const $some = createCustomSomething({});
 // выведет "world"
 ```
-
 
 # is
 
@@ -24873,7 +25178,13 @@ const $some = createCustomSomething({});
 boolean
 
 ```js
-import { is, createStore, createEvent, createEffect, createDomain } from "effector";
+import {
+	is,
+	createStore,
+	createEvent,
+	createEffect,
+	createDomain,
+} from 'effector';
 
 const store = createStore(null);
 const event = createEvent();
@@ -24915,7 +25226,13 @@ is.store(null);
 boolean
 
 ```js
-import { is, createStore, createEvent, createEffect, createDomain } from "effector";
+import {
+	is,
+	createStore,
+	createEvent,
+	createEffect,
+	createDomain,
+} from 'effector';
 
 const store = createStore(null);
 const event = createEvent();
@@ -24957,7 +25274,13 @@ is.event(null);
 boolean
 
 ```js
-import { is, createStore, createEvent, createEffect, createDomain } from "effector";
+import {
+	is,
+	createStore,
+	createEvent,
+	createEffect,
+	createDomain,
+} from 'effector';
 
 const store = createStore(null);
 const event = createEvent();
@@ -24990,7 +25313,13 @@ is.effect(null);
 boolean
 
 ```js
-import { is, createStore, createEvent, createEffect, createDomain } from "effector";
+import {
+	is,
+	createStore,
+	createEvent,
+	createEffect,
+	createDomain,
+} from 'effector';
 
 const store = createStore(null);
 const event = createEvent();
@@ -25027,7 +25356,7 @@ is.domain(null);
 boolean
 
 ```js
-import { fork } from "effector";
+import { fork } from 'effector';
 
 const store = createStore(null);
 const event = createEvent();
@@ -25064,7 +25393,14 @@ is.scope(null);
 boolean
 
 ```js
-import { is, createStore, createEvent, createEffect, createDomain, fork } from "effector";
+import {
+	is,
+	createStore,
+	createEvent,
+	createEffect,
+	createDomain,
+	fork,
+} from 'effector';
 
 const store = createStore(null);
 const event = createEvent();
@@ -25107,7 +25443,7 @@ is.unit(null);
 >
 > Добавлен в effector 22.4.0
 
-Проверяет, что переданный  был создан с помощью метода .
+Проверяет, что переданный был создан с помощью метода .
 Если в качестве аргумента был передан не effect, возвращает `false`.
 
 **Возвращает**
@@ -25115,14 +25451,21 @@ is.unit(null);
 boolean
 
 ```js
-import { is, createStore, createEvent, createEffect, createDomain, attach } from "effector";
+import {
+	is,
+	createStore,
+	createEvent,
+	createEffect,
+	createDomain,
+	attach,
+} from 'effector';
 
 const $store = createStore(null);
 const event = createEvent();
 const fx = createEffect();
 
 const childFx = attach({
-  effect: fx,
+	effect: fx,
 });
 
 is.attached(childFx);
@@ -25152,30 +25495,34 @@ is.attached(null);
 Если оставить `onCreateEffect` как есть, без проверок, то лог ошибки будет задублирован.
 
 ```js
-import { createDomain, attach, is } from "effector";
+import { createDomain, attach, is } from 'effector';
 
 const logFailuresDomain = createDomain();
 
 logFailuresDomain.onCreateEffect((effect) => {
-  if (is.attached(effect)) {
-    effect.fail.watch(({ params, error }) => {
-      console.warn(`Effect "${effect.compositeName.fullName}" failed`, params, error);
-    });
-  }
+	if (is.attached(effect)) {
+		effect.fail.watch(({ params, error }) => {
+			console.warn(
+				`Effect "${effect.compositeName.fullName}" failed`,
+				params,
+				error,
+			);
+		});
+	}
 });
 
 const baseRequestFx = logFailuresDomain.createEffect((path) => {
-  throw new Error(`path ${path}`);
+	throw new Error(`path ${path}`);
 });
 
 const loadDataFx = attach({
-  mapParams: () => "/data",
-  effect: baseRequestFx,
+	mapParams: () => '/data',
+	effect: baseRequestFx,
 });
 
 const loadListFx = attach({
-  mapParams: () => "/list",
-  effect: baseRequestFx,
+	mapParams: () => '/list',
+	effect: baseRequestFx,
 });
 
 loadDataFx();
@@ -25183,7 +25530,6 @@ loadListFx();
 ```
 
 Запустить пример
-
 
 # launch
 
@@ -25205,7 +25551,6 @@ launch({target: event, params: T}): void
 launch({target: fx, params: T}): void
 ```
 
-
 # merge
 
 Объединяет апдейты массива юнитов в новое событие, которое будет срабатывать при запуске любой из переданных сущностей
@@ -25226,7 +25571,7 @@ const result: Event<T> = merge(/*clock*/ [$store, event, fx]);
 
 #### Аргументы
 
-* **`clock`**: Массив юнитов для объединения
+- **`clock`**: Массив юнитов для объединения
 
 #### Возвращает
 
@@ -25241,12 +25586,12 @@ const result: Event<T> = merge(/*clock*/ [$store, event, fx]);
 ##### Пример 1
 
 ```js
-import { createEvent, merge } from "effector";
+import { createEvent, merge } from 'effector';
 
 const foo = createEvent();
 const bar = createEvent();
 const baz = merge([foo, bar]);
-baz.watch((v) => console.log("merged event triggered: ", v));
+baz.watch((v) => console.log('merged event triggered: ', v));
 
 foo(1);
 // => merged event triggered: 1
@@ -25259,7 +25604,7 @@ bar(2);
 ##### Пример 2
 
 ```js
-import { createEvent, createStore, merge } from "effector";
+import { createEvent, createStore, merge } from 'effector';
 
 const setFoo = createEvent();
 const setBar = createEvent();
@@ -25280,7 +25625,7 @@ setBar(123); // => state changed to: 123
 ##### Пример 3
 
 ```js
-import { createEvent, createStore, merge } from "effector";
+import { createEvent, createStore, merge } from 'effector';
 
 const setFoo = createEvent();
 const otherEvent = createEvent();
@@ -25294,12 +25639,11 @@ merged.watch((v) => console.log(`merged event payload: ${v}`));
 setFoo(999);
 // => merged event payload: 999
 
-otherEvent("bar");
+otherEvent('bar');
 // => merged event payload: bar
 ```
 
 Запустить пример
-
 
 # effector/babel-plugin
 
@@ -25309,11 +25653,10 @@ otherEvent("bar");
 
 Пожалуйста, обратитесь к документации Babel plugin для примеров использования.
 
-
 # effector/compat
 
 ```ts
-import {} from "effector/compat";
+import {} from 'effector/compat';
 ```
 
 Библиотека предоставляет отдельный модуль с поддержкой совместимости до IE11 и Chrome 47 (браузер для устройств Smart TV).
@@ -25328,11 +25671,11 @@ import {} from "effector/compat";
 
 Вам нужно установить полифиллы для этих объектов:
 
-* `Promise`
-* `Object.assign`
-* `Array.prototype.flat`
-* `Map`
-* `Set`
+- `Promise`
+- `Object.assign`
+- `Array.prototype.flat`
+- `Map`
+- `Set`
 
 В большинстве случаев бандлер может автоматически добавить полифиллы.
 
@@ -25342,15 +25685,21 @@ import {} from "effector/compat";
 <summary>Пример конфигурации Vite</summary>
 
 ```js
-import { defineConfig } from "vite";
-import legacy from "@vitejs/plugin-legacy";
+import { defineConfig } from 'vite';
+import legacy from '@vitejs/plugin-legacy';
 
 export default defineConfig({
-  plugins: [
-    legacy({
-      polyfills: ["es.promise", "es.object.assign", "es.array.flat", "es.map", "es.set"],
-    }),
-  ],
+	plugins: [
+		legacy({
+			polyfills: [
+				'es.promise',
+				'es.object.assign',
+				'es.array.flat',
+				'es.map',
+				'es.set',
+			],
+		}),
+	],
 });
 ```
 
@@ -25378,11 +25727,11 @@ export default defineConfig({
 
 ```js
 module.exports = {
-  resolve: {
-    alias: {
-      effector: "effector/compat",
-    },
-  },
+	resolve: {
+		alias: {
+			effector: 'effector/compat',
+		},
+	},
 };
 ```
 
@@ -25394,19 +25743,18 @@ module.exports = {
 <summary>Пример конфигурации Vite</summary>
 
 ```js
-import { defineConfig } from "vite";
+import { defineConfig } from 'vite';
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      effector: "effector/compat",
-    },
-  },
+	resolve: {
+		alias: {
+			effector: 'effector/compat',
+		},
+	},
 });
 ```
 
 </details>
-
 
 # effector/inspect
 
@@ -25420,18 +25768,17 @@ Inspect API разработан как опциональный модуль. �
 
 Пожалуйста, обратитесь к документации Inspect API для примеров использования.
 
-
 # restore
 
 ```ts
-import { restore } from "effector";
+import { restore } from 'effector';
 ```
 
 ## Методы
 
 ### `restore(event, defaultState)`
 
-Создает  из . Работает как сокращение для `createStore(defaultState).on(event, (_, payload) => payload)`.
+Создает из . Работает как сокращение для `createStore(defaultState).on(event, (_, payload) => payload)`.
 
 > WARNING Это не производный стор:
 >
@@ -25446,7 +25793,7 @@ restore(event: Event<T>, defaultState: T): StoreWritable<T>
 #### Аргументы
 
 1. `event`
-2. `defaultState` (*Payload*)
+2. `defaultState` (_Payload_)
 
 #### Возвращает
 
@@ -25457,15 +25804,15 @@ restore(event: Event<T>, defaultState: T): StoreWritable<T>
 ##### Базовый пример
 
 ```js
-import { createEvent, restore } from "effector";
+import { createEvent, restore } from 'effector';
 
 const event = createEvent();
-const $store = restore(event, "default");
+const $store = restore(event, 'default');
 
-$store.watch((state) => console.log("state: ", state));
+$store.watch((state) => console.log('state: ', state));
 // state: default
 
-event("foo");
+event('foo');
 // state: foo
 ```
 
@@ -25473,7 +25820,7 @@ event("foo");
 
 ### `restore(effect, defaultState)`
 
-Создает  из успешных результатов . Работает как сокращение для `createStore(defaultState).on(effect.done, (_, {result}) => result)`.
+Создает из успешных результатов . Работает как сокращение для `createStore(defaultState).on(effect.done, (_, {result}) => result)`.
 
 #### Формула
 
@@ -25484,7 +25831,7 @@ restore(effect: Effect<Params, Done, Fail>, defaultState: Done): StoreWritable<D
 #### Аргументы
 
 1. `effect`
-2. `defaultState` (*Done*)
+2. `defaultState` (_Done_)
 
 #### Возвращает
 
@@ -25499,12 +25846,12 @@ Store будет иметь тот же тип, что и `Done` из `Effect<Pa
 ##### Эффект
 
 ```js
-import { createEffect, restore } from "effector";
+import { createEffect, restore } from 'effector';
 
-const fx = createEffect(() => "foo");
-const $store = restore(fx, "default");
+const fx = createEffect(() => 'foo');
+const $store = restore(fx, 'default');
 
-$store.watch((state) => console.log("state: ", state));
+$store.watch((state) => console.log('state: ', state));
 // => state: default
 
 await fx();
@@ -25523,7 +25870,7 @@ TBD
 
 #### Аргументы
 
-1. `shape` (*State*)
+1. `shape` (_State_)
 
 #### Возвращает
 
@@ -25534,42 +25881,37 @@ TBD
 ##### Объект
 
 ```js
-import { restore } from "effector";
+import { restore } from 'effector';
 
 const { foo: $foo, bar: $bar } = restore({
-  foo: "foo",
-  bar: 0,
+	foo: 'foo',
+	bar: 0,
 });
 
 $foo.watch((foo) => {
-  console.log("foo", foo);
+	console.log('foo', foo);
 });
 // => foo 'foo'
 $bar.watch((bar) => {
-  console.log("bar", bar);
+	console.log('bar', bar);
 });
 // => bar 0
 ```
 
 Запустить пример
 
-
 # sample API
 
 [units]: /ru/explanation/glossary#common-unit
-
 [eventApi]: /ru/api/effector/Event
-
 [storeApi]: /ru/api/effector/Store
-
 [effectApi]: /ru/api/effector/Effect
-
 [purity]: /ru/explanation/glossary/#purity
 
 ## `sample` API
 
 ```ts
-import { sample } from "effector";
+import { sample } from 'effector';
 ```
 
 Метод для связывания юнитов. Его главная задача - брать данные из одного места `source` и передавать их в другое место `target` при срабатывании определённого триггера `clock`.
@@ -25582,25 +25924,25 @@ import { sample } from "effector";
 
 ### Алгоритм работы
 
-* При срабатывании `clock` прочитать значение из `source`
-* Если указан `filter`, и результат функции вернул `true` или стор со значением `true`, то продолжить
-* Если указан `fn`, то преобразовать данные
-* И передать данные в `target`.
+- При срабатывании `clock` прочитать значение из `source`
+- Если указан `filter`, и результат функции вернул `true` или стор со значением `true`, то продолжить
+- Если указан `fn`, то преобразовать данные
+- И передать данные в `target`.
 
 ### Особенности работы `sample`
 
-* Если `clock` не передан, `sample` будет срабатывать при каждом обновлении `source`.
-* Если `target` не передан, то `sample` создаст и вернёт новый производный юнит
+- Если `clock` не передан, `sample` будет срабатывать при каждом обновлении `source`.
+- Если `target` не передан, то `sample` создаст и вернёт новый производный юнит
 
 ### Возвращаемый юнит и значение
 
 Если `target` не передан, то он будет создан при вызове. Тип создаваемого юнита описан в данной таблице:
 
-| clock \ source                      |  |  |  |
-| ----------------------------------- | --------------------------------- | --------------------------------- | ----------------------------------- |
-|    | `Store`                           | `Event`                           | `Event`                             |
-|    | `Event`                           | `Event`                           | `Event`                             |
-|  | `Event`                           | `Event`                           | `Event`                             |
+| clock \ source |         |         |         |
+| -------------- | ------- | ------- | ------- |
+|                | `Store` | `Event` | `Event` |
+|                | `Event` | `Event` | `Event` |
+|                | `Event` | `Event` | `Event` |
 
 Использование таблицы:
 
@@ -25618,22 +25960,22 @@ const $store = createStore();
 const $secondStore = createStore();
 
 const $derivedStore = sample({
-  clock: $store,
-  source: $secondStore,
+	clock: $store,
+	source: $secondStore,
 });
 // Результатом будет производный стор,
 // так как `source` и `clock` являются сторами
 
 const derivedEvent = sample({
-  clock: event,
-  source: $store,
+	clock: event,
+	source: $store,
 });
 // Результатом будет производное событие, так как `clock` – событие
 ```
 
 ### Полная форма
 
-* **Формула**
+- **Формула**
 
 ```ts
 sample({
@@ -25652,7 +25994,7 @@ sample({
 Аргумент `clock` является триггером, определяющий момент взятия данных из source.<br/>
 Является опциональным.
 
-* **Тип**
+- **Тип**
 
 ```ts
 sample({
@@ -25662,10 +26004,10 @@ sample({
 
 Может иметь сигнатуру:
 
-* [`Event<T>`][eventApi] - срабатывает при вызове события
-* [`Store<T>`][storeApi] - срабатывает при изменении стора
-* [`Effect<T, Done, Fail>`][effectApi] - срабатывает при вызове эффекта
-* `Unit<T>[]`- массив [юнитов][units] срабатывает при активации любого из них
+- [`Event<T>`][eventApi] - срабатывает при вызове события
+- [`Store<T>`][storeApi] - срабатывает при изменении стора
+- [`Effect<T, Done, Fail>`][effectApi] - срабатывает при вызове эффекта
+- `Unit<T>[]`- массив [юнитов][units] срабатывает при активации любого из них
 
 > INFO либо clock либо source:
 >
@@ -25678,31 +26020,31 @@ const fetchFx = createEffect();
 
 // Event как clock
 sample({
-  source: $data,
-  clock: clicked,
+	source: $data,
+	clock: clicked,
 });
 
 // Store как clock
 sample({
-  source: $data,
-  clock: $store,
+	source: $data,
+	clock: $store,
 });
 
 // Массив как clock
 sample({
-  source: $data,
-  clock: [clicked, fetchFx.done],
+	source: $data,
+	clock: [clicked, fetchFx.done],
 });
 ```
 
-***
+---
 
 #### `source`
 
 Является источником данных, откуда берутся данные при срабатывании `clock`. Если `clock` не указан, тогда `source` используется как `clock`. <br/>
 Является опциональным.
 
-* **Тип**
+- **Тип**
 
 ```ts
 sample({
@@ -25712,24 +26054,24 @@ sample({
 
 Может иметь сигнатуру:
 
-* [`Store<T>`][storeApi] - данные берутся из текущего значения стора
-* [`Event<T>`][eventApi] - возьмется последнее значение, с которым запускалось событие
-* [`Effect<T, Done, Fail>`][effectApi] - возьмется последнее значение, с которым запускался эффект
-* Объект с [юнитами][units] - для комбинирования нескольких источников
-* Массив с [юнитами][units] - для комбинирования нескольких источников
+- [`Store<T>`][storeApi] - данные берутся из текущего значения стора
+- [`Event<T>`][eventApi] - возьмется последнее значение, с которым запускалось событие
+- [`Effect<T, Done, Fail>`][effectApi] - возьмется последнее значение, с которым запускался эффект
+- Объект с [юнитами][units] - для комбинирования нескольких источников
+- Массив с [юнитами][units] - для комбинирования нескольких источников
 
 > INFO либо source либо clock:
 >
 > Хотя аргумент `source` является опциональным, при использовании метода `sample` необходимо указать либо `source`, либо clock.
 
-***
+---
 
 #### `filter`
 
 Функция-предикат для фильтрации. Если возвращает `false` или стор со значением `false`, данные не будут переданы в `target`.<br/>
 Является опциональным.
 
-* **Тип**
+- **Тип**
 
 ```ts
 sample({
@@ -25739,35 +26081,35 @@ sample({
 
 Может иметь сигнатуру:
 
-* [`Store<boolean>`][storeApi] – стор с `boolean` значением, как производный так и базовый
-* Функция-предикат – функция возвращающая `boolean` значение
+- [`Store<boolean>`][storeApi] – стор с `boolean` значением, как производный так и базовый
+- Функция-предикат – функция возвращающая `boolean` значение
 
 ```ts
 const $isUserActive = createStore(false);
 
 sample({
-  clock: checkScore,
-  source: $score,
-  filter: (score) => score > 100,
-  target: showWinnerFx,
+	clock: checkScore,
+	source: $score,
+	filter: (score) => score > 100,
+	target: showWinnerFx,
 });
 
 sample({
-  clock: action,
-  source: $user,
-  filter: $isUserActive,
-  target: adminActionFx,
+	clock: action,
+	source: $user,
+	filter: $isUserActive,
+	target: adminActionFx,
 });
 ```
 
-***
+---
 
 #### `fn`
 
 Функция для трансформации данных перед передачей в `target`. Функция [**должна быть чистой**][purity].<br/>
 Является опциональным.
 
-* **Тип**
+- **Тип**
 
 ```ts
 sample({
@@ -25782,32 +26124,32 @@ sample({
 ```ts
 const $user = createStore<User>({});
 const saveUserFx = createEffect((user: User) => {
-  // ...
+	// ...
 });
 
 sample({
-  clock: updateProfile,
-  source: $user,
-  fn: (user, updates) => ({ ...user, ...updates }),
-  target: saveUserFx,
+	clock: updateProfile,
+	source: $user,
+	fn: (user, updates) => ({ ...user, ...updates }),
+	target: saveUserFx,
 });
 
 sample({
-  clock: submit,
-  source: $form,
-  fn: (form) => form.email,
-  target: sendEmailFx,
+	clock: submit,
+	source: $form,
+	fn: (form) => form.email,
+	target: sendEmailFx,
 });
 ```
 
-***
+---
 
 #### `target`
 
 Целевой юнит, который получит данные и будет вызван.<br/>
 Является опциональным.
 
-* **Тип**
+- **Тип**
 
 ```ts
 sample({
@@ -25817,10 +26159,10 @@ sample({
 
 Может иметь сигнатуру:
 
-* EventCallable\<T> - событие (не производное) будет вызвано с данными
-* [`Effect<T, Done, Fail>`][effectApi] - эффект будет вызван с данными
-* StoreWritable\<T> - стор (не производный) будет обновлён данными
-* Массив с [юнитами][units] - будет вызван каждый юнит в массиве
+- EventCallable\<T> - событие (не производное) будет вызвано с данными
+- [`Effect<T, Done, Fail>`][effectApi] - эффект будет вызван с данными
+- StoreWritable\<T> - стор (не производный) будет обновлён данными
+- Массив с [юнитами][units] - будет вызван каждый юнит в массиве
 
 > INFO target без target:
 >
@@ -25829,31 +26171,31 @@ sample({
 ```ts
 const targetEvent = createEvent<string>();
 const targetFx = createEffect<string, void>();
-const $targetStore = createStore("");
+const $targetStore = createStore('');
 
 // Event как target
 sample({
-  source: $store,
-  clock: trigger,
-  target: targetEvent,
+	source: $store,
+	clock: trigger,
+	target: targetEvent,
 });
 
 // Effect как target
 sample({
-  source: $store,
-  clock: trigger,
-  target: targetFx,
+	source: $store,
+	clock: trigger,
+	target: targetFx,
 });
 
 // Store как target
 sample({
-  source: $store,
-  clock: trigger,
-  target: $targetStore,
+	source: $store,
+	clock: trigger,
+	target: $targetStore,
 });
 ```
 
-***
+---
 
 #### `greedy`
 
@@ -25863,14 +26205,14 @@ sample({
 >
 > Используйте `batch` вместо `greedy`.
 
-***
+---
 
 #### `batch`
 
 Группирует обновления для лучшей производительности. По умолчанию `true`.<br/>
 Является опциональным.
 
-* **Тип**
+- **Тип**
 
 ```ts
 sample({
@@ -25878,14 +26220,14 @@ sample({
 })
 ```
 
-***
+---
 
 #### `name`
 
 Свойство `name` позволяет задать имя создаваемому юниту. Это имя используется для отладки.<br/>
 Является опциональным.
 
-* **Тип**
+- **Тип**
 
 ```ts
 sample({
@@ -25895,7 +26237,7 @@ sample({
 
 ### Краткая форма
 
-* **Формула**
+- **Формула**
 
 ```ts
 sample(source, clock, fn?): Unit
@@ -25910,7 +26252,7 @@ sample(source, clock, fn?): Unit
 3. `source` и `fn`: `sample(source, fn)` - с функцией-трансформером, но без`clock`, тогда `source`ведет как`clock`
 4. Один аргумент: `sample(source)` - только `source`, тогда `source` ведет как `clock`
 
-* **Возвращаемое значение**
+- **Возвращаемое значение**
 
 Возвращаемое значение зависит от переданных юнитов, а тип данных от fn, если присутствует, иначе от `source`.
 
@@ -25918,7 +26260,7 @@ sample(source, clock, fn?): Unit
 
 Является источником данных, откуда берутся данные при срабатывании `clock`. Если `clock` не указан, тогда `source` используется как `clock`.
 
-* **Тип**
+- **Тип**
 
 ```ts
 sample(source?: Unit<T> | Unit<T>[])
@@ -25926,23 +26268,23 @@ sample(source?: Unit<T> | Unit<T>[])
 
 Может иметь сигнатуру:
 
-* [`Store<T>`][storeApi] - данные берутся из текущего значения стора
-* [`Event<T>`][eventApi] - возьмется последнее значение, с которым запускалось событие
-* [`Effect<T, Done, Fail>`][effectApi] - возьмется последнее значение, с которым запускался эффект
-* `Unit<T>[]`- массив [юнитов][units] срабатывает при активации любого из них
+- [`Store<T>`][storeApi] - данные берутся из текущего значения стора
+- [`Event<T>`][eventApi] - возьмется последнее значение, с которым запускалось событие
+- [`Effect<T, Done, Fail>`][effectApi] - возьмется последнее значение, с которым запускался эффект
+- `Unit<T>[]`- массив [юнитов][units] срабатывает при активации любого из них
 
 > INFO поведение без clock:
 >
 > Если `clock` не указан, тогда `source` ведет себя как `clock` - то есть является триггером.
 
-***
+---
 
 #### `clock`
 
 Аргумент `clock` является триггером, определяющий момент взятия данных из source.<br/>
 Является опциональным.
 
-* **Тип**
+- **Тип**
 
 ```ts
 sample(clock?: Unit<T> | Unit<T>[])
@@ -25950,10 +26292,10 @@ sample(clock?: Unit<T> | Unit<T>[])
 
 Может иметь сигнатуру:
 
-* [`Event<T>`][eventApi] - срабатывает при вызове события
-* [`Store<T>`][storeApi] - срабатывает при изменении стора
-* [`Effect<T, Done, Fail>`][effectApi] - срабатывает при вызове эффекта
-* `Unit<T>[]`- массив [юнитов][units] срабатывает при активации любого из них
+- [`Event<T>`][eventApi] - срабатывает при вызове события
+- [`Store<T>`][storeApi] - срабатывает при изменении стора
+- [`Effect<T, Done, Fail>`][effectApi] - срабатывает при вызове эффекта
+- `Unit<T>[]`- массив [юнитов][units] срабатывает при активации любого из них
 
 ```ts
 const clicked = createEvent();
@@ -25965,29 +26307,29 @@ sample($data, clicked);
 sample($data, $store);
 ```
 
-***
+---
 
 #### `fn`
 
 Функция для трансформации данных перед передачей в `target`. Функция [**должна быть чистой**][purity].<br/> Является опциональным.
 
-* **Тип**
+- **Тип**
 
 ```ts
 sample(fn: (source: Source, clock: Clock) => result)
 ```
 
-* **Пример**
+- **Пример**
 
 ```ts
-const $userName = createStore("john");
+const $userName = createStore('john');
 
 const submitForm = createEvent();
 
 const sampleUnit = sample(
-  $userName /* 2 */,
-  submitForm /* 1 */,
-  (name, password) => ({ name, password }) /* 3 */,
+	$userName /* 2 */,
+	submitForm /* 1 */,
+	(name, password) => ({ name, password }) /* 3 */,
 );
 
 submitForm(12345678);
@@ -25999,20 +26341,19 @@ submitForm(12345678);
 
 ### Связанные API и статьи
 
-* **API**
-    * merge - Объединяет апдейты массива юнитов
-    * Store - Описание стора, а также его методов и свойств
-    * Event - Описание событий, а также его методов и свойств
-    * Effect - Описание эффектов, а также его методов и свойств
-* **Статьи**
-    * Типизация юнитов и методов
-    * Композиция юнитов и работа с методов&#x20;
-
+- **API**
+    - merge - Объединяет апдейты массива юнитов
+    - Store - Описание стора, а также его методов и свойств
+    - Event - Описание событий, а также его методов и свойств
+    - Effect - Описание эффектов, а также его методов и свойств
+- **Статьи**
+    - Типизация юнитов и методов
+    - Композиция юнитов и работа с методов&#x20;
 
 # scopeBind
 
 ```ts
-import { scopeBind } from "effector";
+import { scopeBind } from 'effector';
 ```
 
 `scopeBind` — метод для привязки юнита (эвента или эффекта) к скоупу, который может быть вызван позже. Эффектор поддерживает императивный вызов эвентов внутри обработчиков, однако существуют случаи, когда необходимо явно привязать эвенты к скоупу — например, при вызове эвентов из колбэков `setTimeout` или `setInterval`.
@@ -26030,10 +26371,10 @@ scopeBind<T>(event: EventCallable<T>, options?: {scope?: Scope, safe?: boolean})
 
 #### Аргументы
 
-1. `event`  или  для привязки к скоупу.
-2. `options` (*Object*): опциональные настройки
-    * `scope` (*Scope*): скоуп, к которому нужно привязать эвент
-    * `safe` (*Boolean*): флаг для подавления исключений, если скоуп отсутствует
+1. `event` или для привязки к скоупу.
+2. `options` (_Object_): опциональные настройки
+    - `scope` (_Scope_): скоуп, к которому нужно привязать эвент
+    - `safe` (_Boolean_): флаг для подавления исключений, если скоуп отсутствует
 
 #### Возвращает
 
@@ -26046,26 +26387,26 @@ scopeBind<T>(event: EventCallable<T>, options?: {scope?: Scope, safe?: boolean})
 Мы собираемся вызвать `changeLocation` внутри колбэка `history.listen`, поэтому нет способа для эффектора ассоциировать эвент с соответствующим скоупом. Нам нужно явно привязать эвент к скоупу, используя `scopeBind`.
 
 ```ts
-import { createStore, createEvent, attach, scopeBind } from "effector";
+import { createStore, createEvent, attach, scopeBind } from 'effector';
 
 const $history = createStore(history);
 const initHistory = createEvent();
 const changeLocation = createEvent<string>();
 
 const installHistoryFx = attach({
-  source: $history,
-  effect: (history) => {
-    const locationUpdate = scopeBind(changeLocation);
+	source: $history,
+	effect: (history) => {
+		const locationUpdate = scopeBind(changeLocation);
 
-    history.listen((location) => {
-      locationUpdate(location);
-    });
-  },
+		history.listen((location) => {
+			locationUpdate(location);
+		});
+	},
 });
 
 sample({
-  clock: initHistory,
-  target: installHistoryFx,
+	clock: initHistory,
+	target: installHistoryFx,
 });
 ```
 
@@ -26084,8 +26425,8 @@ sample({
 >
 > Чтобы быть совместимыми с Fork API, колбэки должны соблюдать те же правила, что и хендлеры эффектов:
 >
-> * Синхронные функции можно использовать как есть.
-> * Асинхронные функции должны соответствовать правилам при работе с скоупом.
+> - Синхронные функции можно использовать как есть.
+> - Асинхронные функции должны соответствовать правилам при работе с скоупом.
 
 #### Формула
 
@@ -26095,10 +26436,10 @@ scopeBind(callback: (...args: Args) => T, options?: { scope?: Scope; safe?: bool
 
 #### Аргументы
 
-1. `callback` (*Function*): любая функция, которую нужно привязать к скоупу.
-2. `options` (*Object*): необязательные настройки.
-    * `scope` (*Scope*): скоуп, к которому нужно привязать эвент.
-    * `safe` (*Boolean*): флаг для подавления исключений, если скоуп отсутствует.
+1. `callback` (_Function_): любая функция, которую нужно привязать к скоупу.
+2. `options` (_Object_): необязательные настройки.
+    - `scope` (_Scope_): скоуп, к которому нужно привязать эвент.
+    - `safe` (_Boolean_): флаг для подавления исключений, если скоуп отсутствует.
 
 #### Возвращает
 
@@ -26107,28 +26448,27 @@ scopeBind(callback: (...args: Args) => T, options?: { scope?: Scope; safe?: bool
 #### Примеры
 
 ```ts
-import { createEvent, createStore, attach, scopeBind } from "effector";
+import { createEvent, createStore, attach, scopeBind } from 'effector';
 
 const $history = createStore(history);
 const locationChanged = createEvent();
 
 const listenToHistoryFx = attach({
-  source: $history,
-  effect: (history) => {
-    return history.listen(
-      scopeBind((location) => {
-        locationChanged(location);
-      }),
-    );
-  },
+	source: $history,
+	effect: (history) => {
+		return history.listen(
+			scopeBind((location) => {
+				locationChanged(location);
+			}),
+		);
+	},
 });
 ```
-
 
 # serialize
 
 ```ts
-import { serialize, type Scope } from "effector";
+import { serialize, type Scope } from 'effector';
 ```
 
 ## Методы
@@ -26139,7 +26479,7 @@ import { serialize, type Scope } from "effector";
 
 > WARNING Внимание:
 >
-> Для использования этого метода требуется  или , так как эти плагины предоставляют sid для сторов, которые необходимы для стабильной сериализации состояния.
+> Для использования этого метода требуется или , так как эти плагины предоставляют sid для сторов, которые необходимы для стабильной сериализации состояния.
 >
 > Подробное объяснение можно найти здесь.
 
@@ -26172,7 +26512,13 @@ serialize(scope: Scope, { ignore?: Array<Store<any>>; onlyChanges?: boolean }): 
 ##### Сериализация состояния форкнутого экземпляра
 
 ```ts
-import { createStore, createEvent, allSettled, fork, serialize } from "effector";
+import {
+	createStore,
+	createEvent,
+	allSettled,
+	fork,
+	serialize,
+} from 'effector';
 
 const inc = createEvent();
 const $store = createStore(42);
@@ -26193,27 +26539,27 @@ console.log(serialize(scope)); // => {[sid]: 43}
 Это позволяет нам гидрировать состояние клиента несколько раз, например, во время смены маршрутов в next.js.
 
 ```ts
-import { createDomain, fork, serialize, hydrate } from "effector";
+import { createDomain, fork, serialize, hydrate } from 'effector';
 
 const app = createDomain();
 
 /** стор, который мы хотим гидрировать с сервера */
-const $title = app.createStore("dashboard");
+const $title = app.createStore('dashboard');
 
 /** стор, который не используется сервером */
-const $clientTheme = app.createStore("light");
+const $clientTheme = app.createStore('light');
 
 /** скоуп в клиентском приложении */
 const clientScope = fork(app, {
-  values: new Map([
-    [$clientTheme, "dark"],
-    [$title, "profile"],
-  ]),
+	values: new Map([
+		[$clientTheme, 'dark'],
+		[$title, 'profile'],
+	]),
 });
 
 /** scope на стороне сервера для страницы чатов, созданный для каждого запроса */
 const chatsPageScope = fork(app, {
-  values: new Map([[$title, "chats"]]),
+	values: new Map([[$title, 'chats']]),
 });
 
 /** этот объект будет содержать только данные $title
@@ -26231,11 +26577,10 @@ console.log(clientScope.getState($clientTheme));
 
 Запустить пример
 
-
 # split
 
 ```ts
-import { split } from "effector";
+import { split } from 'effector';
 ```
 
 Выберите один из кейсов по заданным условиям. Эта функция "разделяет" исходный юнит на несколько событий, которые срабатывают, когда полезная нагрузка соответствует их условиям. Работает как сопоставление с образцом для значений полезной нагрузки и внешних сторов.
@@ -26248,8 +26593,8 @@ import { split } from "effector";
 
 **Смотрите также**:
 
-* store кейса
-* функция кейса
+- store кейса
+- функция кейса
 
 ### Режим сопоставления
 
@@ -26258,8 +26603,8 @@ import { split } from "effector";
 
 **Смотрите также**:
 
-* store сопоставления
-* функция сопоставления
+- store сопоставления
+- функция сопоставления
 
 ### Стор кейса
 
@@ -26392,9 +26737,9 @@ split({
 
 #### Аргументы
 
-* `source`: Юнит, который будет запускать вычисления в `split`
-* `match`: Одиночное store со строкой, одиночная функция, возвращающая строку или объект с boolean сторами и функциями, возвращающими boolean значение
-* `cases`: Объект с юнитами или массивами юнитов, в которые будут переданы данные из `source` после выбора кейса
+- `source`: Юнит, который будет запускать вычисления в `split`
+- `match`: Одиночное store со строкой, одиночная функция, возвращающая строку или объект с boolean сторами и функциями, возвращающими boolean значение
+- `cases`: Объект с юнитами или массивами юнитов, в которые будут переданы данные из `source` после выбора кейса
 
 #### Возвращает
 
@@ -26405,39 +26750,39 @@ split({
 ##### Базовый
 
 ```js
-import { split, createEffect, createEvent } from "effector";
+import { split, createEffect, createEvent } from 'effector';
 const messageReceived = createEvent();
 const showTextPopup = createEvent();
 const playAudio = createEvent();
 const reportUnknownMessageTypeFx = createEffect(({ type }) => {
-  console.log("неизвестное сообщение:", type);
+	console.log('неизвестное сообщение:', type);
 });
 
 split({
-  source: messageReceived,
-  match: {
-    text: (msg) => msg.type === "text",
-    audio: (msg) => msg.type === "audio",
-  },
-  cases: {
-    text: showTextPopup,
-    audio: playAudio,
-    __: reportUnknownMessageTypeFx,
-  },
+	source: messageReceived,
+	match: {
+		text: (msg) => msg.type === 'text',
+		audio: (msg) => msg.type === 'audio',
+	},
+	cases: {
+		text: showTextPopup,
+		audio: playAudio,
+		__: reportUnknownMessageTypeFx,
+	},
 });
 
 showTextPopup.watch(({ value }) => {
-  console.log("новое сообщение:", value);
+	console.log('новое сообщение:', value);
 });
 
 messageReceived({
-  type: "text",
-  value: "Привет",
+	type: 'text',
+	value: 'Привет',
 });
 // => новое сообщение: Привет
 messageReceived({
-  type: "image",
-  imageUrl: "...",
+	type: 'image',
+	imageUrl: '...',
 });
 // => неизвестное сообщение: image
 ```
@@ -26449,42 +26794,42 @@ messageReceived({
 Вы также можете сопоставлять напрямую с API хранилища:
 
 ```js
-import { split, createStore, createEvent, createApi } from "effector";
+import { split, createStore, createEvent, createApi } from 'effector';
 
 const messageReceived = createEvent();
 
 const $textContent = createStore([]);
 
 split({
-  source: messageReceived,
-  match: {
-    text: (msg) => msg.type === "text",
-    audio: (msg) => msg.type === "audio",
-  },
-  cases: createApi($textContent, {
-    text: (list, { value }) => [...list, value],
-    audio: (list, { duration }) => [...list, `аудио ${duration} мс`],
-    __: (list) => [...list, "неизвестное сообщение"],
-  }),
+	source: messageReceived,
+	match: {
+		text: (msg) => msg.type === 'text',
+		audio: (msg) => msg.type === 'audio',
+	},
+	cases: createApi($textContent, {
+		text: (list, { value }) => [...list, value],
+		audio: (list, { duration }) => [...list, `аудио ${duration} мс`],
+		__: (list) => [...list, 'неизвестное сообщение'],
+	}),
 });
 
 $textContent.watch((messages) => {
-  console.log(messages);
+	console.log(messages);
 });
 
 messageReceived({
-  type: "text",
-  value: "Привет",
+	type: 'text',
+	value: 'Привет',
 });
 // => ['Привет']
 messageReceived({
-  type: "image",
-  imageUrl: "...",
+	type: 'image',
+	imageUrl: '...',
 });
 // => ['Привет', 'неизвестное сообщение']
 messageReceived({
-  type: "audio",
-  duration: 500,
+	type: 'audio',
+	duration: 500,
 });
 // => ['Привет', 'неизвестное сообщение', 'аудио 500 мс']
 ```
@@ -26494,36 +26839,45 @@ messageReceived({
 ##### Кейс с массивами юнитов
 
 ```js
-import { createEffect, createEvent, createStore, sample, split } from "effector";
+import {
+	createEffect,
+	createEvent,
+	createStore,
+	sample,
+	split,
+} from 'effector';
 
-const $verificationCode = createStore("12345");
-const $error = createStore("");
+const $verificationCode = createStore('12345');
+const $error = createStore('');
 
 const modalToInputUsername = createEvent();
 const modalToAuthorizationMethod = createEvent();
 
 const checkVerificationCodeFx = createEffect((code) => {
-  throw "500";
+	throw '500';
 });
 
 sample({
-  clock: verificationCodeSubmitted,
-  source: $verificationCode,
-  target: checkVerificationCodeFx,
+	clock: verificationCodeSubmitted,
+	source: $verificationCode,
+	target: checkVerificationCodeFx,
 });
 
 split({
-  source: checkVerificationCodeFx.failData,
-  match: (value) => (["400", "410"].includes(value) ? "verificationCodeError" : "serverError"),
-  cases: {
-    verificationCodeError: $verificationCodeError,
-    serverError: [$error, modalToAuthorizationMethod],
-  },
+	source: checkVerificationCodeFx.failData,
+	match: (value) =>
+		['400', '410'].includes(value) ?
+			'verificationCodeError'
+		:	'serverError',
+	cases: {
+		verificationCodeError: $verificationCodeError,
+		serverError: [$error, modalToAuthorizationMethod],
+	},
 });
 
-$error.updates.watch((value) => console.log("ОШИБКА: " + value));
+$error.updates.watch((value) => console.log('ОШИБКА: ' + value));
 modalToAuthorizationMethod.watch(() =>
-  console.log("Модальное окно с содержимым метода авторизации."),
+	console.log('Модальное окно с содержимым метода авторизации.'),
 );
 // => ОШИБКА: 500
 // => Модальное окно с содержимым метода авторизации.
@@ -26544,7 +26898,7 @@ split(source, match);
 #### Аргументы
 
 1. `source`: Юнит, который будет запускать вычисления в `split`
-2. `match` (*Объект*): Схема кейсов, которая использует имена результирующих событий как ключи и функцию сопоставления\*((value) => Boolean)\*
+2. `match` (_Объект_): Схема кейсов, которая использует имена результирующих событий как ключи и функцию сопоставления\*((value) => Boolean)\*
 
 #### Возвращает
 
@@ -26555,32 +26909,32 @@ split(source, match);
 ##### Базовый
 
 ```js
-import { createEvent, split } from "effector";
+import { createEvent, split } from 'effector';
 
 const message = createEvent();
 
 const messageByAuthor = split(message, {
-  bob: ({ user }) => user === "bob",
-  alice: ({ user }) => user === "alice",
+	bob: ({ user }) => user === 'bob',
+	alice: ({ user }) => user === 'alice',
 });
 messageByAuthor.bob.watch(({ text }) => {
-  console.log("[bob]: ", text);
+	console.log('[bob]: ', text);
 });
 messageByAuthor.alice.watch(({ text }) => {
-  console.log("[alice]: ", text);
+	console.log('[alice]: ', text);
 });
 
-message({ user: "bob", text: "Привет" });
+message({ user: 'bob', text: 'Привет' });
 // => [bob]: Привет
-message({ user: "alice", text: "Привет, bob" });
+message({ user: 'alice', text: 'Привет, bob' });
 // => [alice]: Привет, bob
 
 /* кейс по умолчанию, срабатывает, если ни одно из условий не выполнено */
 const { __: guest } = messageByAuthor;
 guest.watch(({ text }) => {
-  console.log("[гость]: ", text);
+	console.log('[гость]: ', text);
 });
-message({ user: "незарегистрированный", text: "привет" });
+message({ user: 'незарегистрированный', text: 'привет' });
 // => [гость]: привет
 ```
 
@@ -26593,24 +26947,24 @@ message({ user: "незарегистрированный", text: "привет"
 ##### Другой пример
 
 ```js
-import { createEvent, split } from "effector";
+import { createEvent, split } from 'effector';
 
 const message = createEvent();
 
 const { short, long, medium } = split(message, {
-  short: (m) => m.length <= 5,
-  medium: (m) => m.length > 5 && m.length <= 10,
-  long: (m) => m.length > 10,
+	short: (m) => m.length <= 5,
+	medium: (m) => m.length > 5 && m.length <= 10,
+	long: (m) => m.length > 10,
 });
 
 short.watch((m) => console.log(`короткое сообщение '${m}'`));
 medium.watch((m) => console.log(`среднее сообщение '${m}'`));
 long.watch((m) => console.log(`длинное сообщение '${m}'`));
 
-message("Привет, Боб!");
+message('Привет, Боб!');
 // => длинное сообщение 'Привет, Боб!'
 
-message("Привет!");
+message('Привет!');
 // => короткое сообщение 'Привет!'
 ```
 
@@ -26637,35 +26991,40 @@ TBD
 #### Примеры
 
 ```js
-import { createStore, createEvent, createEffect, split } from "effector";
+import { createStore, createEvent, createEffect, split } from 'effector';
 
-const options = ["save", "delete", "forward"];
-const $message = createStore({ id: 1, text: "Принесите мне чашку кофе, пожалуйста!" });
-const $mode = createStore("");
+const options = ['save', 'delete', 'forward'];
+const $message = createStore({
+	id: 1,
+	text: 'Принесите мне чашку кофе, пожалуйста!',
+});
+const $mode = createStore('');
 const selectedMessageOption = createEvent();
-const saveMessageFx = createEffect(() => "save");
-const forwardMessageFx = createEffect(() => "forward");
-const deleteMessageFx = createEffect(() => "delete");
+const saveMessageFx = createEffect(() => 'save');
+const forwardMessageFx = createEffect(() => 'forward');
+const deleteMessageFx = createEffect(() => 'delete');
 
-$mode.on(selectedMessageOption, (mode, opt) => options.find((item) => item === opt) ?? mode);
+$mode.on(
+	selectedMessageOption,
+	(mode, opt) => options.find((item) => item === opt) ?? mode,
+);
 
 split({
-  source: $message,
-  clock: selectedMessageOption,
-  match: $mode,
-  cases: {
-    save: saveMessageFx,
-    delete: deleteMessageFx,
-    forward: forwardMessageFx,
-  },
+	source: $message,
+	clock: selectedMessageOption,
+	match: $mode,
+	cases: {
+		save: saveMessageFx,
+		delete: deleteMessageFx,
+		forward: forwardMessageFx,
+	},
 });
 
-selectedMessageOption("delete"); // ничего не происходит
-selectedMessageOption("delete");
+selectedMessageOption('delete'); // ничего не происходит
+selectedMessageOption('delete');
 ```
 
 Попробуйте
-
 
 # SWC плагин
 
@@ -26720,10 +27079,10 @@ npm install -ED @effector/swc-plugin
 
 ```js
 const nextConfig = {
-  experimental: {
-    // даже если конфигурация не нужна, передайте объект опций `{}` в плагин
-    swcPlugins: [["@effector/swc-plugin", {}]],
-  },
+	experimental: {
+		// даже если конфигурация не нужна, передайте объект опций `{}` в плагин
+		swcPlugins: [['@effector/swc-plugin', {}]],
+	},
 };
 ```
 
@@ -26739,12 +27098,12 @@ const nextConfig = {
 
 ```json
 {
-  "$schema": "https://json.schemastore.org/swcrc",
-  "jsc": {
-    "experimental": {
-      "plugins": [["@effector/swc-plugin", {}]]
-    }
-  }
+	"$schema": "https://json.schemastore.org/swcrc",
+	"jsc": {
+		"experimental": {
+			"plugins": [["@effector/swc-plugin", {}]]
+		}
+	}
 }
 ```
 
@@ -26761,11 +27120,14 @@ const nextConfig = {
 #### Формула
 
 ```json
-["@effector/swc-plugin", { "factories": ["./path/to/factory", "factory-package"] }]
+[
+	"@effector/swc-plugin",
+	{ "factories": ["./path/to/factory", "factory-package"] }
+]
 ```
 
-* Тип: `string[]`
-* По умолчанию: `[]`
+- Тип: `string[]`
+- По умолчанию: `[]`
 
 Если вы предоставляете относительный путь (начинающийся с `./`), плагин рассматривает его как локальную фабрику относительно корневой директории вашего проекта. Эти фабрики могут быть импортированы только с использованием относительных импортов в вашем коде.
 
@@ -26778,14 +27140,14 @@ const nextConfig = {
 ```
 
 ```ts title="/src/factory.ts"
-import { createStore } from "effector";
+import { createStore } from 'effector';
 
 /* createBooleanStore — это фабрика */
 export const createBooleanStore = () => createStore(true);
 ```
 
 ```ts title="/src/widget/user.ts"
-import { createBooleanStore } from "../factory";
+import { createBooleanStore } from '../factory';
 
 const $boolean = createBooleanStore(); /* Рассматривается как фабрика! */
 ```
@@ -26800,8 +27162,8 @@ const $boolean = createBooleanStore(); /* Рассматривается как 
 ["@effector/swc-plugin", { "debugSids": false }]
 ```
 
-* Тип: `boolean`
-* По умолчанию: `false`
+- Тип: `boolean`
+- По умолчанию: `false`
 
 ### `hmr`
 
@@ -26821,11 +27183,11 @@ const $boolean = createBooleanStore(); /* Рассматривается как 
 ["@effector/swc-plugin", { "hmr": "es" }]
 ```
 
-* Тип: `"es"` | `"cjs"` | `false`
-    * `"es"`: Использует API HMR `import.meta.hot` в сборщиках, основанных на ESM, таких как Vite и Rollup
-    * `"cjs"`: Использует API HMR `module.hot` в сборщиках, использующих CommonJS модули, таких как Webpack, Next.js или Metro (React Native)
-    * `false`: Отключает Hot Module Replacement.
-* По умолчанию: `false`
+- Тип: `"es"` | `"cjs"` | `false`
+    - `"es"`: Использует API HMR `import.meta.hot` в сборщиках, основанных на ESM, таких как Vite и Rollup
+    - `"cjs"`: Использует API HMR `module.hot` в сборщиках, использующих CommonJS модули, таких как Webpack, Next.js или Metro (React Native)
+    - `false`: Отключает Hot Module Replacement.
+- По умолчанию: `false`
 
 > INFO Обратите внимание:
 >
@@ -26841,8 +27203,8 @@ const $boolean = createBooleanStore(); /* Рассматривается как 
 ["@effector/swc-plugin", { "addNames": true }]
 ```
 
-* Тип: `boolean`
-* По умолчанию: `true`
+- Тип: `boolean`
+- По умолчанию: `true`
 
 ### `addLoc`
 
@@ -26854,8 +27216,8 @@ const $boolean = createBooleanStore(); /* Рассматривается как 
 ["@effector/swc-plugin", { "addLoc": true }]
 ```
 
-* Тип: `boolean`
-* По умолчанию: `false`
+- Тип: `boolean`
+- По умолчанию: `false`
 
 ### `forceScope`
 
@@ -26869,15 +27231,15 @@ const $boolean = createBooleanStore(); /* Рассматривается как 
 
 ```json
 [
-  "@effector/swc-plugin",
-  {
-    "forceScope": { "hooks": true, "reflect": false }
-  }
+	"@effector/swc-plugin",
+	{
+		"forceScope": { "hooks": true, "reflect": false }
+	}
 ]
 ```
 
-* Тип: `boolean | { hooks: boolean, reflect: boolean }`
-* По умолчанию: `false`
+- Тип: `boolean | { hooks: boolean, reflect: boolean }`
+- По умолчанию: `false`
 
 ##### `hooks`
 
@@ -26907,14 +27269,13 @@ const $boolean = createBooleanStore(); /* Рассматривается как 
 ["@effector/swc-plugin", { "transformLegacyDomainMethods": false }]
 ```
 
-* Тип: `boolean`
-* По умолчанию: `true`
-
+- Тип: `boolean`
+- По умолчанию: `true`
 
 # withRegion
 
 ```ts
-import { withRegion } from "effector";
+import { withRegion } from 'effector';
 ```
 
 Метод основан на идее управления памятью на основе регионов (см. [Region-based memory management](https://en.wikipedia.org/wiki/Region-based_memory_management) для справки).
@@ -26937,38 +27298,43 @@ withRegion(unit: Unit<T> | Node, callback: () => void): void
 
 #### Аргументы
 
-1. `unit`: *Unit* | *Node* — который будет служить "локальной областью" или "регионом", владеющим всеми юнитами, созданными внутри предоставленного callback. Обычно узел, созданный методом низкого уровня `createNode`, оптимален для этого случая.
+1. `unit`: _Unit_ | _Node_ — который будет служить "локальной областью" или "регионом", владеющим всеми юнитами, созданными внутри предоставленного callback. Обычно узел, созданный методом низкого уровня `createNode`, оптимален для этого случая.
 2. `callback`: `() => void` — Callback, в котором должны быть определены все соответствующие юниты.
 
 #### Примеры
 
 ```js
-import { createNode, createEvent, restore, withRegion, clearNode } from "effector";
+import {
+	createNode,
+	createEvent,
+	restore,
+	withRegion,
+	clearNode,
+} from 'effector';
 
 const first = createEvent();
 const second = createEvent();
-const $store = restore(first, "");
+const $store = restore(first, '');
 const region = createNode();
 
 withRegion(region, () => {
-  // Следующие связи, созданные с помощью `sample`, принадлежат предоставленному юниту `region`
-  // и будут удалены, как только будет вызван `clearNode` на `region`.
-  sample({
-    clock: second,
-    target: first,
-  });
+	// Следующие связи, созданные с помощью `sample`, принадлежат предоставленному юниту `region`
+	// и будут удалены, как только будет вызван `clearNode` на `region`.
+	sample({
+		clock: second,
+		target: first,
+	});
 });
 
 $store.watch(console.log);
 
-first("привет");
-second("мир");
+first('привет');
+second('мир');
 
 clearNode(region);
 
-second("не вызовет обновлений `$store`");
+second('не вызовет обновлений `$store`');
 ```
-
 
 # Справочник API
 
@@ -26979,12 +27345,11 @@ import IconSolid from "@icons/Solid.astro";
 import IconEffector from "@icons/Effector.astro";
 import IconNextJs from "@icons/NextJs.astro";
 import MostUsefulMethods from "@components/MostUsefulMethods.astro";
-import { MOST\_USEFUL } from "src/navigation";
+import { MOST_USEFUL } from "src/navigation";
 
 Самые часто используемые операторы из пакетов effector.
 
 <MostUsefulMethods items={MOST_USEFUL} />
-
 
 # Протокол @@unitShape
 
@@ -27026,30 +27391,29 @@ const Component = () => {
 
 ```ts
 function createRoute(/* ... */) {
-  const $params = createStore(/* ... */);
+	const $params = createStore(/* ... */);
 
-  return {
-    "@@unitShape": () => ({
-      params: $params,
-    }),
-  };
+	return {
+		'@@unitShape': () => ({
+			params: $params,
+		}),
+	};
 }
 ```
 
 ### FAQ
 
-***
+---
 
 **Вопрос**: Как часто вызывается функция `@@unitShape`?
 
 **Ответ**: Столько же раз, сколько вызывается сам `useUnit` – это зависит от UI-библиотеки. Например, `effector-react` вызывает её как любой другой хук – один раз за рендер компонента, но `effector-solid` вызывает `useUnit` один раз за монтирование компонента.
 
-***
+---
 
 **Вопрос**: Как я могу узнать, какая UI-библиотека используется для конкретного вызова `@@unitShape`?
 
 **Ответ**: Вы не можете. `@@unitShape` должен быть универсальным для всех UI-библиотек или должен проверять, какая UI-библиотека используется внутри, с помощью методов UI-библиотеки (например, `Context` в React или Solid).
-
 
 # События в эффекторе
 
@@ -27070,7 +27434,7 @@ function createRoute(/* ... */) {
 **Императивный** метод подразумевает вызов события как функции:
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const callHappened = createEvent<void>();
 
@@ -27080,14 +27444,14 @@ callHappened(); // событие вызвано
 **Декларативный** подход использует событие как цель для операторов, таких как sample, или как аргумент при передаче в фабричные функции:
 
 ```ts
-import { createEvent, sample } from "effector";
+import { createEvent, sample } from 'effector';
 
 const firstTriggered = createEvent<void>();
 const secondTriggered = createEvent<void>();
 
 sample({
-  clock: firstTriggered,
-  target: secondTriggered,
+	clock: firstTriggered,
+	target: secondTriggered,
 });
 ```
 
@@ -27106,11 +27470,11 @@ sample({
 Если необходимо передать несколько аргументов, объедините их в объект:
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const requestReceived = createEvent<{ id: number; title: string }>();
 
-requestReceived({ id: 1, title: "example" });
+requestReceived({ id: 1, title: 'example' });
 ```
 
 Это правило также способствует ясности значения каждого аргумента как на стороне вызова, так и на стороне подписки. Оно способствует чистоте и организованности кода, облегчая его понимание и сопровождение.
@@ -27125,15 +27489,15 @@ requestReceived({ id: 1, title: "example" });
 Для определения момента вызова события effector и его экосистема предлагают различные методы с разными возможностями. Отладка является основным случаем использования, и мы настоятельно рекомендуем использовать [`patronum/debug`](https://patronum.effector.dev/operators/debug/) для отображения момента вызова события и передаваемого им аргумента.
 
 ```ts
-import { createEvent, sample } from "effector";
-import { debug } from "patronum";
+import { createEvent, sample } from 'effector';
+import { debug } from 'patronum';
 
 const firstTriggered = createEvent<void>();
 const secondTriggered = createEvent<void>();
 
 sample({
-  clock: firstTriggered,
-  target: secondTriggered,
+	clock: firstTriggered,
+	target: secondTriggered,
 });
 
 debug(firstTriggered, secondTriggered);
@@ -27145,28 +27509,28 @@ firstTriggered();
 
 Однако, если ваша среда не позволяет добавлять дополнительные зависимости, вы можете использовать метод `createWatch`, который в аргумент принимает объект со значениями
 
-* `unit` — юнит или массив юнитов, за которым вы хотите начать следить
-* `fn` — функция, которая вызывается при изменениях юнита, принимает обновленное значение в аргументе
-* `scope` — изолированный контекст, инстанс fork'а, для изолированного выполнения
+- `unit` — юнит или массив юнитов, за которым вы хотите начать следить
+- `fn` — функция, которая вызывается при изменениях юнита, принимает обновленное значение в аргументе
+- `scope` — изолированный контекст, инстанс fork'а, для изолированного выполнения
 
 ```ts
-import { createEvent, sample, createWatch } from "effector";
+import { createEvent, sample, createWatch } from 'effector';
 
 const firstTriggered = createEvent<void>();
 const secondTriggered = createEvent<void>();
 
 sample({
-  clock: firstTriggered,
-  target: secondTriggered,
+	clock: firstTriggered,
+	target: secondTriggered,
 });
 
-userClicked("value");
+userClicked('value');
 
 const unwatch = createWatch({
-  unit: [firstTriggered, secondTriggered],
-  fn: (payload) => {
-    console.log("[event] triggered");
-  },
+	unit: [firstTriggered, secondTriggered],
+	fn: (payload) => {
+		console.log('[event] triggered');
+	},
 });
 
 firstTriggered();
@@ -27185,17 +27549,17 @@ firstTriggered();
 Когда событие вызывается, TypeScript проверяет, что тип переданного аргумента соответствует типу, определенному в событии, обеспечивая согласованность и безопасность типов в коде.
 
 ```ts
-import { sample, createEvent } from "effector";
+import { sample, createEvent } from 'effector';
 
 const someHappened = createEvent<number>();
 const anotherHappened = createEvent<string>();
 
 sample({
-  // @ts-expect-error error:
-  // "clock should extend target type";
-  // targets: { clockType: number; targetType: string; }
-  clock: someHappened,
-  target: anotherHappened,
+	// @ts-expect-error error:
+	// "clock should extend target type";
+	// targets: { clockType: number; targetType: string; }
+	clock: someHappened,
+	target: anotherHappened,
 });
 ```
 
@@ -27208,15 +27572,15 @@ sample({
 Вы можете создать новое событие на основе существующего с помощью метода `map`, которое вызовется после того, как оригинальное событие было вызвано:
 
 ```ts mark={5}
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const userClicked = createEvent<{ id: number; name: string }>();
 // Создаем событие, которое будет срабатывать только с именем пользователя
 const userNameSelected = userClicked.map(({ name }) => name);
-const $userName = createStore("").on(userNameSelected, (_, newName) => newName);
+const $userName = createStore('').on(userNameSelected, (_, newName) => newName);
 
 // Примеры использования
-userClicked({ id: 1, name: "John" });
+userClicked({ id: 1, name: 'John' });
 // userNameSelected получит значение 'John'
 ```
 
@@ -27229,23 +27593,23 @@ userClicked({ id: 1, name: "John" });
 Метод `filter` позволяет создать новое событие, которое срабатывает только при выполнении определенного условия:
 
 ```ts mark={11,17}
-import { sample, createEvent } from "effector";
+import { sample, createEvent } from 'effector';
 
-type User = { id: number; role: "admin" | "user" };
-type Admin = { id: number; role: "admin" };
+type User = { id: number; role: 'admin' | 'user' };
+type Admin = { id: number; role: 'admin' };
 
 const userClicked = createEvent<User>();
 
 // Событие вызовется только для admin
 const adminClicked = sample({
-  clock: userClicked,
-  filter: ({ role }) => role === "admin",
+	clock: userClicked,
+	filter: ({ role }) => role === 'admin',
 });
 
 // Создаем типизированное событие
 const typeSafeAdminClicked = sample({
-  clock: userClicked,
-  filter: (user): user is Admin => user.role === "admin",
+	clock: userClicked,
+	filter: (user): user is Admin => user.role === 'admin',
 });
 ```
 
@@ -27262,8 +27626,8 @@ const iconClicked = createEvent();
 const anyClicked = merge([buttonClicked, linkClicked, iconClicked]);
 
 sample({
-  clock: anyClicked,
-  target: someActionHappened,
+	clock: anyClicked,
+	target: someActionHappened,
 });
 ```
 
@@ -27276,8 +27640,8 @@ const iconClicked = createEvent();
 
 // Любое из этих событий вызовет someActionHappened
 sample({
-  clock: [buttonClicked, linkClicked, iconClicked],
-  target: someActionHappened,
+	clock: [buttonClicked, linkClicked, iconClicked],
+	target: someActionHappened,
 });
 ```
 
@@ -27288,25 +27652,29 @@ sample({
 Предположим у вас происходят разные ошибки в приложении с разной структурой, но обработка этих ошибок должна происходить централизованно:
 
 ```ts wrap
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 // Основное событие обработки ошибок
 const showError = createEvent<string>();
 
 // Подписываемся на показ ошибок
 sample({
-  clock: showError,
-  target: processErrorFx, // упустим реализацию эффекта
+	clock: showError,
+	target: processErrorFx, // упустим реализацию эффекта
 });
 
 // Создаем специальные события для разных типов ошибок
-const showNetworkError = showError.prepend((code: number) => `Ошибка сети: ${code}`);
+const showNetworkError = showError.prepend(
+	(code: number) => `Ошибка сети: ${code}`,
+);
 
-const showValidationError = showError.prepend((field: string) => `Поле ${field} заполнено неверно`);
+const showValidationError = showError.prepend(
+	(field: string) => `Поле ${field} заполнено неверно`,
+);
 
 // Использование
 showNetworkError(404); // 🔴 Ошибка: Ошибка сети: 404
-showValidationError("email"); // 🔴 Ошибка: Поле email заполнено неверно
+showValidationError('email'); // 🔴 Ошибка: Поле email заполнено неверно
 ```
 
 В этом примере:
@@ -27314,9 +27682,9 @@ showValidationError("email"); // 🔴 Ошибка: Поле email заполн�
 1. Мы имеем основное событие для обработки ошибок, которое принимает строку
 2. Используя `prepend` мы создаем два новых события, каждое из которых:
 
-* Принимает свой тип данных
-* Преобразовывает эти данные к строке
-* Отдает результат основному событию
+- Принимает свой тип данных
+- Преобразовывает эти данные к строке
+- Отдает результат основному событию
 
 #### Условное срабатывание событий
 
@@ -27328,9 +27696,9 @@ const $isEnabled = createStore(true);
 
 // Событие сработает только если $isEnabled равно true
 sample({
-  clock: buttonClicked,
-  filter: $isEnabled,
-  target: actionExecuted,
+	clock: buttonClicked,
+	filter: $isEnabled,
+	target: actionExecuted,
 });
 ```
 
@@ -27339,7 +27707,6 @@ sample({
 > Использование событий через `sample` предпочтительнее прямого вызова событий внутри `watch` или других обработчиков, так как это делает поток данных более явным и предсказуемым.
 
 Ознакомиться с полным API для Event.
-
 
 # Разделение потоков данных с помощью split
 
@@ -27353,8 +27720,8 @@ import ThemeImage from "@components/ThemeImage.astro";
 Метод `split` был создан с целью разделения логики на несколько потоков данных.
 Например, вам может потребоваться направить данные по разным путям в зависимости от их содержимого. Это похоже на железнодорожную стрелку, которая направляет поезда по разным путям:
 
-* если форма заполнена неправильно – показать ошибку
-* если все корректно – отправить запрос
+- если форма заполнена неправильно – показать ошибку
+- если все корректно – отправить запрос
 
 > INFO Порядок проверки условий:
 >
@@ -27365,15 +27732,18 @@ import ThemeImage from "@components/ThemeImage.astro";
 Давайте посмотрим на простой пример – разбор сообщений разных типов:
 
 ```ts
-import { createEvent, split } from "effector";
+import { createEvent, split } from 'effector';
 
 const updateUserStatus = createEvent();
 
-const { activeUserUpdated, idleUserUpdated, inactiveUserUpdated } = split(updateUserStatus, {
-  activeUserUpdated: (userStatus) => userStatus === "active",
-  idleUserUpdated: (userStatus) => userStatus === "idle",
-  inactiveUserUpdated: (userStatus) => userStatus === "inactive",
-});
+const { activeUserUpdated, idleUserUpdated, inactiveUserUpdated } = split(
+	updateUserStatus,
+	{
+		activeUserUpdated: (userStatus) => userStatus === 'active',
+		idleUserUpdated: (userStatus) => userStatus === 'idle',
+		inactiveUserUpdated: (userStatus) => userStatus === 'inactive',
+	},
+);
 ```
 
 Логика этого кусочка кода максимально простая. При вызове события `updateUserStatus` мы попадаем в `split`, где проходимся по каждому условию сверху вниз до первого совпадения, а затем `effector` вызывает нужное нам событие.
@@ -27393,22 +27763,27 @@ const { activeUserUpdated, idleUserUpdated, inactiveUserUpdated } = split(update
 Рассмотрим тот же пример, что и выше, но с использованием случая по умолчанию:
 
 ```ts
-import { createEvent, split } from "effector";
+import { createEvent, split } from 'effector';
 
 const updateUserStatus = createEvent();
 
-const { activeUserUpdated, idleUserUpdated, inactiveUserUpdated, __ } = split(updateUserStatus, {
-  activeUserUpdated: (userStatus) => userStatus === "active",
-  idleUserUpdated: (userStatus) => userStatus === "idle",
-  inactiveUserUpdated: (userStatus) => userStatus === "inactive",
-});
+const { activeUserUpdated, idleUserUpdated, inactiveUserUpdated, __ } = split(
+	updateUserStatus,
+	{
+		activeUserUpdated: (userStatus) => userStatus === 'active',
+		idleUserUpdated: (userStatus) => userStatus === 'idle',
+		inactiveUserUpdated: (userStatus) => userStatus === 'inactive',
+	},
+);
 
-__.watch((defaultStatus) => console.log("default case with status:", defaultStatus));
-activeUserUpdated.watch(() => console.log("active user"));
+__.watch((defaultStatus) =>
+	console.log('default case with status:', defaultStatus),
+);
+activeUserUpdated.watch(() => console.log('active user'));
 
-updateUserStatus("whatever");
-updateUserStatus("active");
-updateUserStatus("default case");
+updateUserStatus('whatever');
+updateUserStatus('active');
+updateUserStatus('default case');
 
 // Вывод в консоль:
 // default case with status: whatever
@@ -27437,32 +27812,35 @@ width={650}
 />
 
 ```ts
-import { createStore, createEvent, split } from "effector";
+import { createStore, createEvent, split } from 'effector';
 
 type Repo = {
-  // ... другие свойства
-  isStarred: boolean;
-  isWatched: boolean;
+	// ... другие свойства
+	isStarred: boolean;
+	isWatched: boolean;
 };
 
 const toggleStar = createEvent<string>();
 const toggleWatch = createEvent<string>();
 
 const $repo = createStore<null | Repo>(null)
-  .on(toggleStar, (repo) => ({
-    ...repo,
-    isStarred: !repo.isStarred,
-  }))
-  .on(toggleWatch, (repo) => ({ ...repo, isWatched: !repo.isWatched }));
+	.on(toggleStar, (repo) => ({
+		...repo,
+		isStarred: !repo.isStarred,
+	}))
+	.on(toggleWatch, (repo) => ({ ...repo, isWatched: !repo.isWatched }));
 
 const { starredRepo, unstarredRepo, __ } = split($repo, {
-  starredRepo: (repo) => repo.isStarred,
-  unstarredRepo: (repo) => !repo.isStarred,
+	starredRepo: (repo) => repo.isStarred,
+	unstarredRepo: (repo) => !repo.isStarred,
 });
 
 // следим за случаем по умолчанию для дебага
 __.watch((repo) =>
-  console.log("[split toggleStar] Случай по умолчанию отработал со значением ", repo),
+	console.log(
+		'[split toggleStar] Случай по умолчанию отработал со значением ',
+		repo,
+	),
 );
 
 // где-то в приложении
@@ -27475,8 +27853,8 @@ toggleStar();
 >
 > Используйте этот вариант, когда у ваc:
 >
-> * нету зависимости от внешних данных, например от сторов
-> * нужен простой и понятный код
+> - нету зависимости от внешних данных, например от сторов
+> - нужен простой и понятный код
 
 ### Расширенная запись
 
@@ -27489,7 +27867,7 @@ toggleStar();
 Возьмем в пример случай, когда у нас имеется два режима приложения `user` и `admin`. При срабатывании события в режиме `user` и `admin` у нас происходят разные действия:
 
 ```ts
-import { createStore, createEvent, split } from "effector";
+import { createStore, createEvent, split } from 'effector';
 
 const adminActionFx = createEffect();
 const secondAdminActionFx = createEffect();
@@ -27499,17 +27877,17 @@ const defaultActionFx = createEffect();
 const buttonClicked = createEvent();
 
 // Текущий режим приложения
-const $appMode = createStore<"admin" | "user">("user");
+const $appMode = createStore<'admin' | 'user'>('user');
 
 // Разные события для разных режимов
 split({
-  source: buttonClicked,
-  match: $appMode, // Логика зависит от текущего режима
-  cases: {
-    admin: [adminActionFx, secondAdminActionFx],
-    user: userActionFx,
-    __: defaultActionFx,
-  },
+	source: buttonClicked,
+	match: $appMode, // Логика зависит от текущего режима
+	cases: {
+		admin: [adminActionFx, secondAdminActionFx],
+		user: userActionFx,
+		__: defaultActionFx,
+	},
 });
 
 // При клике одна и та же кнопка делает разные вещи
@@ -27526,30 +27904,30 @@ buttonClicked();
 // дополним предыдущий код
 
 const adminActionFx = createEffect((currentUser) => {
-  // ...
+	// ...
 });
 const secondAdminActionFx = createEffect((currentUser) => {
-  // ...
+	// ...
 });
 
 // добавим новый стор
 const $currentUser = createStore({
-  id: 1,
-  name: "Donald",
+	id: 1,
+	name: 'Donald',
 });
 
-const $appMode = createStore<"admin" | "user">("user");
+const $appMode = createStore<'admin' | 'user'>('user');
 
 split({
-  clock: buttonClicked,
-  // и передадим его как источник данных
-  source: $currentUser,
-  match: $appMode,
-  cases: {
-    admin: [adminActionFx, secondAdminActionFx],
-    user: userActionFx,
-    __: defaultActionFx,
-  },
+	clock: buttonClicked,
+	// и передадим его как источник данных
+	source: $currentUser,
+	match: $appMode,
+	cases: {
+		admin: [adminActionFx, secondAdminActionFx],
+		user: userActionFx,
+		__: defaultActionFx,
+	},
 });
 ```
 
@@ -27563,26 +27941,26 @@ split({
 >
 > В этом варианте использование `match` принимает в себя юниты, функции и объект, но с определенными условиями:
 >
-> * **Стор**: если вы используете стор, тогда этот **store должен хранить в себе строковое значение**
-> * **Функция:** если вы передаете функцию, то эта **фунция должна вернуть строковое значение, а также быть чистой**!
-> * **Объект с сторами**: если вы передаете объект с сторами, тогда вам нужно, чтобы **каждый стор был с булевым значением**
-> * **Объект с функциями**: если вы передаете объект с функциями, то **каждая функция должна возвращать булевое значение, и быть чистой**!
+> - **Стор**: если вы используете стор, тогда этот **store должен хранить в себе строковое значение**
+> - **Функция:** если вы передаете функцию, то эта **фунция должна вернуть строковое значение, а также быть чистой**!
+> - **Объект с сторами**: если вы передаете объект с сторами, тогда вам нужно, чтобы **каждый стор был с булевым значением**
+> - **Объект с функциями**: если вы передаете объект с функциями, то **каждая функция должна возвращать булевое значение, и быть чистой**!
 
 #### `match` как стор
 
 Когда `match` принимает стор, значение из этого стора используется как ключ для выбора нужного case:
 
 ```ts
-const $currentTab = createStore("home");
+const $currentTab = createStore('home');
 
 split({
-  source: pageNavigated,
-  match: $currentTab,
-  cases: {
-    home: loadHomeDataFx,
-    profile: loadProfileDataFx,
-    settings: loadSettingsDataFx,
-  },
+	source: pageNavigated,
+	match: $currentTab,
+	cases: {
+		home: loadHomeDataFx,
+		profile: loadProfileDataFx,
+		settings: loadSettingsDataFx,
+	},
 });
 ```
 
@@ -27594,13 +27972,13 @@ split({
 const userActionRequested = createEvent<{ type: string; payload: any }>();
 
 split({
-  source: userActionRequested,
-  match: (action) => action.type, // Функция возвращает строку
-  cases: {
-    update: updateUserDataFx,
-    delete: deleteUserDataFx,
-    create: createUserDataFx,
-  },
+	source: userActionRequested,
+	match: (action) => action.type, // Функция возвращает строку
+	cases: {
+		update: updateUserDataFx,
+		delete: deleteUserDataFx,
+		create: createUserDataFx,
+	},
 });
 ```
 
@@ -27613,16 +27991,16 @@ const $isAdmin = createStore(false);
 const $isModerator = createStore(false);
 
 split({
-  source: postCreated,
-  match: {
-    admin: $isAdmin,
-    moderator: $isModerator,
-  },
-  cases: {
-    admin: createAdminPostFx,
-    moderator: createModeratorPostFx,
-    __: createUserPostFx,
-  },
+	source: postCreated,
+	match: {
+		admin: $isAdmin,
+		moderator: $isModerator,
+	},
+	cases: {
+		admin: createAdminPostFx,
+		moderator: createModeratorPostFx,
+		__: createUserPostFx,
+	},
 });
 ```
 
@@ -27632,17 +28010,17 @@ split({
 
 ```ts
 split({
-  source: paymentReceived,
-  match: {
-    lowAmount: ({ amount }) => amount < 100,
-    mediumAmount: ({ amount }) => amount >= 100 && amount < 1000,
-    highAmount: ({ amount }) => amount >= 1000,
-  },
-  cases: {
-    lowAmount: processLowPaymentFx,
-    mediumAmount: processMediumPaymentFx,
-    highAmount: processHighPaymentFx,
-  },
+	source: paymentReceived,
+	match: {
+		lowAmount: ({ amount }) => amount < 100,
+		mediumAmount: ({ amount }) => amount >= 100 && amount < 1000,
+		highAmount: ({ amount }) => amount >= 1000,
+	},
+	cases: {
+		lowAmount: processLowPaymentFx,
+		mediumAmount: processMediumPaymentFx,
+		highAmount: processHighPaymentFx,
+	},
 });
 ```
 
@@ -27656,48 +28034,49 @@ split({
 
 ```ts
 const showFormErrorsFx = createEffect(() => {
-  // логика отображение ошибки
+	// логика отображение ошибки
 });
 const submitFormFx = createEffect(() => {
-  // логика отображение ошибки
+	// логика отображение ошибки
 });
 
 const submitForm = createEvent();
 
 const $form = createStore({
-  name: "",
-  email: "",
-  age: 0,
+	name: '',
+	email: '',
+	age: 0,
 }).on(submitForm, (_, submittedForm) => ({ ...submittedForm }));
 // Отдельный стор для ошибок
 const $formErrors = createStore({
-  name: "",
-  email: "",
-  age: "",
+	name: '',
+	email: '',
+	age: '',
 }).reset(submitForm);
 
 // Проверяем все поля и собираем все ошибки
 sample({
-  clock: submitForm,
-  source: $form,
-  fn: (form) => ({
-    name: !form.name.trim() ? "Имя обязательно" : "",
-    email: !isValidEmail(form.email) ? "Неверный email" : "",
-    age: form.age < 18 ? "Возраст должен быть 18+" : "",
-  }),
-  target: $formErrors,
+	clock: submitForm,
+	source: $form,
+	fn: (form) => ({
+		name: !form.name.trim() ? 'Имя обязательно' : '',
+		email: !isValidEmail(form.email) ? 'Неверный email' : '',
+		age: form.age < 18 ? 'Возраст должен быть 18+' : '',
+	}),
+	target: $formErrors,
 });
 
 // И только после этого используем split для маршрутизации
 split({
-  source: $formErrors,
-  match: {
-    hasErrors: (errors) => Object.values(errors).some((error) => error !== ""),
-  },
-  cases: {
-    hasErrors: showFormErrorsFx,
-    __: submitFormFx,
-  },
+	source: $formErrors,
+	match: {
+		hasErrors: (errors) =>
+			Object.values(errors).some((error) => error !== ''),
+	},
+	cases: {
+		hasErrors: showFormErrorsFx,
+		__: submitFormFx,
+	},
 });
 ```
 
@@ -27714,9 +28093,8 @@ split({
 Все найденные ошибки сохраняются в сторе `$formErrors`.
 И вот тут в игру вступает `split`. Он смотрит на все ошибки и решает:
 
-* Если хотя бы в одном поле есть ошибка - ❌ показываем все ошибки пользователю
-* Если все поля заполнены правильно - ✅ отправляем форму
-
+- Если хотя бы в одном поле есть ошибка - ❌ показываем все ошибки пользователю
+- Если все поля заполнены правильно - ✅ отправляем форму
 
 # Управление состоянием в effector
 
@@ -27744,8 +28122,8 @@ import SideBySide from "@components/SideBySide/SideBySide.astro";
 >
 > //обновление объекта
 > $user.on(nameChanged, (user, newName) => ({
->   ...user,
->   name: newName,
+> 	...user,
+> 	name: newName,
 > }));
 > ```
 >
@@ -27757,13 +28135,13 @@ import SideBySide from "@components/SideBySide/SideBySide.astro";
 > // ❌ Неправильно
 >
 > $users.on(userAdded, (users, newUser) => {
->   users.push(newUser); // Мутация!
->   return users;
+> 	users.push(newUser); // Мутация!
+> 	return users;
 > });
 >
 > $user.on(nameChanged, (user, newName) => {
->   user.name = newName; // Мутация!
->   return user;
+> 	user.name = newName; // Мутация!
+> 	return user;
 > });
 > ```
 >
@@ -27776,12 +28154,12 @@ import SideBySide from "@components/SideBySide/SideBySide.astro";
 Создать новый стор можно при помощи метода createStore:
 
 ```ts
-import { createStore } from "effector";
+import { createStore } from 'effector';
 
 // Создание стора с начальным значением
 const $counter = createStore(0);
 // с явной типизацией
-const $user = createStore<{ name: "Bob"; age: 25 } | null>(null);
+const $user = createStore<{ name: 'Bob'; age: 25 } | null>(null);
 const $posts = createStore<Post[]>([]);
 ```
 
@@ -27814,9 +28192,9 @@ const Counter = () => {
 
 ```html
 <script setup>
-  import { useUnit } from "effector-vue/composition";
-  import { $counter } from "./model.js";
-  const counter = useUnit($counter);
+	import { useUnit } from 'effector-vue/composition';
+	import { $counter } from './model.js';
+	const counter = useUnit($counter);
 </script>
 ```
 
@@ -27841,7 +28219,7 @@ const Counter = () => {
 
 ```ts
 $counter.watch((counter) => {
-  console.log("Counter changed:", counter);
+	console.log('Counter changed:', counter);
 });
 ```
 
@@ -27864,19 +28242,19 @@ console.log($counter.getState()); // 0
 Самый простой и верный способ обновить стор - это привязать его к событию:
 
 ```ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const incremented = createEvent();
 const decremented = createEvent();
 const resetCounter = createEvent();
 
 const $counter = createStore(0)
-  // Увеличиваем значение на 1 при каждом вызове события
-  .on(incremented, (counterValue) => counterValue + 1)
-  // Уменьшаем значение на 1 при каждом вызове события
-  .on(decremented, (counterValue) => counterValue - 1)
-  // Сбрасываем значение в 0
-  .reset(resetCounter);
+	// Увеличиваем значение на 1 при каждом вызове события
+	.on(incremented, (counterValue) => counterValue + 1)
+	// Уменьшаем значение на 1 при каждом вызове события
+	.on(decremented, (counterValue) => counterValue - 1)
+	// Сбрасываем значение в 0
+	.reset(resetCounter);
 
 $counter.watch((counterValue) => console.log(counterValue));
 
@@ -27904,18 +28282,18 @@ resetCounter();
 Обновить стор можно и с помощью параметров события, достаточно лишь передать данные в событие, как у обычной функции, и использовать в обработчике:
 
 ```ts mark={12}
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const userUpdated = createEvent<{ name: string }>();
 
-const $user = createStore({ name: "Bob" });
+const $user = createStore({ name: 'Bob' });
 
 $user.on(userUpdated, (user, changedUser) => ({
-  ...user,
-  ...changedUser,
+	...user,
+	...changedUser,
 }));
 
-userUpdated({ name: "Alice" });
+userUpdated({ name: 'Alice' });
 ```
 
 #### Сложная логика обновления
@@ -27924,34 +28302,34 @@ userUpdated({ name: "Alice" });
 
 Однако это не всегда покрывает все нужды. Для более сложной логики обновления состояния мы можем воспользоваться методом sample, который помогает нам в случае когда:
 
-* Нужно контролировать обновление стора при помощи события
-* Требуется обновить стор на основе значений других сторов
-* Нужна трансформация данных перед обновлением стора с доступом к актуальным значениям других сторов
+- Нужно контролировать обновление стора при помощи события
+- Требуется обновить стор на основе значений других сторов
+- Нужна трансформация данных перед обновлением стора с доступом к актуальным значениям других сторов
 
 Например:
 
 ```ts
-import { createEvent, createStore, sample } from "effector";
+import { createEvent, createStore, sample } from 'effector';
 
 const updateItems = createEvent();
 
 const $items = createStore([1, 2, 3]);
 const $filteredItems = createStore([]);
-const $filter = createStore("even");
+const $filter = createStore('even');
 
 // sample автоматически предоставляет доступ к актуальным значениям
 // всех связанных сторов в момент срабатывания события
 sample({
-  clock: updateItems,
-  source: { items: $items, filter: $filter },
-  fn: ({ items, filter }) => {
-    if (filter === "even") {
-      return items.filter((n) => n % 2 === 0);
-    }
+	clock: updateItems,
+	source: { items: $items, filter: $filter },
+	fn: ({ items, filter }) => {
+		if (filter === 'even') {
+			return items.filter((n) => n % 2 === 0);
+		}
 
-    return items.filter((n) => n % 2 === 1);
-  },
-  target: $filteredItems,
+		return items.filter((n) => n % 2 === 1);
+	},
+	target: $filteredItems,
 });
 ```
 
@@ -27972,21 +28350,21 @@ sample({
 Если у вас работа со стором подразумевает замену старого состояние на новое при вызове события, то вы можете использовать метод restore:
 
 ```ts mark={5}
-import { restore, createEvent } from "effector";
+import { restore, createEvent } from 'effector';
 
 const nameChanged = createEvent<string>();
 
-const $counter = restore(nameChanged, "");
+const $counter = restore(nameChanged, '');
 ```
 
 Код выше эквивалентен коду ниже:
 
 ```ts mark={5}
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const nameChanged = createEvent<string>();
 
-const $counter = createStore("").on(nameChanged, (_, newName) => newName);
+const $counter = createStore('').on(nameChanged, (_, newName) => newName);
 ```
 
 Также метод `restore` можно использовать и с эффектом, в таком случае в стор попадут данные из события эффекта doneData, а дефолтное значение стора должно соответствовать возвращаемому значению:
@@ -27994,22 +28372,23 @@ const $counter = createStore("").on(nameChanged, (_, newName) => newName);
 > INFO Что такое эффекты?:
 >
 > Если вы не знакомы с `createEffect` и эффектами, то вы узнаете как работать с ними на этой странице.
+
 ```ts
-import { restore, createEffect } from "effector";
+import { restore, createEffect } from 'effector';
 
 // упустим реализацию типов
 const createUserFx = createEffect<string, User>((id) => {
-  return {
-    id: 4,
-    name: "Bob",
-    age: 18,
-  };
+	return {
+		id: 4,
+		name: 'Bob',
+		age: 18,
+	};
 });
 
 const $newUser = restore(createUserFx, {
-  id: 0,
-  name: "",
-  age: -1,
+	id: 0,
+	name: '',
+	age: -1,
 });
 
 createUserFx();
@@ -28028,7 +28407,7 @@ createUserFx();
 Стор не ограничен одной подпиской на событие, вы можете подписаться на столько событий, сколько вам нужно, а также подписываться на одно и то же событие разными сторами:
 
 ```ts "categoryChanged"
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const categoryChanged = createEvent<string>();
 const searchQueryChanged = createEvent<string>();
@@ -28036,20 +28415,20 @@ const filtersReset = createEvent();
 
 const $lastUsedFilter = createStore<string | null>(null);
 const $filters = createStore({
-  category: "all",
-  searchQuery: "",
+	category: 'all',
+	searchQuery: '',
 });
 
 // подписываемся двумя разными сторами на одно и то же событие
 $lastUsedFilter.on(categoryChanged, (_, categoty) => category);
 $filters.on(categoryChanged, (filters, category) => ({
-  ...filters,
-  category,
+	...filters,
+	category,
 }));
 
 $filters.on(searchQueryChanged, (filters, searchQuery) => ({
-  ...filters,
-  searchQuery,
+	...filters,
+	searchQuery,
 }));
 
 $filters.reset(filtersReset);
@@ -28069,14 +28448,14 @@ $filters.reset(filtersReset);
 ```ts wrap data-height="full"
 // createApi
 
-import { createStore, createApi } from "effector";
+import { createStore, createApi } from 'effector';
 
 const $counter = createStore(0);
 
 const { increment, decrement, reset } = createApi($counter, {
-  increment: (state) => state + 1,
-  decrement: (state) => state - 1,
-  reset: () => 0,
+	increment: (state) => state + 1,
+	decrement: (state) => state - 1,
+	reset: () => 0,
 });
 
 // Использование
@@ -28091,7 +28470,7 @@ reset(); // 0
 ```ts wrap data-height="full"
 // Обычное использование
 
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const $counter = createStore(0);
 
@@ -28100,9 +28479,9 @@ const decrementClicked = createEvent();
 const resetClicked = createEvent();
 
 $counter
-  .on(incrementClicked, (state) => state + 1)
-  .on(decrementClicked, (state) => state - 1)
-  .reset(resetClicked);
+	.on(incrementClicked, (state) => state + 1)
+	.on(decrementClicked, (state) => state - 1)
+	.reset(resetClicked);
 
 // Использование
 increment(); // 1
@@ -28118,11 +28497,11 @@ reset(); // 0
 Часто нужно создать стор, значение которого зависит от других состояний. Для этого используется метод map:
 
 ```ts
-import { createStore, combine } from "effector";
+import { createStore, combine } from 'effector';
 
 const $currentUser = createStore({
-  id: 1,
-  name: "Winnie Pooh",
+	id: 1,
+	name: 'Winnie Pooh',
 });
 const $users = createStore<User[]>([]);
 
@@ -28135,7 +28514,7 @@ const $activeUsersCount = $activeUsers.map((users) => users.length);
 
 // Комбинация нескольких сторов
 const $friendsList = combine($users, $currentUser, (users, currentUser) =>
-  users.filter((user) => user.friendIds.includes(currentUser.id)),
+	users.filter((user) => user.friendIds.includes(currentUser.id)),
 );
 ```
 
@@ -28143,21 +28522,21 @@ const $friendsList = combine($users, $currentUser, (users, currentUser) =>
 Также можно комбинировать сторы в объект:
 
 ```ts
-import { combine } from "effector";
+import { combine } from 'effector';
 
 const $form = combine({
-  name: $name,
-  age: $age,
-  city: $city,
+	name: $name,
+	age: $age,
+	city: $city,
 });
 
 // или с дополнительной трансформацией
 const $formValidation = combine($name, $age, (name, age) => ({
-  isValid: name.length > 0 && age >= 18,
-  errors: {
-    name: name.length === 0 ? "Required" : null,
-    age: age < 18 ? "Must be 18+" : null,
-  },
+	isValid: name.length > 0 && age >= 18,
+	errors: {
+		name: name.length === 0 ? 'Required' : null,
+		age: age < 18 ? 'Must be 18+' : null,
+	},
 }));
 ```
 
@@ -28186,11 +28565,11 @@ const $form = createStore({ email: "", password: "" })
 
 ```ts
 const $store = createStore(0).on(event, (_, newValue) => {
-  if (newValue % 2 === 0) {
-    return;
-  }
+	if (newValue % 2 === 0) {
+		return;
+	}
 
-  return newValue;
+	return newValue;
 });
 ```
 
@@ -28202,7 +28581,7 @@ const $store = createStore(0).on(event, (_, newValue) => {
 Если вам нужно использовать `undefined` как валидное значение, необходимо явно указать с помощью `skipVoid: false` при создании стора:
 
 ```ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const setVoidValue = createEvent<number>();
 
@@ -28211,7 +28590,7 @@ const $store = createStore(13).on(setVoidValue, (_, voidValue) => voidValue);
 
 // ✅ undefined разрешены как значения
 const $store = createStore(13, {
-  skipVoid: false,
+	skipVoid: false,
 }).on(setVoidValue, (_, voidValue) => voidValue);
 
 setVoidValue(null);
@@ -28222,7 +28601,6 @@ setVoidValue(null);
 > Вы можете использовать `null` вместо `undefined` для отсутствующих значений.
 
 Познакомиться с полным API для сторов тут
-
 
 # TypeScript в effector
 
@@ -28238,7 +28616,7 @@ Effector предоставляет первоклассную поддержк�
 События в effector могут быть типизированы при помощи передачи типа в дженерик функции, однако если не передавать ничего, то в таком случае событие будет с типом `EventCallable<void>`:
 
 ```ts
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 // Событие без параметров
 const clicked = createEvent();
@@ -28250,8 +28628,8 @@ const userNameChanged = createEvent<string>();
 
 // Событие со сложным параметром
 const formSubmitted = createEvent<{
-  username: string;
-  password: string;
+	username: string;
+	password: string;
 }>();
 // EventCallable<{ username: string;password: string; }>
 ```
@@ -28284,7 +28662,7 @@ const warningMessage = message.prepend<string>((warnMessage) => warnMessage);
 Сторы также можно типизировать при помощи передачи типа в дженерик функции, либо указав дефолтное значение при инициализации, тогда ts будет выводить тип из этого значения:
 
 ```ts
-import { createStore } from "effector";
+import { createStore } from 'effector';
 
 // Базовый стор с примитивным значением
 // StoreWritable<number>
@@ -28292,20 +28670,22 @@ const $counter = createStore(0);
 
 // Стор со сложным объектным типом
 interface User {
-  id: number;
-  name: string;
-  role: "admin" | "user";
+	id: number;
+	name: string;
+	role: 'admin' | 'user';
 }
 
 // StoreWritable<User>
 const $user = createStore<User>({
-  id: 1,
-  name: "Bob",
-  role: "user",
+	id: 1,
+	name: 'Bob',
+	role: 'user',
 });
 
 // Store<string>
-const $userNameAndRole = $user.map((user) => `User name and role: ${user.name} and ${user.role}`);
+const $userNameAndRole = $user.map(
+	(user) => `User name and role: ${user.name} and ${user.role}`,
+);
 ```
 
 #### Типы сторов
@@ -28324,15 +28704,15 @@ const $userNameAndRole = $user.map((user) => `User name and role: ${user.name} a
   <TabItem label="Обычное использование">
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 // Базовый эффект
 // Effect<string, User, Error>
 const fetchUserFx = createEffect(async (userId: string) => {
-  const response = await fetch(`/api/users/${userId}`);
-  const result = await response.json();
+	const response = await fetch(`/api/users/${userId}`);
+	const result = await response.json();
 
-  return result as User;
+	return result as User;
 });
 ```
 
@@ -28341,15 +28721,15 @@ const fetchUserFx = createEffect(async (userId: string) => {
   <TabItem label="Типизация через дженерик">
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 // Базовый эффект
 // Effect<string, User, Error>
 const fetchUserFx = createEffect<string, User>(async (userId) => {
-  const response = await fetch(`/api/users/${userId}`);
-  const result = await response.json();
+	const response = await fetch(`/api/users/${userId}`);
+	const result = await response.json();
 
-  return result;
+	return result;
 });
 ```
 
@@ -28362,8 +28742,8 @@ const fetchUserFx = createEffect<string, User>(async (userId) => {
 
 ```ts
 const sendMessage = async (params: { text: string }) => {
-  // ...
-  return "ok";
+	// ...
+	return 'ok';
 };
 
 const sendMessageFx = createEffect<typeof sendMessage, AxiosError>(sendMessage);
@@ -28377,22 +28757,22 @@ const sendMessageFx = createEffect<typeof sendMessage, AxiosError>(sendMessage);
 ```ts
 // Определяем типы ошибок API
 interface ApiError {
-  code: number;
-  message: string;
+	code: number;
+	message: string;
 }
 
 // Создаём типизированный эффект
 const fetchUserFx = createEffect<string, User, ApiError>(async (userId) => {
-  const response = await fetch(`/api/users/${userId}`);
+	const response = await fetch(`/api/users/${userId}`);
 
-  if (!response.ok) {
-    throw {
-      code: response.status,
-      message: "Failed to fetch user",
-    } as ApiError;
-  }
+	if (!response.ok) {
+		throw {
+			code: response.status,
+			message: 'Failed to fetch user',
+		} as ApiError;
+	}
 
-  return response.json();
+	return response.json();
 });
 ```
 
@@ -28405,28 +28785,28 @@ const fetchUserFx = createEffect<string, User, ApiError>(async (userId) => {
 Если вам необходимо получить конкретный тип, то для этого вам нужно в ручную указать ожидаемый тип, сделать это можно при помощи [типов придикатов](https://www.typescriptlang.org/docs/handbook/advanced-types.html#using-type-predicates):
 
 ```ts
-type UserMessage = { kind: "user"; text: string };
-type WarnMessage = { kind: "warn"; warn: string };
+type UserMessage = { kind: 'user'; text: string };
+type WarnMessage = { kind: 'warn'; warn: string };
 
 const message = createEvent<UserMessage | WarnMessage>();
 const userMessage = createEvent<UserMessage>();
 
 sample({
-  clock: message,
-  filter: (msg): msg is UserMessage => msg.kind === "user",
-  target: userMessage,
+	clock: message,
+	filter: (msg): msg is UserMessage => msg.kind === 'user',
+	target: userMessage,
 });
 ```
 
 Если вам нужно произвести проверку в `filter` на существование данных, то вы можете просто передать `Boolean`:
 
 ```ts
-import { createEvent, createStore, sample } from "effector";
+import { createEvent, createStore, sample } from 'effector';
 
 interface User {
-  id: string;
-  name: string;
-  email: string;
+	id: string;
+	name: string;
+	email: string;
 }
 
 // События
@@ -28438,10 +28818,10 @@ const $currentUser = createStore<User | null>(null);
 
 // При сабмите формы отправляем данные только если юзер существует
 sample({
-  clock: formSubmitted,
-  source: $currentUser,
-  filter: Boolean, // отфильтровываем null
-  target: userDataSaved,
+	clock: formSubmitted,
+	source: $currentUser,
+	filter: Boolean, // отфильтровываем null
+	target: userDataSaved,
 });
 
 // Теперь userDataSaved получит только существующие данные пользователя
@@ -28453,18 +28833,18 @@ sample({
 Однако, такая механика не отработает как нужно при использовании `filter` и `fn` вместе. В таком случае вам потребуется в ручную указать тип данных параметров `filter`, а также добавить [предикаты типов](https://www.typescriptlang.org/docs/handbook/advanced-types.html#using-type-predicates). Это происходит из-за того, что TypeScript не может корректно вывести тип в `fn` после `filter`, если тип не указан явно. Это ограничение системы типов TypeScript.
 
 ```ts
-type UserMessage = { kind: "user"; text: string };
-type WarnMessage = { kind: "warn"; warn: string };
+type UserMessage = { kind: 'user'; text: string };
+type WarnMessage = { kind: 'warn'; warn: string };
 type Message = UserMessage | WarnMessage;
 
 const message = createEvent<Message>();
 const userText = createEvent<string>();
 
 sample({
-  clock: message,
-  filter: (msg: Message): msg is UserMessage => msg.kind === "user",
-  fn: (msg) => msg.text,
-  target: userText,
+	clock: message,
+	filter: (msg: Message): msg is UserMessage => msg.kind === 'user',
+	fn: (msg) => msg.text,
+	target: userText,
 });
 
 // userMessage has type Event<string>
@@ -28480,15 +28860,15 @@ sample({
 Чтобы позволить TypeScript выводить типы создаваемого эффекта, можно добавить тип к первому аргументу `mapParams`, который станет дженериком `Params` у результата:
 
 ```ts
-const sendTextFx = createEffect<{ message: string }, "ok">(() => {
-  // ...
+const sendTextFx = createEffect<{ message: string }, 'ok'>(() => {
+	// ...
 
-  return "ok";
+	return 'ok';
 });
 
 const sendWarningFx = attach({
-  effect: sendTextFx,
-  mapParams: (warningMessage: string) => ({ message: warningMessage }),
+	effect: sendTextFx,
+	mapParams: (warningMessage: string) => ({ message: warningMessage }),
 });
 // sendWarningFx имеет тип Effect<{message: string}, 'ok'>
 ```
@@ -28501,14 +28881,14 @@ const sendWarningFx = attach({
   <TabItem label="до 5.5 версии TS">
 
 ```ts
-type UserMessage = { kind: "user"; text: string };
-type WarnMessage = { kind: "warn"; warn: string };
+type UserMessage = { kind: 'user'; text: string };
+type WarnMessage = { kind: 'warn'; warn: string };
 
 const message = createEvent<UserMessage | WarnMessage>();
 
 const { userMessage, warnMessage } = split(message, {
-  userMessage: (msg): msg is UserMessage => msg.kind === "user",
-  warnMessage: (msg): msg is WarnMessage => msg.kind === "warn",
+	userMessage: (msg): msg is UserMessage => msg.kind === 'user',
+	warnMessage: (msg): msg is WarnMessage => msg.kind === 'warn',
 });
 // userMessage имеет тип Event<UserMessage>
 // warnMessage имеет тип Event<WarnMessage>
@@ -28519,14 +28899,14 @@ const { userMessage, warnMessage } = split(message, {
   <TabItem label="после 5.5 версии TS">
 
 ```ts
-type UserMessage = { kind: "user"; text: string };
-type WarnMessage = { kind: "warn"; warn: string };
+type UserMessage = { kind: 'user'; text: string };
+type WarnMessage = { kind: 'warn'; warn: string };
 
 const message = createEvent<UserMessage | WarnMessage>();
 
 const { userMessage, warnMessage } = split(message, {
-  userMessage: (msg) => msg.kind === "user",
-  warnMessage: (msg) => msg.kind === "warn",
+	userMessage: (msg) => msg.kind === 'user',
+	warnMessage: (msg) => msg.kind === 'warn',
 });
 // userMessage имеет тип Event<UserMessage>
 // warnMessage имеет тип Event<WarnMessage>
@@ -28543,8 +28923,8 @@ const { userMessage, warnMessage } = split(message, {
 const $count = createStore(0);
 
 const { add, sub } = createApi($count, {
-  add: (x, add: number) => x + add,
-  sub: (x, sub: number) => x - sub,
+	add: (x, add: number) => x + add,
+	sub: (x, sub: number) => x - sub,
 });
 
 // add имеет тип Event<number>
@@ -28557,18 +28937,18 @@ const { add, sub } = createApi($count, {
 
 ```ts
 export function getUnitType(unit: unknown) {
-  if (is.event(unit)) {
-    // здесь юнит имеет тип Event<any>
-    return "event";
-  }
-  if (is.effect(unit)) {
-    // здесь юнит имеет тип Effect<any, any>
-    return "effect";
-  }
-  if (is.store(unit)) {
-    // здесь юнит имеет тип Store<any>
-    return "store";
-  }
+	if (is.event(unit)) {
+		// здесь юнит имеет тип Event<any>
+		return 'event';
+	}
+	if (is.effect(unit)) {
+		// здесь юнит имеет тип Effect<any, any>
+		return 'effect';
+	}
+	if (is.store(unit)) {
+		// здесь юнит имеет тип Store<any>
+		return 'store';
+	}
 }
 ```
 
@@ -28577,7 +28957,7 @@ export function getUnitType(unit: unknown) {
 При объединении событий можно получить союз их типов:
 
 ```ts
-import { createEvent, merge } from "effector";
+import { createEvent, merge } from 'effector';
 
 const firstEvent = createEvent<string>();
 const secondEvent = createEvent<number>();
@@ -28596,7 +28976,7 @@ const anyClick = merge([buttonClicked, linkClicked]);
 `merge` принимает дженерик параметр, где можно указать какого типа событий он ожидает:
 
 ```ts
-import { createEvent, merge } from "effector";
+import { createEvent, merge } from 'effector';
 
 const firstEvent = createEvent<string>();
 const secondEvent = createEvent<number>();
@@ -28615,7 +28995,7 @@ Effector предоставляет набор утилитных типов д�
 Тип `UnitValue` служит для извлечение типа данных из юнитов:
 
 ```ts
-import { UnitValue, createEffect, createStore, createEvent } from "effector";
+import { UnitValue, createEffect, createStore, createEvent } from 'effector';
 
 const event = createEvent<{ id: string; name?: string } | { id: string }>();
 type UnitEventType = UnitValue<typeof event>;
@@ -28639,7 +29019,7 @@ type UnitScopeType = UnitValue<typeof scope>;
 `StoreValue` по своей сути похож на `UnitValue`, но работает только со стором:
 
 ```ts
-import { createStore, StoreValue } from "effector";
+import { createStore, StoreValue } from 'effector';
 
 const $store = createStore(true);
 
@@ -28653,7 +29033,7 @@ type StoreValueType = StoreValue<typeof $store>;
 Похож на `UnitValue`, но только для событий
 
 ```ts
-import { createEvent, EventPayload } from "effector";
+import { createEvent, EventPayload } from 'effector';
 
 const event = createEvent<{ id: string }>();
 
@@ -28666,15 +29046,15 @@ type EventPayloadType = EventPayload<typeof event>;
 Принимает тип эффекта в параметры дженерика, позволяет получить тип параметров эффекта.
 
 ```ts
-import { createEffect, EffectParams } from "effector";
+import { createEffect, EffectParams } from 'effector';
 
 const fx = createEffect<
-  { id: string },
-  { name: string; isAdmin: boolean },
-  { statusText: string; status: number }
+	{ id: string },
+	{ name: string; isAdmin: boolean },
+	{ statusText: string; status: number }
 >(() => {
-  // ...
-  return { name: "Alice", isAdmin: false };
+	// ...
+	return { name: 'Alice', isAdmin: false };
 });
 
 type EffectParamsType = EffectParams<typeof fx>;
@@ -28686,13 +29066,13 @@ type EffectParamsType = EffectParams<typeof fx>;
 Принимает тип эффекта в параметры дженерика, позволяет получить тип возвращаемого значения эффекта.
 
 ```ts
-import { createEffect, EffectResult } from "effector";
+import { createEffect, EffectResult } from 'effector';
 
 const fx = createEffect<
-  { id: string },
-  { name: string; isAdmin: boolean },
-  { statusText: string; status: number }
->(() => ({ name: "Alice", isAdmin: false }));
+	{ id: string },
+	{ name: string; isAdmin: boolean },
+	{ statusText: string; status: number }
+>(() => ({ name: 'Alice', isAdmin: false }));
 
 type EffectResultType = EffectResult<typeof fx>;
 // {name: string; isAdmin: boolean}
@@ -28703,18 +29083,17 @@ type EffectResultType = EffectResult<typeof fx>;
 Принимает тип эффекта в параметры дженерика, позволяет получить тип ошибки эффекта.
 
 ```ts
-import { createEffect, EffectError } from "effector";
+import { createEffect, EffectError } from 'effector';
 
 const fx = createEffect<
-  { id: string },
-  { name: string; isAdmin: boolean },
-  { statusText: string; status: number }
->(() => ({ name: "Alice", isAdmin: false }));
+	{ id: string },
+	{ name: string; isAdmin: boolean },
+	{ statusText: string; status: number }
+>(() => ({ name: 'Alice', isAdmin: false }));
 
 type EffectErrorType = EffectError<typeof fx>;
 // {statusText: string; status: number}
 ```
-
 
 # Объединение юнитов
 
@@ -28737,21 +29116,21 @@ type EffectErrorType = EffectError<typeof fx>;
 #### Базовое использование sample
 
 ```ts
-import { createStore, createEvent, sample, createEffect } from "effector";
+import { createStore, createEvent, sample, createEffect } from 'effector';
 
 const buttonClicked = createEvent();
 
-const $userName = createStore("Bob");
+const $userName = createStore('Bob');
 
 const fetchUserFx = createEffect((userName) => {
-  // логика
+	// логика
 });
 
 // При клике на кнопку получаем текущее имя
 sample({
-  clock: buttonClicked,
-  source: $userName,
-  target: fetchUserFx,
+	clock: buttonClicked,
+	source: $userName,
+	target: fetchUserFx,
 });
 ```
 
@@ -28760,14 +29139,14 @@ sample({
 > Если вы не укажете `clock`, то источником вызова также может послужить и `source`. Вы должны использовать хотя бы один из этих свойств аргумента!
 
 ```ts
-import { createStore, sample } from "effector";
+import { createStore, sample } from 'effector';
 
-const $currentUser = createStore({ name: "Bob", age: 25 });
+const $currentUser = createStore({ name: 'Bob', age: 25 });
 
 // создает производный стор, который обновляется, когда source меняется
 const $userAge = sample({
-  source: $currentUser,
-  fn: (user) => user.age,
+	source: $currentUser,
+	fn: (user) => user.age,
 });
 // эквивалентно
 const $userAgeViaMap = $currentUser.map((currentUser) => currentUser.age);
@@ -28775,37 +29154,37 @@ const $userAgeViaMap = $currentUser.map((currentUser) => currentUser.age);
 
 Как вы можете заметить метод `sample` очень гибкий и может использоваться в различных сценариях:
 
-* Когда нужно взять данные из стора в момент события
-* Для трансформации данных перед отправкой
-* Для условной обработки через filter
-* Для синхронизации нескольких источников данных
-* Последовательная цепочка запуска юнитов
+- Когда нужно взять данные из стора в момент события
+- Для трансформации данных перед отправкой
+- Для условной обработки через filter
+- Для синхронизации нескольких источников данных
+- Последовательная цепочка запуска юнитов
 
 #### Фильтрация данных
 
 Вам может потребоваться запустить цепочку вызова, при выполнение каких-то условий, для таких ситуаций метод `sample` позволяет фильтровать данные с помощью параметра `filter`:
 
 ```ts
-import { createEvent, createStore, sample, createEffect } from "effector";
+import { createEvent, createStore, sample, createEffect } from 'effector';
 
 type UserFormData = {
-  username: string;
-  age: number;
+	username: string;
+	age: number;
 };
 
 const submitForm = createEvent();
 
-const $formData = createStore<UserFormData>({ username: "", age: 0 });
+const $formData = createStore<UserFormData>({ username: '', age: 0 });
 
 const submitToServerFx = createEffect((formData: UserFormData) => {
-  // логика
+	// логика
 });
 
 sample({
-  clock: submitForm,
-  source: $formData,
-  filter: (form) => form.age >= 18 && form.username.length > 0,
-  target: submitToServerFx,
+	clock: submitForm,
+	source: $formData,
+	filter: (form) => form.age >= 18 && form.username.length > 0,
+	target: submitToServerFx,
 });
 
 submitForm();
@@ -28822,17 +29201,17 @@ submitForm();
 Часто нужно не просто передать данные, но и преобразовать их. Для этого используется параметр `fn`:
 
 ```ts
-import { createEvent, createStore, sample } from "effector";
+import { createEvent, createStore, sample } from 'effector';
 
 const buttonClicked = createEvent();
-const $user = createStore({ name: "Bob", age: 25 });
-const $userInfo = createStore("");
+const $user = createStore({ name: 'Bob', age: 25 });
+const $userInfo = createStore('');
 
 sample({
-  clock: buttonClicked,
-  source: $user,
-  fn: (user) => `${user.name} is ${user.age} years old`,
-  target: $userInfo,
+	clock: buttonClicked,
+	source: $user,
+	fn: (user) => `${user.name} is ${user.age} years old`,
+	target: $userInfo,
 });
 ```
 
@@ -28841,29 +29220,29 @@ sample({
 Можно использовать несколько сторов как источник данных:
 
 ```ts
-import { createEvent, createStore, sample, createEffect } from "effector";
+import { createEvent, createStore, sample, createEffect } from 'effector';
 
 type SubmitSearch = {
-  query: string;
-  filters: Array<string>;
+	query: string;
+	filters: Array<string>;
 };
 
 const submitSearchFx = createEffect((params: SubmitSearch) => {
-  /// логика
+	/// логика
 });
 
 const searchClicked = createEvent();
 
-const $searchQuery = createStore("");
+const $searchQuery = createStore('');
 const $filters = createStore<string[]>([]);
 
 sample({
-  clock: searchClicked,
-  source: {
-    query: $searchQuery,
-    filters: $filters,
-  },
-  target: submitSearchFx,
+	clock: searchClicked,
+	source: {
+		query: $searchQuery,
+		filters: $filters,
+	},
+	target: submitSearchFx,
 });
 ```
 
@@ -28872,7 +29251,7 @@ sample({
 `sample` позволяет использовать массив событий в качестве `clock`, что очень удобно когда нам нужно обработать одинаковым образом несколько разных триггеров. Это помогает избежать дублирования кода и делает логику более централизованной.
 
 ```ts
-import { createEvent, createStore, sample } from "effector";
+import { createEvent, createStore, sample } from 'effector';
 
 // События для разных действий пользователя
 const saveButtonClicked = createEvent();
@@ -28880,19 +29259,19 @@ const ctrlSPressed = createEvent();
 const autoSaveTriggered = createEvent();
 
 // Общее хранилище данных
-const $formData = createStore({ text: "" });
+const $formData = createStore({ text: '' });
 
 // Эффект сохранения
 const saveDocumentFx = createEffect((data: { text: string }) => {
-  // Логика сохранения
+	// Логика сохранения
 });
 
 // Единая точка сохранения документа, которая срабатывает от любого триггера
 sample({
-  // Все эти события будут вызывать сохранение
-  clock: [saveButtonClicked, ctrlSPressed, autoSaveTriggered],
-  source: $formData,
-  target: saveDocumentFx,
+	// Все эти события будут вызывать сохранение
+	clock: [saveButtonClicked, ctrlSPressed, autoSaveTriggered],
+	source: $formData,
+	target: saveDocumentFx,
 });
 ```
 
@@ -28903,16 +29282,16 @@ sample({
 `sample` позволяет передавать массив юнитов в `target`, что полезно когда одни и те же данные нужно направить в несколько мест одновременно. В `target` можно передать массив любых юнитов - событий, эффектов или сторов.
 
 ```ts
-import { createEvent, createStore, createEffect, sample } from "effector";
+import { createEvent, createStore, createEffect, sample } from 'effector';
 
 // Создаем юниты куда будут направляться данные
 const userDataReceived = createEvent<User>();
 const $lastUserData = createStore<User | null>(null);
 const saveUserFx = createEffect<User, void>((user) => {
-  // Сохраняем пользователя
+	// Сохраняем пользователя
 });
 const logUserFx = createEffect<User, void>((user) => {
-  // Логируем действия с пользователем
+	// Логируем действия с пользователем
 });
 
 const userUpdated = createEvent<User>();
@@ -28923,16 +29302,16 @@ const userUpdated = createEvent<User>();
 // - Обновляем стор $lastUserData
 // - Вызываем событие userDataReceived
 sample({
-  clock: userUpdated,
-  target: [saveUserFx, logUserFx, $lastUserData, userDataReceived],
+	clock: userUpdated,
+	target: [saveUserFx, logUserFx, $lastUserData, userDataReceived],
 });
 ```
 
 Важные моменты:
 
-* Все юниты в target должны быть совместимы по типу с данными из `source`/`clock`
-* Порядок выполнения целей гарантирован - они будут вызваны в порядке написания
-* Можно комбинировать разные типы юнитов в массиве `target`
+- Все юниты в target должны быть совместимы по типу с данными из `source`/`clock`
+- Порядок выполнения целей гарантирован - они будут вызваны в порядке написания
+- Можно комбинировать разные типы юнитов в массиве `target`
 
 #### Возвращаемое значение sample
 
@@ -28949,9 +29328,9 @@ const sendData = createEvent<number>();
 
 // result будет иметь тип EventCallable<number>
 const result = sample({
-  clock: submitted,
-  source: $store,
-  target: sendData,
+	clock: submitted,
+	source: $store,
+	target: sendData,
 });
 ```
 
@@ -28963,21 +29342,21 @@ const result = sample({
 Если **НЕ** указан `filter`, а также `clock` и `source` **являются сторами**, то результат будет **производным стором** с типом данных из `source`.<br/>
 
 ```ts
-import { createStore, sample } from "effector";
+import { createStore, sample } from 'effector';
 
-const $store = createStore("");
+const $store = createStore('');
 const $secondStore = createStore(0);
 
 const $derived = sample({
-  clock: $secondStore,
-  source: $store,
+	clock: $secondStore,
+	source: $store,
 });
 // $derived будет Store<string>
 
 const $secondDerived = sample({
-  clock: $secondStore,
-  source: $store,
-  fn: () => false,
+	clock: $secondStore,
+	source: $store,
+	fn: () => false,
 });
 // $secondDerived будет Store<boolean>
 ```
@@ -28993,22 +29372,22 @@ const $secondDerived = sample({
 > Метод `sample` полностью типизирован, и принимает тип в зависимости от передаваемых параметров!
 
 ```ts
-import { createStore, createEvent, sample } from "effector";
+import { createStore, createEvent, sample } from 'effector';
 
 const $store = createStore(0);
 
 const submitted = createEvent<string>();
 
 const event = sample({
-  clock: submitted,
-  source: $store,
+	clock: submitted,
+	source: $store,
 });
 // event имеет тип Event<number>
 
 const secondSampleEvent = sample({
-  clock: submitted,
-  source: $store,
-  fn: () => true,
+	clock: submitted,
+	source: $store,
+	fn: () => true,
 });
 // Event<true>
 ```
@@ -29018,11 +29397,11 @@ const secondSampleEvent = sample({
 Давайте рассмотрим практический пример, когда при выборе id пользователя нам нужно проверить является ли он админом, сохранить выбранного пользователя в сторе, и на основе выбранного id создать производный стор с данными о пользователе
 
 ```ts
-import { createStore, createEvent, sample } from "effector";
+import { createStore, createEvent, sample } from 'effector';
 
 type User = {
-  id: number;
-  role: string;
+	id: number;
+	role: string;
 };
 
 const userSelected = createEvent<number>();
@@ -29031,20 +29410,21 @@ const $users = createStore<User[]>([]);
 
 // Создаём производный стор, который будет хранить выбранного пользователя
 const $selectedUser = sample({
-  clock: userSelected,
-  source: $users,
-  fn: (users, id) => users.find((user) => user.id === id) || null,
+	clock: userSelected,
+	source: $users,
+	fn: (users, id) => users.find((user) => user.id === id) || null,
 });
 // $selectedUser имеет тип Store<User | null>
 
 // Создаём производное событие, которое будет срабатывать только для админов
 // если выбранный пользователь админ, то событие сработает сразу
 const adminSelected = sample({
-  clock: userSelected,
-  source: $users,
-  // сработает только если пользователь найден и он админ
-  filter: (users, id) => !!users.find((user) => user.id === id && user.role === "admin"),
-  fn: (users, id) => users.find((user) => user.id === id)!,
+	clock: userSelected,
+	source: $users,
+	// сработает только если пользователь найден и он админ
+	filter: (users, id) =>
+		!!users.find((user) => user.id === id && user.role === 'admin'),
+	fn: (users, id) => users.find((user) => user.id === id)!,
 });
 // adminSelected имеет тип Event<User>
 
@@ -29057,41 +29437,43 @@ userSelected(2);
 
 `attach` - это инструмент для создания новых эффектов на основе существующих, с доступом к данным из сторов. Это особенно полезно когда нужно:
 
-* Добавить контекст к эффекту
-* Переиспользовать логику эффекта с разными параметрами
-* Инкапсулировать доступ к стору
+- Добавить контекст к эффекту
+- Переиспользовать логику эффекта с разными параметрами
+- Инкапсулировать доступ к стору
 
 ```ts
-import { attach, createEffect, createStore } from "effector";
+import { attach, createEffect, createStore } from 'effector';
 
 type SendMessageParams = { text: string; token: string };
 
 // Базовый эффект для отправки данных
-const baseSendMessageFx = createEffect<SendMessageParams, void>(async ({ text, token }) => {
-  await fetch("/api/messages", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ text }),
-  });
-});
+const baseSendMessageFx = createEffect<SendMessageParams, void>(
+	async ({ text, token }) => {
+		await fetch('/api/messages', {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify({ text }),
+		});
+	},
+);
 
 // Стор с токеном авторизации
-const $authToken = createStore("default-token");
+const $authToken = createStore('default-token');
 
 // Создаём специализированный эффект, который автоматически использует токен
 const sendMessageFx = attach({
-  effect: baseSendMessageFx,
-  source: $authToken,
-  mapParams: (text: string, token) => ({
-    text,
-    token,
-  }),
+	effect: baseSendMessageFx,
+	source: $authToken,
+	mapParams: (text: string, token) => ({
+		text,
+		token,
+	}),
 });
 
 // Теперь можно вызывать эффект только с текстом сообщения
-sendMessageFx("Hello!"); // токен будет добавлен автоматически
+sendMessageFx('Hello!'); // токен будет добавлен автоматически
 ```
 
 Очень удобно использовать `attach` для переиспользования логики:
@@ -29101,26 +29483,25 @@ const fetchDataFx = createEffect<{ endpoint: string; token: string }, any>();
 
 // Создаём специализированные эффекты для разных эндпоинтов
 const fetchUsersFx = attach({
-  effect: fetchDataFx,
-  mapParams: (_, token) => ({
-    endpoint: "/users",
-    token,
-  }),
-  source: $authToken,
+	effect: fetchDataFx,
+	mapParams: (_, token) => ({
+		endpoint: '/users',
+		token,
+	}),
+	source: $authToken,
 });
 
 const fetchProductsFx = attach({
-  effect: fetchDataFx,
-  mapParams: (_, token) => ({
-    endpoint: "/products",
-    token,
-  }),
-  source: $authToken,
+	effect: fetchDataFx,
+	mapParams: (_, token) => ({
+		endpoint: '/products',
+		token,
+	}),
+	source: $authToken,
 });
 ```
 
 Полное API для&#x20;
-
 
 # Асинхронность в effector
 
@@ -29136,9 +29517,9 @@ const fetchProductsFx = attach({
 
 Эффекты (Effect) — это инструмент Effector для работы с внешними api, или для сторонних эффектов вашего приложения, например:
 
-* Асинхронные запросы на сервер
-* Работа с `localStorage`/`indexedDB`
-* Любые операции, которые могут либо выполниться либо выкинуть ошибку, или выполняться какое-то время
+- Асинхронные запросы на сервер
+- Работа с `localStorage`/`indexedDB`
+- Любые операции, которые могут либо выполниться либо выкинуть ошибку, или выполняться какое-то время
 
 > TIP полезно знать:
 >
@@ -29148,10 +29529,10 @@ const fetchProductsFx = attach({
 
 Работать с эффектами очень удобно благодаря встроенным состояниям и событиям, которые автоматически отслеживает состояние выполнения эффекта:
 
-* `pending` — является стором указывает, выполняется ли эффект, полезно для отображения загрузки.
-* `done` — является событием, срабатывает при успешном завершении.
-* `fail` — является событием, срабатывает при ошибке.
-* `finally` — является событием, срабатывает когда эффект заверешен с ошибкой или успешно.
+- `pending` — является стором указывает, выполняется ли эффект, полезно для отображения загрузки.
+- `done` — является событием, срабатывает при успешном завершении.
+- `fail` — является событием, срабатывает при ошибке.
+- `finally` — является событием, срабатывает когда эффект заверешен с ошибкой или успешно.
 
 С полным api `effect` можно познакомиться здесь.
 
@@ -29161,23 +29542,25 @@ const fetchProductsFx = attach({
 
 ```ts
 const fetchUserFx = createEffect(() => {
-  /* вызов внешнего api */
+	/* вызов внешнего api */
 });
 
-fetchUserFx.pending.watch((isPending) => console.log("Pending:", isPending));
+fetchUserFx.pending.watch((isPending) => console.log('Pending:', isPending));
 
-fetchUserFx.done.watch(({ params, result }) => console.log(`Fetched user ${params}:`, result));
+fetchUserFx.done.watch(({ params, result }) =>
+	console.log(`Fetched user ${params}:`, result),
+);
 
 fetchUserFx.finally.watch((value) => {
-  if (value.status === "done") {
-    console.log("fetchUserFx resolved ", value.result);
-  } else {
-    console.log("fetchUserFx rejected ", value.error);
-  }
+	if (value.status === 'done') {
+		console.log('fetchUserFx resolved ', value.result);
+	} else {
+		console.log('fetchUserFx rejected ', value.error);
+	}
 });
 
 fetchUserFx.fail.watch(({ params, error }) =>
-  console.error(`Failed to fetch user ${params}:`, error),
+	console.error(`Failed to fetch user ${params}:`, error),
 );
 
 fetchUserFx();
@@ -29190,16 +29573,16 @@ fetchUserFx();
 Допустим мы хотим, чтобы при завершении работы эффекта effector взял данные, которые вернул эффект, и обновил стор с новыми данными, сделать это довольно просто при помощи событий эффекта:
 
 ```ts
-import { createStore, createEffect } from "effector";
+import { createStore, createEffect } from 'effector';
 
 const fetchUserNameFx = createEffect(async (userId: string) => {
-  const userData = await fetch(`/api/users/${userId}`);
+	const userData = await fetch(`/api/users/${userId}`);
 
-  return userData.name;
+	return userData.name;
 });
 
 const $error = createStore<string | null>(null);
-const $userName = createStore("");
+const $userName = createStore('');
 const $isLoading = fetchUserNameFx.pending.map((isPending) => isPending);
 
 $error.reset(fetchUserNameFx.done);
@@ -29210,7 +29593,7 @@ $error.on(fetchUserNameFx.fail, (_, { params, error }) => error.message);
 $userName.on(fetchUserNameFx.doneData, (_, result) => result);
 $error.on(fetchUserNameFx.failData, (_, error) => error.message);
 
-$isLoading.watch((loading) => console.log("Is loading:", loading));
+$isLoading.watch((loading) => console.log('Is loading:', loading));
 ```
 
 `doneData` и `failData` являются событиями, которые идентичны `done` и `fail` соответственно, за исключением того, что они получают только `result` и `error` в свои параметры.
@@ -29226,10 +29609,10 @@ $isLoading.watch((loading) => console.log("Is loading:", loading));
 > <!-- todo add link to page about sample -->
 
 ```ts
-import { createEvent, sample } from "effector";
+import { createEvent, sample } from 'effector';
 
 const userLoginFx = createEffect(() => {
-  // какая-то логика
+	// какая-то логика
 });
 
 // Событие для загрузки данных
@@ -29237,8 +29620,8 @@ const formSubmitted = createEvent();
 
 // Связываем событие с эффектом
 sample({
-  clock: formSubmitted, // Когда сработает
-  target: userLoginFx, // Запусти это
+	clock: formSubmitted, // Когда сработает
+	target: userLoginFx, // Запусти это
 });
 
 // где-то в приложении
@@ -29252,21 +29635,23 @@ Effector предоставляет надежные возможности об
 Чтобы типизировать ошибку в эффекте, необходимо передать определенный тип в generic третьим параметром функции `createEffect`:
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 class CustomError extends Error {
-  // реализация
+	// реализация
 }
 
 const effect = createEffect<Params, ReturnValue, CustomError>(async () => {
-  const response = await fetch(`/api/users/${userId}`);
+	const response = await fetch(`/api/users/${userId}`);
 
-  if (!response.ok) {
-    // Вы можете выбрасывать ошибки, которые будут перехвачены обработчиком .fail
-    throw new CustomError(`Не удалось загрузить пользователя: ${response.statusText}`);
-  }
+	if (!response.ok) {
+		// Вы можете выбрасывать ошибки, которые будут перехвачены обработчиком .fail
+		throw new CustomError(
+			`Не удалось загрузить пользователя: ${response.statusText}`,
+		);
+	}
 
-  return response.json();
+	return response.json();
 });
 ```
 
@@ -29277,18 +29662,18 @@ const effect = createEffect<Params, ReturnValue, CustomError>(async () => {
 Рассмотрим реальный пример, где пользователь вводит ID, а по нажатию кнопки загружаются данные о нём.
 
 ```ts
-import { createStore, createEvent, createEffect, sample } from "effector";
+import { createStore, createEvent, createEffect, sample } from 'effector';
 
 // Эффект для загрузки данных
 const fetchUserFx = createEffect(async (id: number) => {
-  const response = await fetch(`/api/user/${id}`);
+	const response = await fetch(`/api/user/${id}`);
 
-  if (!response.ok) {
-    // можно модифицировать ошибку, прежде чем она попадет в fail/failData
-    throw new Error("User not found");
-  }
+	if (!response.ok) {
+		// можно модифицировать ошибку, прежде чем она попадет в fail/failData
+		throw new Error('User not found');
+	}
 
-  return response.json();
+	return response.json();
 });
 
 const setId = createEvent<number>();
@@ -29306,9 +29691,9 @@ $error.reset(fetchUserFx.done);
 
 // Логика загрузки: запускаем fetchUserFx при submit
 sample({
-  clock: submit,
-  source: $id,
-  target: fetchUserFx,
+	clock: submit,
+	source: $id,
+	target: fetchUserFx,
 });
 
 // Использование
@@ -29320,7 +29705,6 @@ submit(); // Загружаем данные
 
 Ознакомиться с полным API для эффектов
 
-
 # Приоритет вычислений
 
 Наверняка вы заметили, что функция должна быть чистой... или следить за тем, чтобы в ней не было побочных эффектов. Мы поговорим об этом в текущем разделе – **Приоритет вычислений**.
@@ -29329,10 +29713,10 @@ submit(); // Загружаем данные
 
 Приоритет вычислений позволяет нам иметь побочные эффекты, и это одна из основных причин создания этой концепции:
 
-* Позволяет сначала выполнить чистые функции.
-* Побочные эффекты могут следовать за согласованным состоянием приложения.
+- Позволяет сначала выполнить чистые функции.
+- Побочные эффекты могут следовать за согласованным состоянием приложения.
 
-На самом деле, чистое вычисление не может быть наблюдаемо вне своей области видимости, поэтому определение ***чистого вычисления***, используемое в этой библиотеке, дает нам возможность оптимизировать группировку.
+На самом деле, чистое вычисление не может быть наблюдаемо вне своей области видимости, поэтому определение **_чистого вычисления_**, используемое в этой библиотеке, дает нам возможность оптимизировать группировку.
 
 Приоритет:
 
@@ -29352,15 +29736,15 @@ submit(); // Загружаем данные
 ```js
 let count = 0;
 const fx = createEffect(() => {
-  // побочный эффект 1
-  count += 1;
+	// побочный эффект 1
+	count += 1;
 });
 
 fx.done.watch(() => {
-  // побочный эффект 1 уже выполнен
-  console.log("ожидаем, что count будет 1", count === 1);
-  // побочный эффект 2
-  count += 1;
+	// побочный эффект 1 уже выполнен
+	console.log('ожидаем, что count будет 1', count === 1);
+	// побочный эффект 2
+	count += 1;
 });
 
 fx();
@@ -29368,7 +29752,7 @@ fx();
 // побочный эффект 2 также уже выполнен
 // это то, что мы ожидали
 // это эффект watchmen
-console.log("ожидаем, что count будет 2", count === 2);
+console.log('ожидаем, что count будет 2', count === 2);
 // пример, который нарушает это соглашение: setState в react
 // который откладывает любой побочный эффект на долгое время после вызова setState
 ```
@@ -29381,24 +29765,23 @@ console.log("ожидаем, что count будет 2", count === 2);
 
 Мы надеемся, что эта информация прояснила некоторые моменты в том, как работает библиотека.
 
-
 # Глоссарий
 
 ### Event
 
-*Event* (*событие*, *ивент*) это функция, на вызовы которой можно подписаться. Она может обозначать намерение изменить состояния в приложении, указанием на то, что происходит в приложении, быть командой для управления сущностями, триггером вычислений и так далее.
+_Event_ (_событие_, _ивент_) это функция, на вызовы которой можно подписаться. Она может обозначать намерение изменить состояния в приложении, указанием на то, что происходит в приложении, быть командой для управления сущностями, триггером вычислений и так далее.
 
 Event в документации.
 
 ### Store
 
-*Store* (*состояние*, *стор*) это объект который хранит состояние. В приложении могут совместно существовать множество состояний
+_Store_ (_состояние_, _стор_) это объект который хранит состояние. В приложении могут совместно существовать множество состояний
 
 Store в документации.
 
 ### Effect
 
-*Effect* это контейнер для сайд-эффектов, возможно асинхронных. В комплекте имеет ряд заранее созданных эвентов и сторов, облегчающих стандартные действия
+_Effect_ это контейнер для сайд-эффектов, возможно асинхронных. В комплекте имеет ряд заранее созданных эвентов и сторов, облегчающих стандартные действия
 
 При императивном вызове всегда возвращает Promise с результатом.
 
@@ -29408,7 +29791,7 @@ Effect в документации
 
 ### Domain
 
-*Domain* это способ группировки и применения массовых обработок к юнитам. Домены получают уведомления о создании событий, сторов, эффектов и вложенных доменов. Часто используются для логирования и SSR
+_Domain_ это способ группировки и применения массовых обработок к юнитам. Домены получают уведомления о создании событий, сторов, эффектов и вложенных доменов. Часто используются для логирования и SSR
 
 Domain в документации
 
@@ -29428,16 +29811,16 @@ Domain в документации
 **Правильно**, императивно:
 
 ```js
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
-const login = createStore("guest");
+const login = createStore('guest');
 
 const loginSize = login.map((login) => login.length);
 
 const submitLoginSize = createEvent();
 
 loginSize.watch((size) => {
-  submitLoginSize(size);
+	submitLoginSize(size);
 });
 ```
 
@@ -29450,17 +29833,17 @@ loginSize.watch((size) => {
 **Правильно**, декларативно:
 
 ```js
-import { createStore, createEvent, sample } from "effector";
+import { createStore, createEvent, sample } from 'effector';
 
-const login = createStore("guest");
+const login = createStore('guest');
 
 const loginSize = login.map((login) => login.length);
 
 const submitLoginSize = createEvent();
 
 sample({
-  clock: loginSize,
-  target: submitLoginSize,
+	clock: loginSize,
+	target: submitLoginSize,
 });
 ```
 
@@ -29471,15 +29854,15 @@ sample в документации
 **Неправильно**:
 
 ```js
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const submitLoginSize = createEvent();
 
-const login = createStore("guest");
+const login = createStore('guest');
 const loginSize = login.map((login) => {
-  // лучше переместить этот вызов в watch или эффект
-  submitLoginSize(login.length);
-  return login.length;
+	// лучше переместить этот вызов в watch или эффект
+	submitLoginSize(login.length);
+	return login.length;
 });
 ```
 
@@ -29490,7 +29873,7 @@ type StoreReducer<State, E> = (state: State, payload: E) => State | void;
 type EventOrEffectReducer<T, E> = (state: T, payload: E) => T;
 ```
 
-*Reducer* вычисляет новое состояние, учитывая предыдущее состояние и данные из события. Для сторов, если reducer возвращает undefined или то же состояние (===), то обновления не будет
+_Reducer_ вычисляет новое состояние, учитывая предыдущее состояние и данные из события. Для сторов, если reducer возвращает undefined или то же состояние (===), то обновления не будет
 
 ### Watcher
 
@@ -29498,14 +29881,14 @@ type EventOrEffectReducer<T, E> = (state: T, payload: E) => T;
 type Watcher<T> = (update: T) => any;
 ```
 
-*Watcher* – функция с сайд-эффектами, для работы которых не нужны возможности по перехвату ошибок и уведомления подписчиков об завершении асинхронной работы. Используется в event.watch, store.watch и хуках домена. Возвращаемое значение игнорируется
+_Watcher_ – функция с сайд-эффектами, для работы которых не нужны возможности по перехвату ошибок и уведомления подписчиков об завершении асинхронной работы. Используется в event.watch, store.watch и хуках домена. Возвращаемое значение игнорируется
 
 ### Subscription
 
 ```typescript
 type Subscription = {
-  (): void;
-  unsubscribe(): void;
+	(): void;
+	unsubscribe(): void;
 };
 ```
 
@@ -29517,42 +29900,36 @@ type Subscription = {
 > Эффектор предоставляет широкий набор возможностей, чтобы свести необходимость удаления подписок к минимуму. Это отличает его от большинства других реактивных библиотек
 
 [effect]: /ru/api/effector/Effect
-
 [store]: /ru/api/effector/Store
-
 [event]: /ru/api/effector/Event
-
 [domain]: /ru/api/effector/Domain
-
 [scope]: /ru/api/effector/Scope
-
 
 # Prior Art
 
 ### Пейперы
 
-* **Functional Pearl. Weaving a Web** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/weaver+zipper.pdf) *Ralf Hinze and Johan Jeuring*
-* **A graph model of data and workflow provenance** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/A+graph+model+of+data+and+workflow+provenance.pdf) <br/> *Umut Acar, Peter Buneman, James Cheney, Jan Van den Bussche, Natalia Kwasnikowska and Stijn Vansummeren*
-* **An Applicative Control-Flow Graph Based on Huet’s Zipper** [\[pdf\]](http://zero-bias-papers.s3-website-eu-west-1.amazonaws.com/zipcfg.pdf) <br/> *Norman Ramsey and Joao Dias*
-* **Elm: Concurrent FRP for Functional GUIs** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/elm-concurrent-frp.pdf) <br/> *Evan Czaplicki*
-* **Inductive Graphs and Functional Graph Algorithms** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Inductive+Graphs+and+Functional+Graph+Algorithms.pdf) <br/> *Martin Erwig*
-* **Notes on Graph Algorithms Used in Optimizing Compilers** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Graph+Algorithms+Used+in+Optimizing+Compilers.pdf) <br/> *Carl D. Offner*
-* **Backtracking, Interleaving, and Terminating Monad Transformers** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Backtracking%2C+Interleaving%2C+and+Terminating+Monad+Transformers.pdf) <br/> *Oleg Kiselyov, Chung-chieh Shan, Daniel P. Friedman and Amr Sabry*
-* **Typed Tagless Final Interpreters** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Typed+Tagless+Final+Interpreters.pdf) *Oleg Kiselyov*
+- **Functional Pearl. Weaving a Web** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/weaver+zipper.pdf) _Ralf Hinze and Johan Jeuring_
+- **A graph model of data and workflow provenance** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/A+graph+model+of+data+and+workflow+provenance.pdf) <br/> _Umut Acar, Peter Buneman, James Cheney, Jan Van den Bussche, Natalia Kwasnikowska and Stijn Vansummeren_
+- **An Applicative Control-Flow Graph Based on Huet’s Zipper** [\[pdf\]](http://zero-bias-papers.s3-website-eu-west-1.amazonaws.com/zipcfg.pdf) <br/> _Norman Ramsey and Joao Dias_
+- **Elm: Concurrent FRP for Functional GUIs** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/elm-concurrent-frp.pdf) <br/> _Evan Czaplicki_
+- **Inductive Graphs and Functional Graph Algorithms** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Inductive+Graphs+and+Functional+Graph+Algorithms.pdf) <br/> _Martin Erwig_
+- **Notes on Graph Algorithms Used in Optimizing Compilers** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Graph+Algorithms+Used+in+Optimizing+Compilers.pdf) <br/> _Carl D. Offner_
+- **Backtracking, Interleaving, and Terminating Monad Transformers** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Backtracking%2C+Interleaving%2C+and+Terminating+Monad+Transformers.pdf) <br/> _Oleg Kiselyov, Chung-chieh Shan, Daniel P. Friedman and Amr Sabry_
+- **Typed Tagless Final Interpreters** [\[pdf\]](https://zero-bias-papers.s3-eu-west-1.amazonaws.com/Typed+Tagless+Final+Interpreters.pdf) _Oleg Kiselyov_
 
 ### Книги
 
-* **Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions** [\[book\]](https://www.amazon.com/o/asin/0321200683/ref=nosim/enterpriseint-20), [\[messaging patterns overview\]](https://www.enterpriseintegrationpatterns.com/patterns/messaging/) <br/> *Gregor Hohpe and Bobby Woolf*
+- **Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions** [\[book\]](https://www.amazon.com/o/asin/0321200683/ref=nosim/enterpriseint-20), [\[messaging patterns overview\]](https://www.enterpriseintegrationpatterns.com/patterns/messaging/) <br/> _Gregor Hohpe and Bobby Woolf_
 
 ### API
 
-* [re-frame](https://github.com/day8/re-frame)
-* [flux](https://facebook.github.io/flux/)
-* [redux](https://redux.js.org/)
-* [redux-act](https://github.com/pauldijou/redux-act)
-* [most](https://github.com/cujojs/most)
-* nodejs [events](https://nodejs.org/dist/latest-v12.x/docs/api/events.html#events_emitter_on_eventname_listener)
-
+- [re-frame](https://github.com/day8/re-frame)
+- [flux](https://facebook.github.io/flux/)
+- [redux](https://redux.js.org/)
+- [redux-act](https://github.com/pauldijou/redux-act)
+- [most](https://github.com/cujojs/most)
+- nodejs [events](https://nodejs.org/dist/latest-v12.x/docs/api/events.html#events_emitter_on_eventname_listener)
 
 # Sids
 
@@ -29576,34 +29953,34 @@ Effector основан на идее атомарного стора. Это о
 
 ```ts
 // server.ts
-import { createStore } from "single-store-state-manager";
+import { createStore } from 'single-store-state-manager';
 
 function handlerRequest() {
-  const store = createStore({ initialValue: null });
+	const store = createStore({ initialValue: null });
 
-  return {
-    // Можно просто сериализовать весь стор
-    state: JSON.stringify(store.getState()),
-  };
+	return {
+		// Можно просто сериализовать весь стор
+		state: JSON.stringify(store.getState()),
+	};
 }
 
 // client.ts
-import { createStore } from "single-store-state-manager";
+import { createStore } from 'single-store-state-manager';
 
 // Предположим, что сервер поместил состояние в HTML
 const serverState = readServerStateFromWindow();
 
 const store = createStore({
-  // Просто парсим все состояние и используем его как состояние клиента
-  initialValue: JSON.parse(serverState),
+	// Просто парсим все состояние и используем его как состояние клиента
+	initialValue: JSON.parse(serverState),
 });
 ```
 
 Это здорово, что не нужно никаких дополнительных инструментов для сериализации и десериализации, но у одного стора есть несколько проблем:
 
-* Он не поддерживает tree-shaking и code-splitting, вам все равно придется загружать весь стор
-* Из-за своей архитектуры он требует дополнительных инструментов для исправления производительности (например, `reselect`)
-* Он не поддерживает микрофронтенды и другие вещи, которые становятся все более популярными
+- Он не поддерживает tree-shaking и code-splitting, вам все равно придется загружать весь стор
+- Из-за своей архитектуры он требует дополнительных инструментов для исправления производительности (например, `reselect`)
+- Он не поддерживает микрофронтенды и другие вещи, которые становятся все более популярными
 
 #### Множественные сторы
 
@@ -29628,8 +30005,8 @@ const store = createStore({
 Давайте добавим его в некоторые сторы:
 
 ```ts
-const $name = createStore(null, { sid: "name" });
-const $age = createStore(null, { sid: "age" });
+const $name = createStore(null, { sid: 'name' });
+const $age = createStore(null, { sid: 'age' });
 ```
 
 Теперь мы можем сериализовать и десериализовать сторы:
@@ -29637,17 +30014,17 @@ const $age = createStore(null, { sid: "age" });
 ```ts
 // server.ts
 async function handlerRequest() {
-  // создаем изолированный экземпляр приложения
-  const scope = fork();
+	// создаем изолированный экземпляр приложения
+	const scope = fork();
 
-  // заполняем сторы данными
-  await allSettled($name, { scope, params: "Igor" });
-  await allSettled($age, { scope, params: 25 });
+	// заполняем сторы данными
+	await allSettled($name, { scope, params: 'Igor' });
+	await allSettled($age, { scope, params: 25 });
 
-  const state = JSON.serialize(serialize(scope));
-  // -> { "name": "Igor", "age": 25 }
+	const state = JSON.serialize(serialize(scope));
+	// -> { "name": "Igor", "age": 25 }
 
-  return { state };
+	return { state };
 }
 ```
 
@@ -29658,8 +30035,8 @@ async function handlerRequest() {
 const serverState = readServerStateFromWindow();
 
 const scope = fork({
-  // Просто парсим все состояние и используем его как состояние клиента
-  values: JSON.parse(serverState),
+	// Просто парсим все состояние и используем его как состояние клиента
+	values: JSON.parse(serverState),
 });
 ```
 
@@ -29683,41 +30060,48 @@ const scope = fork({
 
 ```tsx
 // src/features/first-name/model.ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 export const firstNameChanged = createEvent<string>();
-export const $firstName = createStore("");
+export const $firstName = createStore('');
 
 $firstName.on(firstNameChanged, (_, firstName) => firstName);
 
 // src/features/last-name/model.ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 export const lastNameChanged = createEvent<string>();
-export const $lastName = createStore("");
+export const $lastName = createStore('');
 
 $lastName.on(lastNameChanged, (_, lastName) => lastName);
 
 // src/features/form/model.ts
-import { createEvent, sample, combine } from "effector";
+import { createEvent, sample, combine } from 'effector';
 
-import { $firstName, firstNameChanged } from "@/features/first-name";
-import { $lastName, lastNameChanged } from "@/features/last-name";
+import { $firstName, firstNameChanged } from '@/features/first-name';
+import { $lastName, lastNameChanged } from '@/features/last-name';
 
-export const formValuesFilled = createEvent<{ firstName: string; lastName: string }>();
+export const formValuesFilled = createEvent<{
+	firstName: string;
+	lastName: string;
+}>();
 
-export const $fullName = combine($firstName, $lastName, (first, last) => `${first} ${last}`);
+export const $fullName = combine(
+	$firstName,
+	$lastName,
+	(first, last) => `${first} ${last}`,
+);
 
 sample({
-  clock: formValuesFilled,
-  fn: (values) => values.firstName,
-  target: firstNameChanged,
+	clock: formValuesFilled,
+	fn: (values) => values.firstName,
+	target: firstNameChanged,
 });
 
 sample({
-  clock: formValuesFilled,
-  fn: (values) => values.lastName,
-  target: lastNameChanged,
+	clock: formValuesFilled,
+	fn: (values) => values.lastName,
+	target: lastNameChanged,
 });
 ```
 
@@ -29747,36 +30131,36 @@ sample({
 
 ```tsx
 // src/server/handler.ts
-import { fork, allSettled, serialize } from "effector";
+import { fork, allSettled, serialize } from 'effector';
 
-import { formValuesFilled } from "@/features/form";
+import { formValuesFilled } from '@/features/form';
 
 async function handleServerRequest(req) {
-  const scope = fork(); // создает изолированный контейнер для состояния приложения
+	const scope = fork(); // создает изолированный контейнер для состояния приложения
 
-  // вычисляем состояние приложения в этом scope
-  await allSettled(formValuesFilled, {
-    scope,
-    params: {
-      firstName: "John",
-      lastName: "Doe",
-    },
-  });
+	// вычисляем состояние приложения в этом scope
+	await allSettled(formValuesFilled, {
+		scope,
+		params: {
+			firstName: 'John',
+			lastName: 'Doe',
+		},
+	});
 
-  // извлекаем значения scope в простой js объект `{[storeSid]: storeState}`
-  const values = serialize(scope);
+	// извлекаем значения scope в простой js объект `{[storeSid]: storeState}`
+	const values = serialize(scope);
 
-  const serializedState = JSON.stringify(values);
+	const serializedState = JSON.stringify(values);
 
-  return renderHtmlToString({
-    scripts: [
-      `
+	return renderHtmlToString({
+		scripts: [
+			`
         <script>
             self._SERVER_STATE_ = ${serializedState}
         </script>
       `,
-    ],
-  });
+		],
+	});
 }
 ```
 
@@ -29788,20 +30172,20 @@ async function handleServerRequest(req) {
 
 ```tsx
 // src/client/index.ts
-import { Provider } from "effector-react";
+import { Provider } from 'effector-react';
 
 const serverState = window._SERVER_STATE_;
 
 const clientScope = fork({
-  values: serverState, // просто назначаем серверное состояние на scope
+	values: serverState, // просто назначаем серверное состояние на scope
 });
 
 clientScope.getState($lastName); // "Doe"
 
 hydrateApp(
-  <Provider value={clientScope}>
-    <App />
-  </Provider>,
+	<Provider value={clientScope}>
+		<App />
+	</Provider>,
 );
 ```
 
@@ -29831,7 +30215,7 @@ const $name = createStore(null);
 Плагин применит следующие трансформации:
 
 ```ts
-const $name = createStore(null, { sid: "j3l44" });
+const $name = createStore(null, { sid: 'j3l44' });
 ```
 
 > TIP:
@@ -29844,9 +30228,9 @@ const $name = createStore(null, { sid: "j3l44" });
 
 Примеры кастомных фабрик:
 
-* `createQuery`, `createMutation` из [`farfetched`](https://ff.effector.dev/)
-* `debounce`, `throttle` и т.д. из [`patronum`](https://patronum.effector.dev/)
-* Любая кастомная фабрика в вашем коде, например фабрика сущности [feature-flag](https://ff.effector.dev/recipes/feature_flags.html)
+- `createQuery`, `createMutation` из [`farfetched`](https://ff.effector.dev/)
+- `debounce`, `throttle` и т.д. из [`patronum`](https://patronum.effector.dev/)
+- Любая кастомная фабрика в вашем коде, например фабрика сущности [feature-flag](https://ff.effector.dev/recipes/feature_flags.html)
 
 > TIP:
 >
@@ -29857,16 +30241,16 @@ const $name = createStore(null, { sid: "j3l44" });
 ```ts
 // src/shared/lib/create-name/index.ts
 export function createName() {
-  const updateName = createEvent();
-  const $name = createStore(null);
+	const updateName = createEvent();
+	const $name = createStore(null);
 
-  $name.on(updateName, (_, nextName) => nextName);
+	$name.on(updateName, (_, nextName) => nextName);
 
-  return { $name };
+	return { $name };
 }
 
 // src/feature/persons/model.ts
-import { createName } from "@/shared/lib/create-name";
+import { createName } from '@/shared/lib/create-name';
 
 const personOne = createName();
 const personTwo = createName();
@@ -29877,16 +30261,16 @@ const personTwo = createName();
 ```ts
 // src/shared/lib/create-name/index.ts
 export function createName() {
-  const updateName = createEvent();
-  const $name = createStore(null, { sid: "ffds2" });
+	const updateName = createEvent();
+	const $name = createStore(null, { sid: 'ffds2' });
 
-  $name.on(updateName, (_, nextName) => nextName);
+	$name.on(updateName, (_, nextName) => nextName);
 
-  return { $name };
+	return { $name };
 }
 
 // src/feature/persons/model.ts
-import { createName } from "@/shared/lib/create-name";
+import { createName } from '@/shared/lib/create-name';
 
 const personOne = createName();
 const personTwo = createName();
@@ -29900,14 +30284,14 @@ const personTwo = createName();
 ```json
 // .babelrc
 {
-  "plugins": [
-    [
-      "effector/babel-plugin",
-      {
-        "factories": ["@/shared/lib/create-name"]
-      }
-    ]
-  ]
+	"plugins": [
+		[
+			"effector/babel-plugin",
+			{
+				"factories": ["@/shared/lib/create-name"]
+			}
+		]
+	]
 }
 ```
 
@@ -29926,25 +30310,25 @@ const personTwo = createName();
 ```ts
 // src/shared/lib/create-name/index.ts
 export function createName() {
-  const updateName = createEvent();
-  const $name = createStore(null, { sid: "ffds2" });
+	const updateName = createEvent();
+	const $name = createStore(null, { sid: 'ffds2' });
 
-  $name.on(updateName, (_, nextName) => nextName);
+	$name.on(updateName, (_, nextName) => nextName);
 
-  return { $name };
+	return { $name };
 }
 
 // src/feature/persons/model.ts
-import { withFactory } from "effector";
-import { createName } from "@/shared/lib/create-name";
+import { withFactory } from 'effector';
+import { createName } from '@/shared/lib/create-name';
 
 const personOne = withFactory({
-  sid: "gre24f",
-  fn: () => createName(),
+	sid: 'gre24f',
+	fn: () => createName(),
 });
 const personTwo = withFactory({
-  sid: "lpefgd",
-  fn: () => createName(),
+	sid: 'lpefgd',
+	fn: () => createName(),
 });
 ```
 
@@ -29965,21 +30349,21 @@ personTwo.$name.sid; // lpefgd|ffds2
 let globalSid = null;
 
 function withFactory({ sid, fn }) {
-  globalSid = sid;
+	globalSid = sid;
 
-  const result = fn();
+	const result = fn();
 
-  globalSid = null;
+	globalSid = null;
 
-  return result;
+	return result;
 }
 
 function createStore(initialValue, { sid }) {
-  if (globalSid) {
-    sid = `${globalSid}|${sid}`;
-  }
+	if (globalSid) {
+		sid = `${globalSid}|${sid}`;
+	}
 
-  // ...
+	// ...
 }
 ```
 
@@ -29996,7 +30380,6 @@ function createStore(initialValue, { sid }) {
 3. Плагины для трансформации кода добавляют `sid` и мета-информацию к созданию юнитов Effector, таких как `createStore` или `createEvent`.
 4. Плагины для трансформации кода оборачивают кастомные фабрики вспомогательной функцией `withFactory`, которая позволяет сделать `sid` внутренних юнитов уникальными.
 
-
 # Лучшие практики и рекомендации в effector
 
 import Tabs from "@components/Tabs/Tabs.astro";
@@ -30012,15 +30395,15 @@ import TabItem from "@components/Tabs/TabItem.astro";
 
 Большие сторы с множеством полей создают несколько проблем:
 
-* Лишние ре-рендеры: При изменении любого поля обновляются все компоненты, подписанные на стор
-* Тяжелые вычисления: Каждое обновление требует копирования всего объекта
-* Лишние вычисления: если вы имеете производные сторы зависящие от большого стора, то они будут перевычисляться
+- Лишние ре-рендеры: При изменении любого поля обновляются все компоненты, подписанные на стор
+- Тяжелые вычисления: Каждое обновление требует копирования всего объекта
+- Лишние вычисления: если вы имеете производные сторы зависящие от большого стора, то они будут перевычисляться
 
 Атомарные сторы позволяют:
 
-* Обновлять только то, что действительно изменилось
-* Подписываться только на нужные данные
-* Эффективнее работать с реактивными зависимостями
+- Обновлять только то, что действительно изменилось
+- Подписываться только на нужные данные
+- Эффективнее работать с реактивными зависимостями
 
 ```ts
 // ❌ Большой стор - любое изменение вызывает обновление всего
@@ -30045,28 +30428,28 @@ const UserName = () => {
 
 Правила атомарных сторов:
 
-* Один стор = одна ответственность
-* Стор должен быть неделимым
-* Сторы можно объединять через combine
-* Обновление стора не должно затрагивать другие данные
+- Один стор = одна ответственность
+- Стор должен быть неделимым
+- Сторы можно объединять через combine
+- Обновление стора не должно затрагивать другие данные
 
 ### Immer для сложных объектов
 
 Если ваш стор содержит в себе вложенные структуры, то вы можете использовать всеми любимый [Immer](https://github.com/immerjs/immer) для упрощенного обновления:
 
 ```ts
-import { createStore } from "effector";
-import { produce } from "immer";
+import { createStore } from 'effector';
+import { produce } from 'immer';
 
 const $users = createStore<User[]>([]);
 
 $users.on(userUpdated, (users, updatedUser) =>
-  produce(users, (draft) => {
-    const user = draft.find((u) => u.id === updatedUser.id);
-    if (user) {
-      user.profile.settings.theme = updatedUser.profile.settings.theme;
-    }
-  }),
+	produce(users, (draft) => {
+		const user = draft.find((u) => u.id === updatedUser.id);
+		if (user) {
+			user.profile.settings.theme = updatedUser.profile.settings.theme;
+		}
+	}),
 );
 ```
 
@@ -30091,12 +30474,12 @@ export const appStarted = createEvent();
   <TabItem label="Без скоупов">
 
 ```ts
-import { sample } from "effector";
-import { scope } from "./app.js";
+import { sample } from 'effector';
+import { scope } from './app.js';
 
 sample({
-  clock: appStarted,
-  target: initFx,
+	clock: appStarted,
+	target: initFx,
 });
 
 appStarted();
@@ -30106,12 +30489,12 @@ appStarted();
   <TabItem label="Со скоупами">
 
 ```ts
-import { sample, allSettled } from "effector";
-import { scope } from "./app.js";
+import { sample, allSettled } from 'effector';
+import { scope } from './app.js';
 
 sample({
-  clock: appStarted,
-  target: initFx,
+	clock: appStarted,
+	target: initFx,
 });
 
 allSettled(appStarted, { scope });
@@ -30131,18 +30514,18 @@ allSettled(appStarted, { scope });
 Использование хука `useUnit` является рекомендуемым способом для работы с юнитами при использовании фреймворков (📘React, 📗Vue и 📘Solid).
 Почему нужно использовать `useUnit`:
 
-* Корректная работа со сторами
-* Оптимизированные обновления
-* Автоматическая работа со  – юниты сами знают в каком скоупе они были вызваны
+- Корректная работа со сторами
+- Оптимизированные обновления
+- Автоматическая работа со – юниты сами знают в каком скоупе они были вызваны
 
 ### Чистые функции
 
 Используйте чистые функции везде, кроме эффектов, для обработки данных, это обеспечивает:
 
-* Детерминированный результат
-* Отсутствие сайд-эффектов
-* Проще для тестирования
-* Легче поддерживать
+- Детерминированный результат
+- Отсутствие сайд-эффектов
+- Проще для тестирования
+- Легче поддерживать
 
 > TIP Эта работа для эффектов:
 >
@@ -30153,19 +30536,21 @@ allSettled(appStarted, { scope });
 Мы настоятельно рекомендуем вам использовать библиотеку [`patronum`](https://patronum.effector.dev/operators/) и метод [`debug`](https://patronum.effector.dev/operators/debug/).
 
 ```ts
-import { createStore, createEvent, createEffect } from "effector";
-import { debug } from "patronum/debug";
+import { createStore, createEvent, createEffect } from 'effector';
+import { debug } from 'patronum/debug';
 
 const event = createEvent();
-const effect = createEffect().use((payload) => Promise.resolve("result" + payload));
+const effect = createEffect().use((payload) =>
+	Promise.resolve('result' + payload),
+);
 const $store = createStore(0)
-  .on(event, (state, value) => state + value)
-  .on(effect.done, (state) => state * 10);
+	.on(event, (state, value) => state + value)
+	.on(effect.done, (state) => state * 10);
 
 debug($store, event, effect);
 
 event(5);
-effect("demo");
+effect('demo');
 
 // => [store] $store 1
 // => [event] event 5
@@ -30191,17 +30576,17 @@ effect("demo");
 
 Farfetched предоставляет:
 
-* Мутации и квери
-* Готовое апи для кеширование и др.
-* Независимость от фреймворков
+- Мутации и квери
+- Готовое апи для кеширование и др.
+- Независимость от фреймворков
 
 ### Утилиты для работы с effector
 
 В экосистеме Effector находится библиотека [patronum](https://patronum.effector.dev/operators/), которая предоставляет готовые решения для работы с юнитами:
 
-* Управление состоянием (`condition`, `status` и др.)
-* Работа со временем (`debounce`, `interval` и др.)
-* Функции предикаты (`not`, `or`, `once` и др.)
+- Управление состоянием (`condition`, `status` и др.)
+- Работа со временем (`debounce`, `interval` и др.)
+- Функции предикаты (`not`, `or`, `once` и др.)
 
 ### Упрощение сложной логики с `createAction`
 
@@ -30212,35 +30597,35 @@ Farfetched предоставляет:
   <TabItem label="❌ Сложный sample">
 
 ```ts
-import { sample } from "effector";
+import { sample } from 'effector';
 
 sample({
-  clock: formSubmitted,
-  source: {
-    form: $form,
-    settings: $settings,
-    user: $user,
-  },
-  filter: ({ form }) => form.isValid,
-  fn: ({ form, settings, user }) => ({
-    data: form,
-    theme: settings.theme,
-  }),
-  target: submitFormFx,
+	clock: formSubmitted,
+	source: {
+		form: $form,
+		settings: $settings,
+		user: $user,
+	},
+	filter: ({ form }) => form.isValid,
+	fn: ({ form, settings, user }) => ({
+		data: form,
+		theme: settings.theme,
+	}),
+	target: submitFormFx,
 });
 
 sample({
-  clock: formSubmitted,
-  source: $form,
-  filter: (form) => !form.isValid,
-  target: showErrorMessageFx,
+	clock: formSubmitted,
+	source: $form,
+	filter: (form) => !form.isValid,
+	target: showErrorMessageFx,
 });
 
 sample({
-  clock: submitFormFx.done,
-  source: $settings,
-  filter: (settings) => settings.sendNotifications,
-  target: sendNotificationFx,
+	clock: submitFormFx.done,
+	source: $settings,
+	filter: (settings) => settings.sendNotifications,
+	target: sendNotificationFx,
 });
 ```
 
@@ -30249,40 +30634,40 @@ sample({
 <TabItem label="✅ С createAction">
 
 ```ts
-import { createAction } from "effector-action";
+import { createAction } from 'effector-action';
 
 const submitForm = createAction({
-  source: {
-    form: $form,
-    settings: $settings,
-    user: $user,
-  },
-  target: {
-    submitFormFx,
-    showErrorMessageFx,
-    sendNotificationFx,
-  },
-  fn: (target, { form, settings, user }) => {
-    if (!form.isValid) {
-      target.showErrorMessageFx(form.errors);
-      return;
-    }
+	source: {
+		form: $form,
+		settings: $settings,
+		user: $user,
+	},
+	target: {
+		submitFormFx,
+		showErrorMessageFx,
+		sendNotificationFx,
+	},
+	fn: (target, { form, settings, user }) => {
+		if (!form.isValid) {
+			target.showErrorMessageFx(form.errors);
+			return;
+		}
 
-    target.submitFormFx({
-      data: form,
-      theme: settings.theme,
-    });
-  },
+		target.submitFormFx({
+			data: form,
+			theme: settings.theme,
+		});
+	},
 });
 
 createAction(submitFormFx.done, {
-  source: $settings,
-  target: sendNotificationFx,
-  fn: (sendNotification, settings) => {
-    if (settings.sendNotifications) {
-      sendNotification();
-    }
-  },
+	source: $settings,
+	target: sendNotificationFx,
+	fn: (sendNotification, settings) => {
+		if (settings.sendNotifications) {
+			sendNotification();
+		}
+	},
 });
 
 submitForm();
@@ -30295,20 +30680,20 @@ submitForm();
 
 Используйте принятые соглашения об именовании:
 
-* Для сторов – префикс `$`
-* Для эффектов – постфикс `fx`, это позволит вам отличать ваши эффекты от событий
-* Для событий – правил нет, однако мы предлагаем вам называть события, которые напрямую запускают обновления сторов, как будто они уже произошли.
+- Для сторов – префикс `$`
+- Для эффектов – постфикс `fx`, это позволит вам отличать ваши эффекты от событий
+- Для событий – правил нет, однако мы предлагаем вам называть события, которые напрямую запускают обновления сторов, как будто они уже произошли.
 
 ```ts
 const updateUserNameFx = createEffect(() => {});
 
 const userNameUpdated = createEvent();
 
-const $userName = createStore("JS");
+const $userName = createStore('JS');
 
 $userName.on(userNameUpdated, (_, newName) => newName);
 
-userNameUpdated("TS");
+userNameUpdated('TS');
 ```
 
 > INFO Соглашение об именовании:
@@ -30327,9 +30712,9 @@ userNameUpdated("TS");
 ```ts
 // Логика в watch
 $user.watch((user) => {
-  localStorage.setItem("user", JSON.stringify(user));
-  api.trackUserUpdate(user);
-  someEvent(user.id);
+	localStorage.setItem('user', JSON.stringify(user));
+	api.trackUserUpdate(user);
+	someEvent(user.id);
 });
 ```
 
@@ -30339,22 +30724,22 @@ $user.watch((user) => {
 ```ts
 // Отдельные эффекты для сайд-эффектов
 const saveToStorageFx = createEffect((user: User) =>
-  localStorage.setItem("user", JSON.stringify(user)),
+	localStorage.setItem('user', JSON.stringify(user)),
 );
 
 const trackUpdateFx = createEffect((user: User) => api.trackUserUpdate(user));
 
 // Связываем через sample
 sample({
-  clock: $user,
-  target: [saveToStorageFx, trackUpdateFx],
+	clock: $user,
+	target: [saveToStorageFx, trackUpdateFx],
 });
 
 // Для событий тоже используем sample
 sample({
-  clock: $user,
-  fn: (user) => user.id,
-  target: someEvent,
+	clock: $user,
+	fn: (user) => user.id,
+	target: someEvent,
 });
 ```
 
@@ -30376,10 +30761,10 @@ sample({
 $users.on(userAdded, (state, payload) => [...state, payload]);
 
 sample({
-  clock: buttonClicked,
-  source: $data,
-  fn: (data) => data,
-  target: someFx,
+	clock: buttonClicked,
+	source: $data,
+	fn: (data) => data,
+	target: someFx,
 });
 ```
 
@@ -30390,10 +30775,10 @@ sample({
 $users.on(userAdded, (users, newUser) => [...users, newUser]);
 
 sample({
-  clock: buttonClicked,
-  source: $userData,
-  fn: (userData) => userData,
-  target: updateUserFx,
+	clock: buttonClicked,
+	source: $userData,
+	fn: (userData) => userData,
+	target: updateUserFx,
 });
 ```
 
@@ -30409,14 +30794,14 @@ sample({
 
 ```ts
 const loginFx = createEffect(async (params) => {
-  const user = await api.login(params);
+	const user = await api.login(params);
 
-  // Императивные вызовы
-  setUser(user);
-  redirectFx("/dashboard");
-  showNotification("Welcome!");
+	// Императивные вызовы
+	setUser(user);
+	redirectFx('/dashboard');
+	showNotification('Welcome!');
 
-  return user;
+	return user;
 });
 ```
 
@@ -30427,12 +30812,12 @@ const loginFx = createEffect(async (params) => {
 const loginFx = createEffect((params) => api.login(params));
 // Связываем через sample
 sample({
-  clock: loginFx.doneData,
-  target: [
-    $user, // Обновляем стор
-    redirectToDashboardFx,
-    showWelcomeNotificationFx,
-  ],
+	clock: loginFx.doneData,
+	target: [
+		$user, // Обновляем стор
+		redirectToDashboardFx,
+		showWelcomeNotificationFx,
+	],
 });
 ```
 
@@ -30448,15 +30833,15 @@ sample({
 
 ```ts
 const submitFormFx = createEffect((formData) => {
-  // Получаем значения через getState
-  const user = $user.getState();
-  const settings = $settings.getState();
+	// Получаем значения через getState
+	const user = $user.getState();
+	const settings = $settings.getState();
 
-  return api.submit({
-    ...formData,
-    userId: user.id,
-    theme: settings.theme,
-  });
+	return api.submit({
+		...formData,
+		userId: user.id,
+		theme: settings.theme,
+	});
 });
 ```
 
@@ -30469,18 +30854,18 @@ const submitFormFx = createEffect(({ form, userId, theme }) => {});
 
 // Получаем все необходимые данные через sample
 sample({
-  clock: formSubmitted,
-  source: {
-    form: $form,
-    user: $user,
-    settings: $settings,
-  },
-  fn: ({ form, user, settings }) => ({
-    form,
-    userId: user.id,
-    theme: settings.theme,
-  }),
-  target: submitFormFx,
+	clock: formSubmitted,
+	source: {
+		form: $form,
+		user: $user,
+		settings: $settings,
+	},
+	fn: ({ form, user, settings }) => ({
+		form,
+		userId: user.id,
+		theme: settings.theme,
+	}),
+	target: submitFormFx,
 });
 ```
 
@@ -30502,16 +30887,15 @@ sample({
 7. Не используйте `$store.getState` для работы
 8. Не тащите логику в UI
 
-
 # Руководство по миграции
 
 Это руководство охватывает шаги, необходимые для перехода на Effector 23 с предыдущей версии.
 В этом релизе несколько функций были объявлены устаревшими:
 
-* Операторы `forward` и `guard`
-* Опция `greedy` в `sample` была переименована в `batch`
-* Типы "производных" и "вызываемых" юнитов теперь официально разделены
-* Возможность использовать `undefined` как магическое значение "пропуска" в редьюсерах
+- Операторы `forward` и `guard`
+- Опция `greedy` в `sample` была переименована в `batch`
+- Типы "производных" и "вызываемых" юнитов теперь официально разделены
+- Возможность использовать `undefined` как магическое значение "пропуска" в редьюсерах
 
 ### Устаревание `forward` и `guard`
 
@@ -30537,18 +30921,18 @@ sample({
 
 Производные юниты теперь полностью отделены от "вызываемых/записываемых":
 
-* Основные фабрики `createEvent` и `createStore` теперь возвращают типы `EventCallable` и `StoreWritable` (поскольку вы можете вызывать и записывать в эти юниты в любой момент).
-* Методы и операторы, такие как `unit.map(...)` или `combine(...)`, теперь возвращают типы `Event` и `Store`, которые являются "только для чтения", т.е. вы можете использовать их только как `clock` или `source`, но не как `target`.
-* Тип `EventCallable` может быть присвоен типу `Event`, но не наоборот, то же самое для сторов.
-* Также есть исключения в рантайме для несоответствия типов.
+- Основные фабрики `createEvent` и `createStore` теперь возвращают типы `EventCallable` и `StoreWritable` (поскольку вы можете вызывать и записывать в эти юниты в любой момент).
+- Методы и операторы, такие как `unit.map(...)` или `combine(...)`, теперь возвращают типы `Event` и `Store`, которые являются "только для чтения", т.е. вы можете использовать их только как `clock` или `source`, но не как `target`.
+- Тип `EventCallable` может быть присвоен типу `Event`, но не наоборот, то же самое для сторов.
+- Также есть исключения в рантайме для несоответствия типов.
 
 Скорее всего, вам не нужно будет ничего делать, вы просто получите улучшенные типы.
 
 Но у вас могут возникнуть проблемы с внешними библиотеками, **которые еще не обновлены до Effector 23**:
 
-* Большинство библиотек просто *принимают* юниты как `clock` и `source` – в таком случае всё в порядке.
-* Если какой-то оператор из внешней библиотеки принимает юнит как `target`, вы всё равно увидите старый добрый тип `Event` в этом случае, поэтому у вас не будет ошибки типа, даже если на самом деле есть проблема.
-* Если какая-то *фабрика* возвращает событие, которое вы должны вызывать в своем коде, то вы получите ошибку типа, и вам нужно будет привести это событие к типу `EventCallable`.
+- Большинство библиотек просто _принимают_ юниты как `clock` и `source` – в таком случае всё в порядке.
+- Если какой-то оператор из внешней библиотеки принимает юнит как `target`, вы всё равно увидите старый добрый тип `Event` в этом случае, поэтому у вас не будет ошибки типа, даже если на самом деле есть проблема.
+- Если какая-то _фабрика_ возвращает событие, которое вы должны вызывать в своем коде, то вы получите ошибку типа, и вам нужно будет привести это событие к типу `EventCallable`.
 
 > TIP Примечание:
 >
@@ -30563,7 +30947,10 @@ sample({
 В Effector есть старая функция: `undefined` используется как "магическое" значение для пропуска обновлений в редьюсерах в редких случаях, например:
 
 ```ts
-const $value = createStore(0).on(newValueReceived, (_oldValue, newValue) => newValue);
+const $value = createStore(0).on(
+	newValueReceived,
+	(_oldValue, newValue) => newValue,
+);
 ```
 
 ☝️ если `newValue` равно `undefined`, то обновление будет пропущено.
@@ -30593,9 +30980,9 @@ const $value = createStore(0).on(newValueReceived, (_oldValue, newValue) => newV
 
 ```ts
 const Component = () => {
-  const foo = useStore($foo);
-  const bar = useStore($bar);
-  const onSubmit = useEvent(triggerSubmit);
+	const foo = useStore($foo);
+	const bar = useStore($bar);
+	const onSubmit = useEvent(triggerSubmit);
 };
 ```
 
@@ -30603,9 +30990,9 @@ const Component = () => {
 
 ```ts
 const Component = () => {
-  const foo = useUnit($foo);
-  const bar = useUnit($bar);
-  const onSubmit = useUnit(triggerSubmit);
+	const foo = useUnit($foo);
+	const bar = useUnit($bar);
+	const onSubmit = useUnit(triggerSubmit);
 };
 ```
 
@@ -30613,10 +31000,9 @@ const Component = () => {
 
 ```ts
 const Component = () => {
-  const [foo, bar, onSubmit] = useUnit([$foo, $bar, triggerSubmit]);
+	const [foo, bar, onSubmit] = useUnit([$foo, $bar, triggerSubmit]);
 };
 ```
-
 
 # Потеря скоупа
 
@@ -30630,11 +31016,11 @@ import SideBySide from "@components/SideBySide/SideBySide.astro";
 
 Типичные места, где это проявляется:
 
-* `setTimeout` / `setInterval`
-* `addEventListener`
-* WebSocket
-* прямой вызов промисов в эффектах
-* сторонние библиотеки с асинхронными API или колбэки.
+- `setTimeout` / `setInterval`
+- `addEventListener`
+- WebSocket
+- прямой вызов промисов в эффектах
+- сторонние библиотеки с асинхронными API или колбэки.
 
 ### Пример проблемы
 
@@ -30645,9 +31031,9 @@ import SideBySide from "@components/SideBySide/SideBySide.astro";
 <TabItem label='timer.tsx'>
 
 ```tsx
-import React from "react";
-import { createEvent, createStore, createEffect, scopeBind } from "effector";
-import { useUnit } from "effector-react";
+import React from 'react';
+import { createEvent, createStore, createEffect, scopeBind } from 'effector';
+import { useUnit } from 'effector-react';
 
 const tick = createEvent();
 const $timer = createStore(0);
@@ -30655,14 +31041,14 @@ const $timer = createStore(0);
 $timer.on(tick, (s) => s + 1);
 
 export function Timer() {
-  const [timer, startTimer] = useUnit([$timer, startTimerFx]);
+	const [timer, startTimer] = useUnit([$timer, startTimerFx]);
 
-  return (
-    <div className="App">
-      <div>Timer:{timer} sec</div>
-      <button onClick={startTimer}>Start timer</button>
-    </div>
-  );
+	return (
+		<div className='App'>
+			<div>Timer:{timer} sec</div>
+			<button onClick={startTimer}>Start timer</button>
+		</div>
+	);
 }
 ```
 
@@ -30670,19 +31056,19 @@ export function Timer() {
 <TabItem label='app.tsx'>
 
 ```tsx
-import React from "react";
-import { Provider } from "effector-react";
-import { fork } from "effector";
-import { Timer } from "./timer";
+import React from 'react';
+import { Provider } from 'effector-react';
+import { fork } from 'effector';
+import { Timer } from './timer';
 
 export const scope = fork();
 
 export default function App() {
-  return (
-    <Provider value={scope}>
-      <Timer />
-    </Provider>
-  );
+	return (
+		<Provider value={scope}>
+			<Timer />
+		</Provider>
+	);
 }
 ```
 
@@ -30694,9 +31080,9 @@ export default function App() {
 
 ```ts
 const startTimerFx = createEffect(() => {
-  setInterval(() => {
-    tick();
-  }, 1000);
+	setInterval(() => {
+		tick();
+	}, 1000);
 });
 ```
 
@@ -30709,11 +31095,11 @@ const startTimerFx = createEffect(() => {
 
 ```ts ins={2} "bindedTick"
 const startTimerFx = createEffect(() => {
-  const bindedTick = scopeBind(tick);
+	const bindedTick = scopeBind(tick);
 
-  setInterval(() => {
-    bindedTick();
-  }, 1000);
+	setInterval(() => {
+		bindedTick();
+	}, 1000);
 });
 ```
 
@@ -30738,22 +31124,22 @@ scopeBind(tick, { scope });
 let scope;
 
 function process() {
-  try {
-    scope = "effector";
-    asyncProcess();
-  } finally {
-    scope = undefined;
-    console.log("наш скоуп undefined");
-  }
+	try {
+		scope = 'effector';
+		asyncProcess();
+	} finally {
+		scope = undefined;
+		console.log('наш скоуп undefined');
+	}
 }
 
 async function asyncProcess() {
-  console.log("у нас есть скоуп", scope); // effector
+	console.log('у нас есть скоуп', scope); // effector
 
-  await 1;
+	await 1;
 
-  // тут мы уже потеряли контекст
-  console.log("а здесь скоупа уже нет ", scope); // undefined
+	// тут мы уже потеряли контекст
+	console.log('а здесь скоупа уже нет ', scope); // undefined
 }
 
 process();
@@ -30771,26 +31157,25 @@ process();
 >
 > В JavaScript готовится proposal [Async Context](https://github.com/tc39/proposal-async-context), который призван решить проблему потери контекста на уровне языка. Это позволит:
 >
-> * Сохранять контекст автоматически через все асинхронные вызовы
-> * Избавиться от необходимости явного использования scopeBind
-> * Получить более предсказуемое поведение асинхронного кода
+> - Сохранять контекст автоматически через все асинхронные вызовы
+> - Избавиться от необходимости явного использования scopeBind
+> - Получить более предсказуемое поведение асинхронного кода
 >
 > Как только это предложение войдет в язык и получит широкую поддержку, effector будет обновлен для использования этого нативного решения.
 
 ### Связанные API и статьи
 
-* **API**
-    * Effect - Описание эффекта, его методов и свойств
-    * Scope - Описание скоупа и его методов
-    * scopeBind - Метод для привязки юнита к скоупу
-    * fork - Оператор для создания скоупа
-    * allSettled - Метод для вызова юнита в предоставленном скоупе и ожидания завершения всей цепочки эффектов
-* **Статьи**
-    * Изолированные контексты
-    * Гайд по работе с SSR
-    * Гайд по тестированию
-    * Важность SID для гидрации сторов
-
+- **API**
+    - Effect - Описание эффекта, его методов и свойств
+    - Scope - Описание скоупа и его методов
+    - scopeBind - Метод для привязки юнита к скоупу
+    - fork - Оператор для создания скоупа
+    - allSettled - Метод для вызова юнита в предоставленном скоупе и ожидания завершения всей цепочки эффектов
+- **Статьи**
+    - Изолированные контексты
+    - Гайд по работе с SSR
+    - Гайд по тестированию
+    - Важность SID для гидрации сторов
 
 # Рендеринг на стороне сервера (SSR)
 
@@ -30852,9 +31237,15 @@ process();
 
 ```tsx
 // app.tsx
-import React from "react";
-import { createEvent, createStore, createEffect, sample, combine } from "effector";
-import { useUnit } from "effector-react";
+import React from 'react';
+import {
+	createEvent,
+	createStore,
+	createEffect,
+	sample,
+	combine,
+} from 'effector';
+import { useUnit } from 'effector-react';
 
 // модель
 export const appStarted = createEvent();
@@ -30863,87 +31254,93 @@ export const $pathname = createStore<string | null>(null);
 const $counter = createStore<number | null>(null);
 
 const fetchUserCounterFx = createEffect(async () => {
-  await sleep(100); // в реальной жизни это был бы какой-то API-запрос
+	await sleep(100); // в реальной жизни это был бы какой-то API-запрос
 
-  return Math.floor(Math.random() * 100);
+	return Math.floor(Math.random() * 100);
 });
 
 const buttonClicked = createEvent();
 const saveUserCounterFx = createEffect(async (count: number) => {
-  await sleep(100); // в реальной жизни это был бы какой-то API-запрос
+	await sleep(100); // в реальной жизни это был бы какой-то API-запрос
 });
 
 sample({
-  clock: appStarted,
-  source: $counter,
-  filter: (count) => count === null, // если счетчик уже загружен – не загружать его снова
-  target: fetchUserCounterFx,
+	clock: appStarted,
+	source: $counter,
+	filter: (count) => count === null, // если счетчик уже загружен – не загружать его снова
+	target: fetchUserCounterFx,
 });
 
 sample({
-  clock: fetchUserCounterFx.doneData,
-  target: $counter,
+	clock: fetchUserCounterFx.doneData,
+	target: $counter,
 });
 
 sample({
-  clock: buttonClicked,
-  source: $counter,
-  fn: (count) => count + 1,
-  target: [$counter, saveUserCounterFx],
+	clock: buttonClicked,
+	source: $counter,
+	fn: (count) => count + 1,
+	target: [$counter, saveUserCounterFx],
 });
 
 const $countUpdatePending = combine(
-  [fetchUserCounterFx.pending, saveUserCounterFx.pending],
-  (updates) => updates.some((upd) => upd === true),
+	[fetchUserCounterFx.pending, saveUserCounterFx.pending],
+	(updates) => updates.some((upd) => upd === true),
 );
 
-const $isClient = createStore(typeof document !== "undefined", {
-  /**
-   * Здесь мы явно указываем effector, что это стор, которое зависит от окружения,
-   * никогда не должно включаться в сериализацию,
-   * так как оно должно всегда вычисляться на основе текущего окружения.
-   *
-   * Это не обязательно, так как в сериализацию включается только разница изменений состояния,
-   * и этот стор не будет изменяться.
-   *
-   * Но всё же хорошо добавить эту настройку – чтобы подчеркнуть намерение.
-   */
-  serialize: "ignore",
+const $isClient = createStore(typeof document !== 'undefined', {
+	/**
+	 * Здесь мы явно указываем effector, что это стор, которое зависит от окружения,
+	 * никогда не должно включаться в сериализацию,
+	 * так как оно должно всегда вычисляться на основе текущего окружения.
+	 *
+	 * Это не обязательно, так как в сериализацию включается только разница изменений состояния,
+	 * и этот стор не будет изменяться.
+	 *
+	 * Но всё же хорошо добавить эту настройку – чтобы подчеркнуть намерение.
+	 */
+	serialize: 'ignore',
 });
 
 const notifyFx = createEffect((message: string) => {
-  alert(message);
+	alert(message);
 });
 
 sample({
-  clock: [
-    saveUserCounterFx.done.map(() => "Обновление счетчика успешно сохранено"),
-    saveUserCounterFx.fail.map(() => "Не удалось сохранить обновление счетчика :("),
-  ],
-  // Совершенно нормально иметь некоторые ветвления в логике приложения в зависимости от текущего окружения.
-  //
-  // Здесь мы хотим вызвать уведомление только на клиенте.
-  filter: $isClient,
-  target: notifyFx,
+	clock: [
+		saveUserCounterFx.done.map(
+			() => 'Обновление счетчика успешно сохранено',
+		),
+		saveUserCounterFx.fail.map(
+			() => 'Не удалось сохранить обновление счетчика :(',
+		),
+	],
+	// Совершенно нормально иметь некоторые ветвления в логике приложения в зависимости от текущего окружения.
+	//
+	// Здесь мы хотим вызвать уведомление только на клиенте.
+	filter: $isClient,
+	target: notifyFx,
 });
 
 // UI
 export function App() {
-  const clickButton = useUnit(buttonClicked);
-  const { count, updatePending } = useUnit({
-    count: $counter,
-    updatePending: $countUpdatePending,
-  });
+	const clickButton = useUnit(buttonClicked);
+	const { count, updatePending } = useUnit({
+		count: $counter,
+		updatePending: $countUpdatePending,
+	});
 
-  return (
-    <div>
-      <h1>Приложение-счетчик</h1>
-      <h2>
-        {updatePending ? "Счетчик обновляется" : `Текущее значение: ${count ?? "неизвестно"}`}
-      </h2>
-      <button onClick={() => clickButton()}>Обновить счетчик</button>
-    </div>
-  );
+	return (
+		<div>
+			<h1>Приложение-счетчик</h1>
+			<h2>
+				{updatePending ?
+					'Счетчик обновляется'
+				:	`Текущее значение: ${count ?? 'неизвестно'}`}
+			</h2>
+			<button onClick={() => clickButton()}>Обновить счетчик</button>
+		</div>
+	);
 }
 ```
 
@@ -30977,47 +31374,47 @@ export function App() {
 
 ```tsx
 // server.tsx
-import { renderToString } from "react-dom/server";
-import { Provider } from "effector-react";
-import { fork, allSettled, serialize } from "effector";
+import { renderToString } from 'react-dom/server';
+import { Provider } from 'effector-react';
+import { fork, allSettled, serialize } from 'effector';
 
-import { appStarted, App, $pathname } from "./app";
+import { appStarted, App, $pathname } from './app';
 
 export async function handleRequest(req) {
-  // 1. Создаем отдельный экземпляр состояния effector – специальный объект `Scope`.
-  const scope = fork({
-    values: [
-      // некоторые части состояния приложения могут быть сразу установлены в нужные значения,
-      // до начала любых вычислений.
-      [$pathname, req.pathname],
-    ],
-  });
+	// 1. Создаем отдельный экземпляр состояния effector – специальный объект `Scope`.
+	const scope = fork({
+		values: [
+			// некоторые части состояния приложения могут быть сразу установлены в нужные значения,
+			// до начала любых вычислений.
+			[$pathname, req.pathname],
+		],
+	});
 
-  // 2. Запускаем логику приложения – все вычисления будут выполнены в соответствии с логикой модели,
-  // а также любые необходимые эффекты.
-  await allSettled(appStarted, {
-    scope,
-  });
+	// 2. Запускаем логику приложения – все вычисления будут выполнены в соответствии с логикой модели,
+	// а также любые необходимые эффекты.
+	await allSettled(appStarted, {
+		scope,
+	});
 
-  // 3. Сериализуем вычисленное состояние, чтобы его можно было передать по сети.
-  const storesValues = serialize(scope);
+	// 3. Сериализуем вычисленное состояние, чтобы его можно было передать по сети.
+	const storesValues = serialize(scope);
 
-  // 4. Рендерим приложение – также в сериализуемую версию.
-  const app = renderToString(
-    // Используя Provider с scope, мы указываем <App />, какое состояние сторов использовать.
-    <Provider value={scope}>
-      <App />
-    </Provider>,
-  );
+	// 4. Рендерим приложение – также в сериализуемую версию.
+	const app = renderToString(
+		// Используя Provider с scope, мы указываем <App />, какое состояние сторов использовать.
+		<Provider value={scope}>
+			<App />
+		</Provider>,
+	);
 
-  // 5. Подготавливаем сериализованный HTML-ответ.
-  //
-  // Это граница сериализации (или сети).
-  // Точка, в которой всё состояние преобразуется в строку для отправки по сети.
-  //
-  // Состояние effector сохраняется в виде `<script>`, который установит состояние в глобальный объект.
-  // Состояние `react` сохраняется как часть DOM-дерева.
-  return `
+	// 5. Подготавливаем сериализованный HTML-ответ.
+	//
+	// Это граница сериализации (или сети).
+	// Точка, в которой всё состояние преобразуется в строку для отправки по сети.
+	//
+	// Состояние effector сохраняется в виде `<script>`, который установит состояние в глобальный объект.
+	// Состояние `react` сохраняется как часть DOM-дерева.
+	return `
     <html>
       <head>
         <script>
@@ -31048,12 +31445,12 @@ export async function handleRequest(req) {
 
 ```tsx
 // client.tsx
-import React from "react";
-import { hydrateRoot } from "react-dom/client";
-import { fork, allSettled } from "effector";
-import { Provider } from "effector-react";
+import React from 'react';
+import { hydrateRoot } from 'react-dom/client';
+import { fork, allSettled } from 'effector';
+import { Provider } from 'effector-react';
 
-import { App, appStarted } from "./app";
+import { App, appStarted } from './app';
 
 /**
  * 1. Находим, где сохранено состояние сервера, и извлекаем его.
@@ -31061,23 +31458,23 @@ import { App, appStarted } from "./app";
  * Смотрите код обработчика сервера, чтобы узнать, где оно было сохранено в HTML.
  */
 const effectorState = globalThis._SERVER_STATE_;
-const reactRoot = document.querySelector("#app");
+const reactRoot = document.querySelector('#app');
 
 /**
  * 2. Инициализируем клиентский scope effector с вычисленными на сервере значениями.
  */
 const clientScope = fork({
-  values: effectorState,
+	values: effectorState,
 });
 
 /**
  * 3. "Гидрируем" состояние React в DOM-дереве.
  */
 hydrateRoot(
-  reactRoot,
-  <Provider value={clientScope}>
-    <App />
-  </Provider>,
+	reactRoot,
+	<Provider value={clientScope}>
+		<App />
+	</Provider>,
 );
 
 /**
@@ -31098,7 +31495,6 @@ allSettled(appStarted, { scope: clientScope });
 4. Серверный код вычисляет и **сериализует** всё состояние приложения в HTML-строку.
 5. Клиентский код извлекает это состояние и использует его для **"гидрации"** приложения на клиенте.
 
-
 # Тестирование в effector
 
 import Tabs from "@components/Tabs/Tabs.astro";
@@ -31116,8 +31512,8 @@ import TabItem from "@components/Tabs/TabItem.astro";
 
 Effector предоставляет встроенные инструменты для:
 
-* Изоляции состояния: Каждое тестируемое состояние может быть создано в своём собственном контексте. Это предотвращает побочные эффекты.
-* Асинхронного выполнения: Все эффекты и события могут быть выполнены и проверены с помощью allSettled.
+- Изоляции состояния: Каждое тестируемое состояние может быть создано в своём собственном контексте. Это предотвращает побочные эффекты.
+- Асинхронного выполнения: Все эффекты и события могут быть выполнены и проверены с помощью allSettled.
 
 #### Тестирование сторов
 
@@ -31128,16 +31524,16 @@ Effector предоставляет встроенные инструменты 
   <TabItem label="counter.test.js">
 
 ```ts
-import { counterIncremented, $counter } from "./counter.js";
+import { counterIncremented, $counter } from './counter.js';
 
-test("counter should increase by 1", async () => {
-  const scope = fork();
+test('counter should increase by 1', async () => {
+	const scope = fork();
 
-  expect(scope.getState($counter)).toEqual(0);
+	expect(scope.getState($counter)).toEqual(0);
 
-  await allSettled(counterIncremented, { scope });
+	await allSettled(counterIncremented, { scope });
 
-  expect(scope.getState($counter)).toEqual(1);
+	expect(scope.getState($counter)).toEqual(1);
 });
 ```
 
@@ -31148,7 +31544,7 @@ test("counter should increase by 1", async () => {
 ```
 
 ```ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 const counterIncremented = createEvent();
 
@@ -31167,26 +31563,26 @@ $counter.on(counterIncremented, (counter) => counter + 1);
 Для того, чтобы протестировать было ли вызвано событие и сколько раз, можно воспользоваться методом `createWatch`, который создаст подписку на переданный юнит:
 
 ```ts
-import { createEvent, createWatch, fork } from "effector";
-import { userUpdated } from "../";
+import { createEvent, createWatch, fork } from 'effector';
+import { userUpdated } from '../';
 
-test("should handle user update with scope", async () => {
-  const scope = fork();
-  const fn = jest.fn();
+test('should handle user update with scope', async () => {
+	const scope = fork();
+	const fn = jest.fn();
 
-  // Создаем watcher в конкретном scope
-  const unwatch = createWatch({
-    unit: userUpdated,
-    fn,
-    scope,
-  });
+	// Создаем watcher в конкретном scope
+	const unwatch = createWatch({
+		unit: userUpdated,
+		fn,
+		scope,
+	});
 
-  // Запускаем событие в scope
-  await allSettled(userUpdated, {
-    scope,
-  });
+	// Запускаем событие в scope
+	await allSettled(userUpdated, {
+		scope,
+	});
 
-  expect(fn).toHaveBeenCalledTimes(1);
+	expect(fn).toHaveBeenCalledTimes(1);
 });
 ```
 
@@ -31204,21 +31600,21 @@ test("should handle user update with scope", async () => {
   <TabItem label="effect.test.js">
 
 ```ts
-import { fork, allSettled } from "effector";
-import { getUserProjectsFx } from "./effect.js";
+import { fork, allSettled } from 'effector';
+import { getUserProjectsFx } from './effect.js';
 
-test("effect executes correctly", async () => {
-  const scope = fork({
-    handlers: [
-      // Список [эффект, моковый обработчик] пар
-      [getUserProjectsFx, () => "user projects data"],
-    ],
-  });
+test('effect executes correctly', async () => {
+	const scope = fork({
+		handlers: [
+			// Список [эффект, моковый обработчик] пар
+			[getUserProjectsFx, () => 'user projects data'],
+		],
+	});
 
-  const result = await allSettled(getUserProjectsFx, { scope });
+	const result = await allSettled(getUserProjectsFx, { scope });
 
-  expect(result.status).toBe("done");
-  expect(result.value).toBe("user projects data");
+	expect(result.status).toBe('done');
+	expect(result.value).toBe('user projects data');
 });
 ```
 
@@ -31229,12 +31625,12 @@ test("effect executes correctly", async () => {
 ```
 
 ```ts
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const getUserProjectsFx = async () => {
-  const result = await fetch("/users/projects/2");
+	const result = await fetch('/users/projects/2');
 
-  return result.json();
+	return result.json();
 };
 ```
 
@@ -31245,39 +31641,39 @@ const getUserProjectsFx = async () => {
 
 Например, у нас есть типичный счетчик, но с асинхронной проверкой через наш бэкэнд. Предположим, у нас следующие требования:
 
-* Когда пользователь нажимает кнопку, мы проверяем, меньше ли текущий счетчик чем 100, и затем проверяем этот клик через наш API бэкэнда.
-* Если валидация успешна, увеличиваем счетчик на 1.
-* Если проверка не пройдена, нужно сбросить счетчик до нуля.
+- Когда пользователь нажимает кнопку, мы проверяем, меньше ли текущий счетчик чем 100, и затем проверяем этот клик через наш API бэкэнда.
+- Если валидация успешна, увеличиваем счетчик на 1.
+- Если проверка не пройдена, нужно сбросить счетчик до нуля.
 
 ```ts
-import { createEvent, createStore, createEffect, sample } from "effector";
+import { createEvent, createStore, createEffect, sample } from 'effector';
 
 export const buttonClicked = createEvent();
 
 export const validateClickFx = createEffect(async () => {
-  /* вызов внешнего api */
+	/* вызов внешнего api */
 });
 
 export const $clicksCount = createStore(0);
 
 sample({
-  clock: buttonClicked,
-  source: $clicksCount,
-  filter: (count) => count < 100,
-  target: validateClickFx,
+	clock: buttonClicked,
+	source: $clicksCount,
+	filter: (count) => count < 100,
+	target: validateClickFx,
 });
 
 sample({
-  clock: validateClickFx.done,
-  source: $clicksCount,
-  fn: (count) => count + 1,
-  target: $clicksCount,
+	clock: validateClickFx.done,
+	source: $clicksCount,
+	fn: (count) => count + 1,
+	target: $clicksCount,
 });
 
 sample({
-  clock: validateClickFx.fail,
-  fn: () => 0,
-  target: $clicksCount,
+	clock: validateClickFx.fail,
+	fn: () => 0,
+	target: $clicksCount,
 });
 ```
 
@@ -31297,18 +31693,18 @@ sample({
 4. Проверим, что в конце у нас имеется нужное состояние.
 
 ```ts
-import { fork, allSettled } from "effector";
+import { fork, allSettled } from 'effector';
 
-import { $clicksCount, buttonClicked, validateClickFx } from "./model";
+import { $clicksCount, buttonClicked, validateClickFx } from './model';
 
-test("main case", async () => {
-  const scope = fork(); // 1
+test('main case', async () => {
+	const scope = fork(); // 1
 
-  expect(scope.getState($clicksCount)).toEqual(0); // 2
+	expect(scope.getState($clicksCount)).toEqual(0); // 2
 
-  await allSettled(buttonClicked, { scope }); // 3
+	await allSettled(buttonClicked, { scope }); // 3
 
-  expect(scope.getState($clicksCount)).toEqual(1); // 4
+	expect(scope.getState($clicksCount)).toEqual(1); // 4
 });
 ```
 
@@ -31319,19 +31715,19 @@ test("main case", async () => {
 Для того, чтобы нам избежать реального запроса на сервер, мы можем замокать ответ от сервера предоставив кастомный обработчик через конфигурацию `fork`.
 
 ```ts
-test("main case", async () => {
-  const scope = fork({
-    handlers: [
-      // Список пар [effect, mock handler]
-      [validateClickFx, () => true],
-    ],
-  });
+test('main case', async () => {
+	const scope = fork({
+		handlers: [
+			// Список пар [effect, mock handler]
+			[validateClickFx, () => true],
+		],
+	});
 
-  expect(scope.getState($clicksCount)).toEqual(0);
+	expect(scope.getState($clicksCount)).toEqual(0);
 
-  await allSettled(buttonClicked, { scope });
+	await allSettled(buttonClicked, { scope });
 
-  expect(scope.getState($clicksCount)).toEqual(1);
+	expect(scope.getState($clicksCount)).toEqual(1);
 });
 ```
 
@@ -31348,39 +31744,38 @@ test("main case", async () => {
 Мы также можем предоставить кастомное начальное значение через конфигурацию `fork`.
 
 ```ts
-test("bad case", async () => {
-  const MOCK_VALUE = 101;
-  const mockFunction = testRunner.fn();
+test('bad case', async () => {
+	const MOCK_VALUE = 101;
+	const mockFunction = testRunner.fn();
 
-  const scope = fork({
-    values: [
-      // Список пар [store, mockValue]
-      [$clicksCount, MOCK_VALUE],
-    ],
-    handlers: [
-      // Список пар [effect, mock handler]
-      [
-        validateClickFx,
-        () => {
-          mockFunction();
+	const scope = fork({
+		values: [
+			// Список пар [store, mockValue]
+			[$clicksCount, MOCK_VALUE],
+		],
+		handlers: [
+			// Список пар [effect, mock handler]
+			[
+				validateClickFx,
+				() => {
+					mockFunction();
 
-          return false;
-        },
-      ],
-    ],
-  });
+					return false;
+				},
+			],
+		],
+	});
 
-  expect(scope.getState($clicksCount)).toEqual(MOCK_VALUE);
+	expect(scope.getState($clicksCount)).toEqual(MOCK_VALUE);
 
-  await allSettled(buttonClicked, { scope });
+	await allSettled(buttonClicked, { scope });
 
-  expect(scope.getState($clicksCount)).toEqual(MOCK_VALUE);
-  expect(mockFunction).toHaveBeenCalledTimes(0);
+	expect(scope.getState($clicksCount)).toEqual(MOCK_VALUE);
+	expect(mockFunction).toHaveBeenCalledTimes(0);
 });
 ```
 
 Вот так мы можем протестировать каждый случай использования, который хотим проверить.
-
 
 # Исправление ошибок в Effector
 
@@ -31400,7 +31795,7 @@ import SideBySide from "@components/SideBySide/SideBySide.astro";
 
 ```ts
 const $store = createStore(0, {
-  skipVoid: false,
+	skipVoid: false,
 });
 ```
 
@@ -31421,11 +31816,11 @@ const $store = createStore(0, {
 1. Использовать babel или SWC плагин, который сделает все за вас
 2. Или добавить `сид` в ручную, передав во второй аргумент `createStore` объект со свойством `sid`:
 
-   ```ts
-   const $store = createStore(0, {
-     sid: "unique id",
-   });
-   ```
+    ```ts
+    const $store = createStore(0, {
+    	sid: 'unique id',
+    });
+    ```
 
 Более подробно про .
 
@@ -31441,35 +31836,35 @@ const $store = createStore(0, {
 
 1. Используйте `scopeBind` внутри эффектов:
 
-   ```ts
-   const event = createEvent();
+    ```ts
+    const event = createEvent();
 
-   // ❌ - не вызывайте scopeBind внутри колбеков
-   const effectFx = createEffect(() => {
-     setTimeout(() => {
-       scopeBind(event)();
-     }, 1111);
-   });
+    // ❌ - не вызывайте scopeBind внутри колбеков
+    const effectFx = createEffect(() => {
+    	setTimeout(() => {
+    		scopeBind(event)();
+    	}, 1111);
+    });
 
-   // ✅ - используйте scopeBind внутри эффекта
-   const effectFx = createEffect(() => {
-     const scopeEvent = scopeBind(event);
+    // ✅ - используйте scopeBind внутри эффекта
+    const effectFx = createEffect(() => {
+    	const scopeEvent = scopeBind(event);
 
-     setTimeout(() => {
-       scopeEvent();
-     }, 1111);
-   });
-   ```
+    	setTimeout(() => {
+    		scopeEvent();
+    	}, 1111);
+    });
+    ```
 
 2. Ваши юниты должны быть вызваны внутри скоупа:
-    * При работе с фреймворком используйте `useUnit`
-    * Если у вас происходит вызов события или эффекта вне фреймворка, то используйте `allSettled` и передайте нужный `scope` в аргумент
+    - При работе с фреймворком используйте `useUnit`
+    - Если у вас происходит вызов события или эффекта вне фреймворка, то используйте `allSettled` и передайте нужный `scope` в аргумент
 
 Если того требует ваша реализация, а от ошибки нужно избавиться, то вы можете передать свойство `safe:true` во второй аргумент метода.
 
 ```ts
 const scopeEvent = scopeBind(event, {
-  safe: true,
+	safe: true,
 });
 ```
 
@@ -31483,13 +31878,13 @@ const scopeEvent = scopeBind(event, {
 
 Эта ошибка возникает, когда вы пытаетесь вызвать события или эффекты из чистых функций в Effector:
 
-* **Вызов событий в методах событий**<br/>
+- **Вызов событий в методах событий**<br/>
   Когда вы пытаетесь вызвать одно событие внутри `.map()`, `.filter()`, `.filterMap()` или `.prepend()` другого события.
 
-* **Вызов событий в обработчиках сторов**<br/>
+- **Вызов событий в обработчиках сторов**<br/>
   При попытке вызвать событие в обработчике .on(), внутри метода .map(), или свойства конфигурации updateFilter() стора.
 
-* **Вызов событий в функциях `sample`**<br/>
+- **Вызов событий в функциях `sample`**<br/>
   При вызове события в функции `fn` или `filter` оператора `sample`.
 
 Как исправить: Вместо вызова событий в чистых функциях используйте декларативные операторы, например `sample`.
@@ -31504,16 +31899,16 @@ const scopeEvent = scopeBind(event, {
 <Fragment slot="left">
 
 ```tsx wrap data-height="full"
-import { sample } from "effector";
+import { sample } from 'effector';
 
 const messageSent = createEvent<Message>();
 const userText = createEvent<string>();
 
 sample({
-  clock: messageSent,
-  filter: (msg: Message): msg is UserMessage => msg.kind === "user",
-  fn: (msg) => msg.text,
-  target: userText,
+	clock: messageSent,
+	filter: (msg: Message): msg is UserMessage => msg.kind === 'user',
+	fn: (msg) => msg.text,
+	target: userText,
 });
 ```
 
@@ -31521,17 +31916,17 @@ sample({
 <Fragment slot="right">
 
 ```tsx wrap data-height="full"
-import { createAction } from "effector-action";
+import { createAction } from 'effector-action';
 
 const userText = createEvent<string>();
 
 const messageSent = createAction({
-  target: userText,
-  fn: (userText, msg: Message) => {
-    if (msg.kind === "user") {
-      userText(msg.txt);
-    }
-  },
+	target: userText,
+	fn: (userText, msg: Message) => {
+		if (msg.kind === 'user') {
+			userText(msg.txt);
+		}
+	},
 });
 ```
 
@@ -31544,11 +31939,11 @@ const messageSent = createAction({
 
 Типичные места, где это проявляется:
 
-* `setTimeout` / `setInterval`
-* `addEventListener`
-* WebSocket
-* прямой вызов промисов в эффектах
-* сторонние библиотеки с асинхронными API или колбэки.
+- `setTimeout` / `setInterval`
+- `addEventListener`
+- WebSocket
+- прямой вызов промисов в эффектах
+- сторонние библиотеки с асинхронными API или колбэки.
 
 **Решение**: Привяжите ваше событие или эффект к текущему скоупу при помощи :
 
@@ -31561,11 +31956,11 @@ const messageSent = createAction({
 const event = createEvent();
 
 const effectFx = createEffect(() => {
-  const scopedEvent = scopeBind(event);
+	const scopedEvent = scopeBind(event);
 
-  setTimeout(() => {
-    scopedEvent();
-  }, 1000);
+	setTimeout(() => {
+		scopedEvent();
+	}, 1000);
 });
 ```
 
@@ -31578,9 +31973,9 @@ const effectFx = createEffect(() => {
 const event = createEvent();
 
 const effectFx = createEffect(() => {
-  setTimeout(() => {
-    event();
-  }, 1000);
+	setTimeout(() => {
+		event();
+	}, 1000);
 });
 ```
 
@@ -31598,13 +31993,13 @@ const effectFx = createEffect(() => {
 ```tsx wrap data-border="good" data-height="full" "useUnit"
 // ✅ использование хука
 
-import { event } from "./model.js";
-import { useUnit } from "effector-react";
+import { event } from './model.js';
+import { useUnit } from 'effector-react';
 
 const Component = () => {
-  const onEvent = useUnit(event);
+	const onEvent = useUnit(event);
 
-  return <button onClick={() => onEvent()}>click me</button>;
+	return <button onClick={() => onEvent()}>click me</button>;
 };
 ```
 
@@ -31614,10 +32009,10 @@ const Component = () => {
 ```tsx wrap data-border="bad" data-height="full"
 // ❌ прямой вызов юнита
 
-import { event } from "./model.js";
+import { event } from './model.js';
 
 const Component = () => {
-  return <button onClick={() => event()}>click me</button>;
+	return <button onClick={() => event()}>click me</button>;
 };
 ```
 
@@ -31626,17 +32021,16 @@ const Component = () => {
 
 > INFO Информация:
 >
-> Использования хука  с юнитами.
+> Использования хука с юнитами.
 
 ### Не нашли ответ на свой вопрос ?
 
 Если вы не нашли ответ на свой вопрос, то вы всегда можете задать сообществу:
 
-* [RU Telegram](https://t.me/effector_ru)
-* [EN Telegram](https://t.me/effector_en)
-* [Discord](https://discord.gg/t3KkcQdt)
-* [Reddit](https://www.reddit.com/r/effectorjs/)
-
+- [RU Telegram](https://t.me/effector_ru)
+- [EN Telegram](https://t.me/effector_en)
+- [Discord](https://discord.gg/t3KkcQdt)
+- [Reddit](https://www.reddit.com/r/effectorjs/)
 
 # Настройка работы WebSocket с Effector
 
@@ -31653,7 +32047,7 @@ const Component = () => {
 Создадим простую, но рабочую модель WebSocket клиента. Для начала определим основные события и состояния:
 
 ```ts
-import { createStore, createEvent, createEffect, sample } from "effector";
+import { createStore, createEvent, createEffect, sample } from 'effector';
 
 // События для работы с сокетом
 const disconnected = createEvent();
@@ -31661,37 +32055,37 @@ const messageSent = createEvent<string>();
 const rawMessageReceived = createEvent<string>();
 
 const $connection = createStore<WebSocket | null>(null)
-  .on(connectWebSocketFx.doneData, (_, ws) => ws)
-  .reset(disconnected);
+	.on(connectWebSocketFx.doneData, (_, ws) => ws)
+	.reset(disconnected);
 ```
 
 Создадим эффект для установки соединения:
 
 ```ts
 const connectWebSocketFx = createEffect((url: string): Promise<WebSocket> => {
-  const ws = new WebSocket(url);
+	const ws = new WebSocket(url);
 
-  const scopeDisconnected = scopeBind(disconnected);
-  const scopeRawMessageReceived = scopeBind(rawMessageReceived);
+	const scopeDisconnected = scopeBind(disconnected);
+	const scopeRawMessageReceived = scopeBind(rawMessageReceived);
 
-  return new Promise((res, rej) => {
-    ws.onopen = () => {
-      res(ws);
-    };
+	return new Promise((res, rej) => {
+		ws.onopen = () => {
+			res(ws);
+		};
 
-    ws.onmessage = (event) => {
-      scopeRawMessageReceived(event.data);
-    };
+		ws.onmessage = (event) => {
+			scopeRawMessageReceived(event.data);
+		};
 
-    ws.onclose = () => {
-      scopeDisconnected();
-    };
+		ws.onclose = () => {
+			scopeDisconnected();
+		};
 
-    ws.onerror = (err) => {
-      scopeDisconnected();
-      rej(err);
-    };
-  });
+		ws.onerror = (err) => {
+			scopeDisconnected();
+			rej(err);
+		};
+	});
 });
 ```
 
@@ -31708,7 +32102,7 @@ const connectWebSocketFx = createEffect((url: string): Promise<WebSocket> => {
 Создадим стор для последнего полученного сообщения:
 
 ```ts
-const $lastMessage = createStore("");
+const $lastMessage = createStore('');
 
 $lastMessage.on(messageReceived, (_, newMessage) => newMessage);
 ```
@@ -31716,20 +32110,22 @@ $lastMessage.on(messageReceived, (_, newMessage) => newMessage);
 А также реализуем эффект для отправки сообщения:
 
 ```ts
-const sendMessageFx = createEffect((params: { socket: WebSocket; message: string }) => {
-  params.socket.send(params.message);
-});
+const sendMessageFx = createEffect(
+	(params: { socket: WebSocket; message: string }) => {
+		params.socket.send(params.message);
+	},
+);
 
 // Связываем отправку сообщения с текущим сокетом
 sample({
-  clock: messageSent,
-  source: $connection,
-  filter: Boolean, // Отправляем только если есть соединение
-  fn: (socket, message) => ({
-    socket,
-    message,
-  }),
-  target: sendMessageFx,
+	clock: messageSent,
+	source: $connection,
+	filter: Boolean, // Отправляем только если есть соединение
+	fn: (socket, message) => ({
+		socket,
+		message,
+	}),
+	target: sendMessageFx,
 });
 ```
 
@@ -31750,47 +32146,47 @@ const TIMEOUT = 5_000;
 const socketError = createEvent<Error>();
 
 const connectWebSocketFx = createEffect((url: string): Promise<WebSocket> => {
-  const ws = new WebSocket(url);
+	const ws = new WebSocket(url);
 
-  const scopeDisconnected = scopeBind(disconnected);
-  const scopeRawMessageReceived = scopeBind(rawMessageReceived);
-  const scopeSocketError = scopeBind(socketError);
+	const scopeDisconnected = scopeBind(disconnected);
+	const scopeRawMessageReceived = scopeBind(rawMessageReceived);
+	const scopeSocketError = scopeBind(socketError);
 
-  return new Promise((res, rej) => {
-    const timeout = setTimeout(() => {
-      const error = new Error("Connection timeout");
+	return new Promise((res, rej) => {
+		const timeout = setTimeout(() => {
+			const error = new Error('Connection timeout');
 
-      socketError(error);
-      reject(error);
-      socket.close();
-    }, TIMEOUT);
+			socketError(error);
+			reject(error);
+			socket.close();
+		}, TIMEOUT);
 
-    ws.onopen = () => {
-      clearTimeout(timeout);
-      res(ws);
-    };
+		ws.onopen = () => {
+			clearTimeout(timeout);
+			res(ws);
+		};
 
-    ws.onmessage = (event) => {
-      scopeMessageReceived(event.data);
-    };
+		ws.onmessage = (event) => {
+			scopeMessageReceived(event.data);
+		};
 
-    ws.onclose = () => {
-      disconnected();
-    };
+		ws.onclose = () => {
+			disconnected();
+		};
 
-    ws.onerror = (err) => {
-      const error = new Error("WebSocket error");
-      scopeDisconnected();
-      scopeSocketError(error);
-      rej(err);
-    };
-  });
+		ws.onerror = (err) => {
+			const error = new Error('WebSocket error');
+			scopeDisconnected();
+			scopeSocketError(error);
+			rej(err);
+		};
+	});
 });
 
 // Стор для хранения ошибки
-const $error = createStore("")
-  .on(socketError, (_, error) => error.message)
-  .reset(connectWebSocketFx.done);
+const $error = createStore('')
+	.on(socketError, (_, error) => error.message)
+	.reset(connectWebSocketFx.done);
 ```
 
 > WARNING Обработка ошибок:
@@ -31810,16 +32206,16 @@ const $error = createStore("")
 Предположим, что мы ожидаем два типа сообщений: `balanceChanged` и `reportGenerated`, содержащие следующие поля:
 
 ```ts
-export const messagesSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("balanceChanged"),
-    balance: z.number(),
-  }),
-  z.object({
-    type: z.literal("reportGenerated"),
-    reportId: z.string(),
-    reportName: z.string(),
-  }),
+export const messagesSchema = z.discriminatedUnion('type', [
+	z.object({
+		type: z.literal('balanceChanged'),
+		balance: z.number(),
+	}),
+	z.object({
+		type: z.literal('reportGenerated'),
+		reportId: z.string(),
+		reportName: z.string(),
+	}),
 ]);
 
 // Получаем тип из схемы
@@ -31832,19 +32228,21 @@ type MessagesSchema = z.infer<typeof messagesSchema>;
 const parsedMessageReceived = createEvent<MessagesSchema>();
 
 const parseFx = createEffect((message: unknown): MessagesSchema => {
-  return messagesSchema.parse(JSON.parse(typeof message === "string" ? message : "{}"));
+	return messagesSchema.parse(
+		JSON.parse(typeof message === 'string' ? message : '{}'),
+	);
 });
 
 // Парсим сообщение при его получении
 sample({
-  clock: rawMessageReceived,
-  target: parseFx,
+	clock: rawMessageReceived,
+	target: parseFx,
 });
 
 // Если парсинг удался — отправляем сообщение дальше
 sample({
-  clock: parseFx.doneData,
-  target: parsedMessageReceived,
+	clock: parseFx.doneData,
+	target: parsedMessageReceived,
 });
 ```
 
@@ -31855,8 +32253,8 @@ const validationError = createEvent<Error>();
 
 // Если парсинг не удался — обрабатываем ошибку
 sample({
-  clock: parseFx.failData,
-  target: validationError,
+	clock: parseFx.failData,
+	target: validationError,
 });
 ```
 
@@ -31869,15 +32267,20 @@ sample({
 Если хочется более точечного контроля, можно сделать событие, которое будет срабатывать только для определенного типа сообщений:
 
 ```ts
-type MessageType<T extends MessagesSchema["type"]> = Extract<MessagesSchema, { type: T }>;
+type MessageType<T extends MessagesSchema['type']> = Extract<
+	MessagesSchema,
+	{ type: T }
+>;
 
-export const messageReceivedByType = <T extends MessagesSchema["type"]>(type: T) => {
-  return sample({
-    clock: parsedMessageReceived,
-    filter: (message): message is MessageType<T> => {
-      return message.type === type;
-    },
-  });
+export const messageReceivedByType = <T extends MessagesSchema['type']>(
+	type: T,
+) => {
+	return sample({
+		clock: parsedMessageReceived,
+		filter: (message): message is MessageType<T> => {
+			return message.type === type;
+		},
+	});
 };
 ```
 
@@ -31885,11 +32288,11 @@ export const messageReceivedByType = <T extends MessagesSchema["type"]>(type: T)
 
 ```ts
 sample({
-  clock: messageReceivedByType("balanceChanged"),
-  fn: (message) => {
-    // Typescript знает структуру message
-  },
-  target: doWhateverYouWant,
+	clock: messageReceivedByType('balanceChanged'),
+	fn: (message) => {
+		// Typescript знает структуру message
+	},
+	target: doWhateverYouWant,
 });
 ```
 
@@ -31903,17 +32306,17 @@ sample({
 
 > INFO Преимущества Socket.IO:
 >
-> * Автоматическое переподключение
-> * Поддержка комнат и пространств имён
-> * Fallback на HTTP Long-polling если WebSocket недоступен
-> * Встроенная поддержка событий и подтверждений (acknowledgments)
-> * Автоматическая сериализация/десериализация данных
+> - Автоматическое переподключение
+> - Поддержка комнат и пространств имён
+> - Fallback на HTTP Long-polling если WebSocket недоступен
+> - Встроенная поддержка событий и подтверждений (acknowledgments)
+> - Автоматическая сериализация/десериализация данных
 
 ```ts
-import { io, Socket } from "socket.io-client";
-import { createStore, createEvent, createEffect, sample } from "effector";
+import { io, Socket } from 'socket.io-client';
+import { createStore, createEvent, createEffect, sample } from 'effector';
 
-const API_URL = "wss://your.ws.server";
+const API_URL = 'wss://your.ws.server';
 
 // События
 const connected = createEvent();
@@ -31922,9 +32325,9 @@ const socketError = createEvent<Error>();
 
 // Типизация для событий
 type ChatMessage = {
-  room: string;
-  message: string;
-  author: string;
+	room: string;
+	message: string;
+	author: string;
 };
 
 const messageSent = createEvent<ChatMessage>();
@@ -31933,97 +32336,99 @@ const socketConnected = createEvent();
 const connectSocket = createEvent();
 
 const connectFx = createEffect((): Promise<Socket> => {
-  const socket = io(API_URL, {
-    //... ваша конфигурация
-  });
+	const socket = io(API_URL, {
+		//... ваша конфигурация
+	});
 
-  // нужно для корректной работы со скоупами
-  const scopeConnected = scopeBind(connected);
-  const scopeDisconnected = scopeBind(disconnected);
-  const scopeSocketError = scopeBind(socketError);
-  const scopeMessageReceived = scopeBind(messageReceived);
+	// нужно для корректной работы со скоупами
+	const scopeConnected = scopeBind(connected);
+	const scopeDisconnected = scopeBind(disconnected);
+	const scopeSocketError = scopeBind(socketError);
+	const scopeMessageReceived = scopeBind(messageReceived);
 
-  return new Promise((resolve, reject) => {
-    socket.on("connect", () => {
-      scopeConnected();
-      resolve(socket);
-    });
+	return new Promise((resolve, reject) => {
+		socket.on('connect', () => {
+			scopeConnected();
+			resolve(socket);
+		});
 
-    socket.on("disconnect", () => scopeDisconnected());
-    socket.on("connect_error", (error) => scopeSocketError(error));
-    socket.on("chat message", (msg: ChatMessage) => scopeMessageReceived(msg));
-  });
+		socket.on('disconnect', () => scopeDisconnected());
+		socket.on('connect_error', (error) => scopeSocketError(error));
+		socket.on('chat message', (msg: ChatMessage) =>
+			scopeMessageReceived(msg),
+		);
+	});
 });
 
 const sendMessageFx = createEffect(
-  ({
-    socket,
-    name,
-    payload,
-  }: SocketResponse<any> & {
-    socket: Socket;
-  }) => {
-    socket.emit(name, payload);
-  },
+	({
+		socket,
+		name,
+		payload,
+	}: SocketResponse<any> & {
+		socket: Socket;
+	}) => {
+		socket.emit(name, payload);
+	},
 );
 
 // Состояния
 const $socket = createStore<Socket | null>(null)
-  .on(connectFx.doneData, (_, socket) => socket)
-  .reset(disconnected);
+	.on(connectFx.doneData, (_, socket) => socket)
+	.reset(disconnected);
 
 // инициализация подключения
 sample({
-  clock: connectSocket,
-  target: connectFx,
+	clock: connectSocket,
+	target: connectFx,
 });
 
 // вызываем событие после успешного подключения
 sample({
-  clock: connectSocketFx.doneData,
-  target: socketConnected,
+	clock: connectSocketFx.doneData,
+	target: socketConnected,
 });
 ```
-
 
 # Сообщество
 
 ### Материалы
 
-* [dev.to/effector](https://dev.to/effector) — пространство на публичной платформе
-* [reddit.com/r/effectorjs](https://reddit.com/r/effectorjs) — сабреддит
-* [twitter.com/effectorJS](https://twitter.com/effectorJS) — ретвиты, релизы, анонсы
+- [dev.to/effector](https://dev.to/effector) — пространство на публичной платформе
+- [reddit.com/r/effectorjs](https://reddit.com/r/effectorjs) — сабреддит
+- [twitter.com/effectorJS](https://twitter.com/effectorJS) — ретвиты, релизы, анонсы
+
 ### Видео
 
-* [Канал на Youtube](https://www.youtube.com/channel/UCm8PRc_yjz3jXHH0JylVw1Q)
+- [Канал на Youtube](https://www.youtube.com/channel/UCm8PRc_yjz3jXHH0JylVw1Q)
 
 ### Где я могу задать вопрос?
 
 1. Прежде всего, вы можете посмотреть [ишью](https://github.com/effector/effector/issues) и [дискуссии](https://github.com/effector/effector/discussions) в репозитории
 2. У нас есть несколько чатов:
-    * Telegram — [t.me/effector\_en](https://t.me/effector_en)
-    * Discord — [discord.gg/t3KkcQdt](https://discord.gg/t3KkcQdt)
-    * Reddit — [reddit.com/r/effectorjs](https://www.reddit.com/r/effectorjs/)
-    * Gitter — [gitter.im/effector/community](https://gitter.im/effector/community)
+    - Telegram — [t.me/effector_en](https://t.me/effector_en)
+    - Discord — [discord.gg/t3KkcQdt](https://discord.gg/t3KkcQdt)
+    - Reddit — [reddit.com/r/effectorjs](https://www.reddit.com/r/effectorjs/)
+    - Gitter — [gitter.im/effector/community](https://gitter.im/effector/community)
 
 ### Русскоязычное сообщество
 
-* Задать вопрос — [t.me/effector\_ru](https://t.me/effector_ru)
-* Новости и анонсы — [t.me/effector\_news](https://t.me/effector_news)
-* Видео:
-    * Effector Meetup 1 — [youtube.com/watch?v=IacUIo9fXhI](https://www.youtube.com/watch?v=IacUIo9fXhI)
-    * Effector Meetup 2 — [youtube.com/watch?v=nLYc4PaTXYk](https://www.youtube.com/watch?v=nLYc4PaTXYk)
-    * Пишем фичу в проекте с EffectorJS — [youtube.com/watch?v=dtrWzH8O\_4k](https://www.youtube.com/watch?v=dtrWzH8O_4k)
-    * Как и зачем мы мигрировали Авиасейлс на Effector — [youtube.com/watch?v=HYaSnVEZiFk](https://www.youtube.com/watch?v=HYaSnVEZiFk)
-    * Делаем игру — [youtube.com/watch?v=tjjxIQd0E8c](https://www.youtube.com/watch?v=tjjxIQd0E8c)
-    * Effector 22.2.0 Halley — [youtube.com/watch?v=pTq9AbmS0FI](https://www.youtube.com/watch?v=pTq9AbmS0FI)
-    * Effector 22.4.0 Encke — [youtube.com/watch?v=9UjgcNn0K\_o](https://www.youtube.com/watch?v=9UjgcNn0K_o)
+- Задать вопрос — [t.me/effector_ru](https://t.me/effector_ru)
+- Новости и анонсы — [t.me/effector_news](https://t.me/effector_news)
+- Видео:
+    - Effector Meetup 1 — [youtube.com/watch?v=IacUIo9fXhI](https://www.youtube.com/watch?v=IacUIo9fXhI)
+    - Effector Meetup 2 — [youtube.com/watch?v=nLYc4PaTXYk](https://www.youtube.com/watch?v=nLYc4PaTXYk)
+    - Пишем фичу в проекте с EffectorJS — [youtube.com/watch?v=dtrWzH8O_4k](https://www.youtube.com/watch?v=dtrWzH8O_4k)
+    - Как и зачем мы мигрировали Авиасейлс на Effector — [youtube.com/watch?v=HYaSnVEZiFk](https://www.youtube.com/watch?v=HYaSnVEZiFk)
+    - Делаем игру — [youtube.com/watch?v=tjjxIQd0E8c](https://www.youtube.com/watch?v=tjjxIQd0E8c)
+    - Effector 22.2.0 Halley — [youtube.com/watch?v=pTq9AbmS0FI](https://www.youtube.com/watch?v=pTq9AbmS0FI)
+    - Effector 22.4.0 Encke — [youtube.com/watch?v=9UjgcNn0K_o](https://www.youtube.com/watch?v=9UjgcNn0K_o)
 
 ### Поддержка и спонсирование
 
-* Sponsr — [sponsr.ru/effector](https://sponsr.ru/effector/)
-* OpenCollective — [opencollective.com/effector](https://opencollective.com/effector)
-* Patreon — [patreon.com/zero\_bias](https://www.patreon.com/zero_bias)
+- Sponsr — [sponsr.ru/effector](https://sponsr.ru/effector/)
+- OpenCollective — [opencollective.com/effector](https://opencollective.com/effector)
+- Patreon — [patreon.com/zero_bias](https://www.patreon.com/zero_bias)
 
 <br /><br />
 
@@ -32143,7 +32548,7 @@ sample({
 
 Роман продвигает Effector среди сообщества фронтенд-разработчиков и работает над документацией.
 
-*Этот список не является исчерпывающим.*
+_Этот список не является исчерпывающим._
 
 <br /><br />
 
@@ -32157,7 +32562,6 @@ sample({
 
 Спасибо за вашу поддержку и любовь на протяжении всего этого времени \:heart:
 
-
 # Основные концепции эффектора
 
 ## Основные концепции
@@ -32169,25 +32573,25 @@ Effector – это современная библиотека для рабо�
 
 Разработка с Effector строится на двух ключевых принципах:
 
-* 📝 **Декларативность**: вы описываете *что* должно произойти, а не *как* это должно работать
-* 🚀 **Реактивность**: изменения автоматически распространяются по всему приложению
+- 📝 **Декларативность**: вы описываете _что_ должно произойти, а не _как_ это должно работать
+- 🚀 **Реактивность**: изменения автоматически распространяются по всему приложению
 
 Effector использует умную систему отслеживания зависимостей, которая гарантирует, что при изменении данных обновятся только действительно зависимые части приложения. Благодаря этому:
 
-* Разработчикам не нужно вручную управлять подписками
-* Производительность остается высокой даже при масштабировании
-* Поток данных остается предсказуемым и понятным
+- Разработчикам не нужно вручную управлять подписками
+- Производительность остается высокой даже при масштабировании
+- Поток данных остается предсказуемым и понятным
 
 ### Юниты
 
 Юнит - это базовое понятие в Effector. Store, Event и Effect – это все юниты, то есть базовые строительные блоки для создания бизнес-логики приложения. Каждый юнит представляет собой независимую сущность, которая может быть:
 
-* Связана с другими юнитами
-* Подписана на изменения других юнитов
-* Использована для создания новых юнитов
+- Связана с другими юнитами
+- Подписана на изменения других юнитов
+- Использована для создания новых юнитов
 
 ```ts
-import { createStore, createEvent, createEffect, is } from "effector";
+import { createStore, createEvent, createEffect, is } from 'effector';
 
 const $counter = createStore(0);
 const event = createEvent();
@@ -32206,17 +32610,17 @@ is.unit({}); // false
 
 ##### Особенности события
 
-* Простота: События в Effector являются минималистичными и легко создаются с помощью createEvent.
-* Композиция: Вы можете комбинировать события, фильтровать их, изменять данные и передавать их в другие обработчики или сторы.
+- Простота: События в Effector являются минималистичными и легко создаются с помощью createEvent.
+- Композиция: Вы можете комбинировать события, фильтровать их, изменять данные и передавать их в другие обработчики или сторы.
 
 ```js
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 // Создаем событие
 const formSubmitted = createEvent();
 
 // Подписываемся на событие
-formSubmitted.watch(() => console.log("Форма отправлена!"));
+formSubmitted.watch(() => console.log('Форма отправлена!'));
 
 formSubmitted();
 
@@ -32230,28 +32634,28 @@ formSubmitted();
 
 ##### Особенности сторов
 
-* У вас может быть столько сторов, сколько вам нужно
-* Стор поддерживает реактивность — изменения автоматически распространяются на все подписанные компоненты
-* Effector оптимизирует ререндеры компонентов, подписанных на сторы, минимизируя лишние обновления
-* Данные в сторе иммутабельнные
-* Здесь нет `setState`, изменение состояния происходит через события
+- У вас может быть столько сторов, сколько вам нужно
+- Стор поддерживает реактивность — изменения автоматически распространяются на все подписанные компоненты
+- Effector оптимизирует ререндеры компонентов, подписанных на сторы, минимизируя лишние обновления
+- Данные в сторе иммутабельнные
+- Здесь нет `setState`, изменение состояния происходит через события
 
 ```ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 // Создаем событие
 const superAdded = createEvent();
 
 // Создаем стор
 const $supers = createStore([
-  {
-    name: "Человек-паук",
-    role: "hero",
-  },
-  {
-    name: "Зеленый гоблин",
-    role: "villain",
-  },
+	{
+		name: 'Человек-паук',
+		role: 'hero',
+	},
+	{
+		name: 'Зеленый гоблин',
+		role: 'villain',
+	},
 ]);
 
 // Обновляем стор при срабатывании события
@@ -32259,8 +32663,8 @@ $supers.on(superAdded, (supers, newSuper) => [...supers, newSuper]);
 
 // Вызываем событие
 superAdded({
-  name: "Носорог",
-  role: "villain",
+	name: 'Носорог',
+	role: 'villain',
 });
 ```
 
@@ -32270,22 +32674,24 @@ superAdded({
 
 ##### Особенности эффекта
 
-* У эффекта есть встроенные состояния `pending` и события `done`, `fail`, которые облегчают отслеживание выполнения операций.
-* Логика, связанная с взаимодействием с внешним миром, вынесена за пределы основной логики приложения. Это упрощает тестирование и делает код более предсказуемым.
-* Может быть как асинхронным, так и синхронным
+- У эффекта есть встроенные состояния `pending` и события `done`, `fail`, которые облегчают отслеживание выполнения операций.
+- Логика, связанная с взаимодействием с внешним миром, вынесена за пределы основной логики приложения. Это упрощает тестирование и делает код более предсказуемым.
+- Может быть как асинхронным, так и синхронным
 
 ```js
-import { createEffect } from "effector";
+import { createEffect } from 'effector';
 
 const fetchUserFx = createEffect(async (userId) => {
-  const response = await fetch(`/api/user/${userId}`);
-  return response.json();
+	const response = await fetch(`/api/user/${userId}`);
+	return response.json();
 });
 
 // Подписываемся на результат эффекта
-fetchUserFx.done.watch(({ result }) => console.log("Данные пользователя:", result));
+fetchUserFx.done.watch(({ result }) =>
+	console.log('Данные пользователя:', result),
+);
 // Если эффект выкинет ошибку, то мы отловим ее при помощи события fail
-fetchUserFx.fail.watch(({ error }) => console.log("Произошла ошибка! ", error));
+fetchUserFx.fail.watch(({ error }) => console.log('Произошла ошибка! ', error));
 
 // Запускаем эффект
 fetchUserFx(1);
@@ -32300,34 +32706,38 @@ fetchUserFx(1);
 Рассмотрим пример из части про сторы, где мы имеем стор с массивом суперлюдей. Допустим у нас появилось новое требование это выводить отдельно друг от друга героев и злодеев. Реализовать это будет очень просто при помощи производных сторов:
 
 ```ts
-import { createStore, createEvent } from "effector";
+import { createStore, createEvent } from 'effector';
 
 // Создаем событие
 const superAdded = createEvent();
 
 // Создаем стор
 const $supers = createStore([
-  {
-    name: "Человек-паук",
-    role: "hero",
-  },
-  {
-    name: "Зеленый гоблин",
-    role: "villain",
-  },
+	{
+		name: 'Человек-паук',
+		role: 'hero',
+	},
+	{
+		name: 'Зеленый гоблин',
+		role: 'villain',
+	},
 ]);
 
 // Создали производные сторы, которые зависят от $supers
-const $superHeroes = $supers.map((supers) => supers.filter((sup) => sup.role === "hero"));
-const $superVillains = $supers.map((supers) => supers.filter((sup) => sup.role === "villain"));
+const $superHeroes = $supers.map((supers) =>
+	supers.filter((sup) => sup.role === 'hero'),
+);
+const $superVillains = $supers.map((supers) =>
+	supers.filter((sup) => sup.role === 'villain'),
+);
 
 // Обновляем стор при срабатывании события
 $supers.on(superAdded, (supers, newSuper) => [...supers, newSuper]);
 
 // Добавляем супера
 superAdded({
-  name: "Носорог",
-  role: "villain",
+	name: 'Носорог',
+	role: 'villain',
 });
 ```
 
@@ -32345,31 +32755,35 @@ superAdded({
 Для примера мы все также возьмем код выше с суперами, однако немного изменим его добавив эффект с загрузкой первоначальных данных, как и в реальных приложениях:
 
 ```ts
-import { createStore, createEvent, createEffect } from "effector";
+import { createStore, createEvent, createEffect } from 'effector';
 
 // определяем наши сторы
 const $supers = createStore([]);
-const $superHeroes = $supers.map((supers) => supers.filter((sup) => sup.role === "hero"));
-const $superVillains = $supers.map((supers) => supers.filter((sup) => sup.role === "villain"));
+const $superHeroes = $supers.map((supers) =>
+	supers.filter((sup) => sup.role === 'hero'),
+);
+const $superVillains = $supers.map((supers) =>
+	supers.filter((sup) => sup.role === 'villain'),
+);
 
 // создаем события
 const superAdded = createEvent();
 
 // создаем эффекты для получения данных
 const getSupersFx = createEffect(async () => {
-  const res = await fetch("/server/api/supers");
-  if (!res.ok) {
-    throw new Error("something went wrong");
-  }
-  const data = await res.json();
-  return data;
+	const res = await fetch('/server/api/supers');
+	if (!res.ok) {
+		throw new Error('something went wrong');
+	}
+	const data = await res.json();
+	return data;
 });
 
 // создаем эффекты для получения данных
 const saveNewSuperFx = createEffect(async (newSuper) => {
-  // симуляция сохранения нового супера
-  await new Promise((res) => setTimeout(res, 1500));
-  return newSuper;
+	// симуляция сохранения нового супера
+	await new Promise((res) => setTimeout(res, 1500));
+	return newSuper;
 });
 
 // когда загрузка завершилась успешно, устанавливаем данные
@@ -32396,27 +32810,31 @@ getSupersFx();
 > `sample` является основным методом работы с юнитами, который позволяет декларативно запустить цепочку действий.
 
 ```ts ins={27-37}
-import { createStore, createEvent, createEffect, sample } from "effector";
+import { createStore, createEvent, createEffect, sample } from 'effector';
 
 const $supers = createStore([]);
-const $superHeroes = $supers.map((supers) => supers.filter((sup) => sup.role === "hero"));
-const $superVillains = $supers.map((supers) => supers.filter((sup) => sup.role === "villain"));
+const $superHeroes = $supers.map((supers) =>
+	supers.filter((sup) => sup.role === 'hero'),
+);
+const $superVillains = $supers.map((supers) =>
+	supers.filter((sup) => sup.role === 'villain'),
+);
 
 const superAdded = createEvent();
 
 const getSupersFx = createEffect(async () => {
-  const res = await fetch("/server/api/supers");
-  if (!res.ok) {
-    throw new Error("something went wrong");
-  }
-  const data = await res.json();
-  return data;
+	const res = await fetch('/server/api/supers');
+	if (!res.ok) {
+		throw new Error('something went wrong');
+	}
+	const data = await res.json();
+	return data;
 });
 
 const saveNewSuperFx = createEffect(async (newSuper) => {
-  // симуляция сохранения нового супера
-  await new Promise((res) => setTimeout(res, 1500));
-  return newSuper;
+	// симуляция сохранения нового супера
+	await new Promise((res) => setTimeout(res, 1500));
+	return newSuper;
 });
 
 $supers.on(getSupersFx.done, ({ result }) => result);
@@ -32424,14 +32842,14 @@ $supers.on(superAdded, (supers, newSuper) => [...supers, newSuper]);
 
 // здесь мы говорим, при запуске clock вызови target и передай туда данные
 sample({
-  clock: superAdded,
-  target: saveNewSuperFx,
+	clock: superAdded,
+	target: saveNewSuperFx,
 });
 
 // когда эффект saveNewSuperFx завершится успешно, то вызови getSupersFx
 sample({
-  clock: saveNewSuperFx.done,
-  target: getSupersFx,
+	clock: saveNewSuperFx.done,
+	target: getSupersFx,
 });
 
 // вызываем загрузку данных
@@ -32439,7 +32857,6 @@ getSupersFx();
 ```
 
 Вот так вот легко и незамысловато мы написали часть бизнес-логики нашего приложения, а часть с отображением этих данных оставили на UI фреймворк.
-
 
 # Экосистема effector
 
@@ -32457,52 +32874,50 @@ getSupersFx();
 
 ### Пакеты
 
-* [patronum](https://github.com/effector/patronum) 💚 — Библиотека утилит Effector, обеспечивающая модульность и удобства.
-* [@effector/reflect](https://github.com/effector/reflect) 💚 — Классические HOC переработаны для соединения компонентов React с модулями, компонуемым и (своего рода) «мелкозернистым реактивным» способом..
-* [@withease/redux](https://withease.effector.dev/redux/) 💚 — Плавный переход от redux к effector.
-* [@withease/i18next](https://withease.effector.dev/i18next) 💚 — Мощные привязки структуры интернационализации.
-* [@withease/web-api](https://withease.effector.dev/web-api/) 💚 — Web API - состояние сети, видимость вкладок и многое другое.
-* [@withease/factories](https://withease.effector.dev/factories/) 💚 — Набор помощников для создания фабрик в вашем приложении.
-* [effector-storage](https://github.com/yumauri/effector-storage) 💚 - Небольшой модуль для синхронизации хранилищ со всеми типами хранилищ (локальное/сессионное хранилище, IndexedDB, файлы cookie, серверное хранилище и т. д.).
-* [farfetched](https://ff.effector.dev) 🛠 — Усовершенствованный инструмент получения данных для веб-приложений..
-* [@effector/next](https://github.com/effector/next) 🛠 - Официальные привязки для Next.js
-* [effector-localstorage](https://github.com/lessmess-dev/effector-localstorage) 🛠 — Модуль для effector, который синхронизирует хранилища с localStorage.
-* [effector-hotkey](https://github.com/kelin2025/effector-hotkey) 🛠 — Горячие клавиши — это просто.
-* [atomic-router](https://github.com/atomic-router/atomic-router) 🛠 — Роутер, не привязанный к view.
-* [effector-undo](https://github.com/tanyaisinmybed/effector-undo) ☢️ — Простая функция отмены/повтора.
-* [forest](https://github.com/effector/effector/tree/master/packages/forest) ☢️ — Реактивный движок ui для веб-приложений.
-* [effector-utils](https://github.com/Kelin2025/effector-utils) ⛔ — Библиотека утилит Effector.
+- [patronum](https://github.com/effector/patronum) 💚 — Библиотека утилит Effector, обеспечивающая модульность и удобства.
+- [@effector/reflect](https://github.com/effector/reflect) 💚 — Классические HOC переработаны для соединения компонентов React с модулями, компонуемым и (своего рода) «мелкозернистым реактивным» способом..
+- [@withease/redux](https://withease.effector.dev/redux/) 💚 — Плавный переход от redux к effector.
+- [@withease/i18next](https://withease.effector.dev/i18next) 💚 — Мощные привязки структуры интернационализации.
+- [@withease/web-api](https://withease.effector.dev/web-api/) 💚 — Web API - состояние сети, видимость вкладок и многое другое.
+- [@withease/factories](https://withease.effector.dev/factories/) 💚 — Набор помощников для создания фабрик в вашем приложении.
+- [effector-storage](https://github.com/yumauri/effector-storage) 💚 - Небольшой модуль для синхронизации хранилищ со всеми типами хранилищ (локальное/сессионное хранилище, IndexedDB, файлы cookie, серверное хранилище и т. д.).
+- [farfetched](https://ff.effector.dev) 🛠 — Усовершенствованный инструмент получения данных для веб-приложений..
+- [@effector/next](https://github.com/effector/next) 🛠 - Официальные привязки для Next.js
+- [effector-localstorage](https://github.com/lessmess-dev/effector-localstorage) 🛠 — Модуль для effector, который синхронизирует хранилища с localStorage.
+- [effector-hotkey](https://github.com/kelin2025/effector-hotkey) 🛠 — Горячие клавиши — это просто.
+- [atomic-router](https://github.com/atomic-router/atomic-router) 🛠 — Роутер, не привязанный к view.
+- [effector-undo](https://github.com/tanyaisinmybed/effector-undo) ☢️ — Простая функция отмены/повтора.
+- [forest](https://github.com/effector/effector/tree/master/packages/forest) ☢️ — Реактивный движок ui для веб-приложений.
+- [effector-utils](https://github.com/Kelin2025/effector-utils) ⛔ — Библиотека утилит Effector.
 
 ### DX
 
-* [eslint-plugin-effector](https://eslint.effector.dev) 💚 — Применение лучших практик.
-* [@effector/swc-plugin](https://github.com/effector/swc-plugin) 💚 — Официальный SWC-плагин для Effector.
-* [effector-logger](https://github.com/effector/logger) 🛠 — Простой логгер сторов, событий, эффектов и доменов.
-* [@effector/redux-devtools-adapter](https://github.com/effector/redux-devtools-adapter) 🛠 - Простой адаптер, который логгирует обновления в Redux DevTools.
+- [eslint-plugin-effector](https://eslint.effector.dev) 💚 — Применение лучших практик.
+- [@effector/swc-plugin](https://github.com/effector/swc-plugin) 💚 — Официальный SWC-плагин для Effector.
+- [effector-logger](https://github.com/effector/logger) 🛠 — Простой логгер сторов, событий, эффектов и доменов.
+- [@effector/redux-devtools-adapter](https://github.com/effector/redux-devtools-adapter) 🛠 - Простой адаптер, который логгирует обновления в Redux DevTools.
 
 ### Управление формами
 
-* [effector-final-form](https://github.com/binjospookie/effector-final-form) 🛠️ – Привязки effector для Final Form.
-* [filledout](https://filledout.github.io) ☢️ — Менеджер форм с простой в использовании проверкой.
-* [effector-forms](https://github.com/aanation/effector-forms) ☢️ — Менеджер форм для effector.
-* [effector-react-form](https://github.com/GTOsss/effector-react-form) ☢️ — Подключите свои формы к state-менеджеру.
-* [efform](https://github.com/tehSLy/efform) ⛔ — Менеджер форм, основанный на менеджере состояний, предназначенный для высококачественного DX.
-* [effector-reform](https://github.com/movpushmov/effector-reform) ☢️️ — Менеджер форм, реализующий концепцию составных форм.
+- [effector-final-form](https://github.com/binjospookie/effector-final-form) 🛠️ – Привязки effector для Final Form.
+- [filledout](https://filledout.github.io) ☢️ — Менеджер форм с простой в использовании проверкой.
+- [effector-forms](https://github.com/aanation/effector-forms) ☢️ — Менеджер форм для effector.
+- [effector-react-form](https://github.com/GTOsss/effector-react-form) ☢️ — Подключите свои формы к state-менеджеру.
+- [efform](https://github.com/tehSLy/efform) ⛔ — Менеджер форм, основанный на менеджере состояний, предназначенный для высококачественного DX.
+- [effector-reform](https://github.com/movpushmov/effector-reform) ☢️️ — Менеджер форм, реализующий концепцию составных форм.
 
 ### Шаблоны
 
-* [ViteJS+React Template](https://github.com/effector/vite-react-template) 💚 — Попробуйте эффектор с React и TypeScript за считанные секунды!
-* [ViteJS+TypeScript Template](https://github.com/mmnkuh/effector-vite-template) 🛠 — Еще один шаблон ViteJS + TypeScript.
-
+- [ViteJS+React Template](https://github.com/effector/vite-react-template) 💚 — Попробуйте эффектор с React и TypeScript за считанные секунды!
+- [ViteJS+TypeScript Template](https://github.com/mmnkuh/effector-vite-template) 🛠 — Еще один шаблон ViteJS + TypeScript.
 
 # Примеры
 
-* Индикатор загрузки: отображение индикатора загрузки во время выполнения эффектов
-* Последовательность эффектов: когда второй запрос к серверу требует данных из первого
-* Отмена эффекта: когда пропадает необходимость в результатах эффекта, который ещё выполняется
-* Модальное окно: связывание модального окна отображаемого через React с состоянием в сторе
-* Вход диапазона: подключение компонента ввода диапазона к состоянию
-
+- Индикатор загрузки: отображение индикатора загрузки во время выполнения эффектов
+- Последовательность эффектов: когда второй запрос к серверу требует данных из первого
+- Отмена эффекта: когда пропадает необходимость в результатах эффекта, который ещё выполняется
+- Модальное окно: связывание модального окна отображаемого через React с состоянием в сторе
+- Вход диапазона: подключение компонента ввода диапазона к состоянию
 
 # Начало работы с effector
 
@@ -32518,19 +32933,19 @@ Effector — это мощный менеджер состояний, котор
 Прежде чем начать погружение стоит сказать, что мы поддерживаем `llms.txt` для возможности использования AI-помощников [ChatGPT](https://chatgpt.com/), [Claude](https://claude.ai/), [Gemini](https://gemini.google.com) и других. Вам просто нужно скинуть ссылку в чат, либо загрузить документацию в IDE типа [Cursor](https://www.cursor.com/en).
 На текущий момент доступны следующие документы:
 
-* https://effector.dev/ru/llms-full.txt
-* https://effector.dev/docs/llms.txt
-* https://effector.dev/docs/llms-full.txt
+- https://effector.dev/ru/llms-full.txt
+- https://effector.dev/docs/llms.txt
+- https://effector.dev/docs/llms-full.txt
 
 Помимо прочего у нас также существует [ChatGPT effector ассистент](https://chatgpt.com/g/g-thabaCJlt-effector-assistant), [репозиторий загруженный в DeepWiki](https://deepwiki.com/effector/effector), и загруженную документацию на [Context7](https://context7.com/effector/effector).
 
 ### Особенности Effector
 
-* **Effector реактивный 🚀**: Effector автоматически отслеживает зависимости и обновляет все связанные части приложения, избавляя вас от необходимости вручную управлять обновлениями.
-* **Декларативный код 📝**: Вы описываете связи между данными и их трансформации, а Effector сам заботится о том, как и когда выполнять эти преобразования.
-* **Предсказуемое тестирование** ✅: Изолированные контексты делают тестирование бизнес-логики простым и надёжным.
-* **Гибкая архитектура** 🏗️: Effector одинаково хорошо подходит как для небольших приложений, так и для крупных корпоративных систем.
-* **Универсальность** 🔄: Хотя Effector прекрасно интегрируется с популярными фреймворками, он может использоваться в любой JavaScript-среде.
+- **Effector реактивный 🚀**: Effector автоматически отслеживает зависимости и обновляет все связанные части приложения, избавляя вас от необходимости вручную управлять обновлениями.
+- **Декларативный код 📝**: Вы описываете связи между данными и их трансформации, а Effector сам заботится о том, как и когда выполнять эти преобразования.
+- **Предсказуемое тестирование** ✅: Изолированные контексты делают тестирование бизнес-логики простым и надёжным.
+- **Гибкая архитектура** 🏗️: Effector одинаково хорошо подходит как для небольших приложений, так и для крупных корпоративных систем.
+- **Универсальность** 🔄: Хотя Effector прекрасно интегрируется с популярными фреймворками, он может использоваться в любой JavaScript-среде.
 
 Больше о ключевых особенностях эффектора вы можете прочитать здесь
 
@@ -32568,7 +32983,7 @@ pnpm install effector
 
 ```ts
 // counter.js
-import { createStore } from "effector";
+import { createStore } from 'effector';
 
 const $counter = createStore(0);
 ```
@@ -32579,7 +32994,7 @@ const $counter = createStore(0);
 
 ```ts ins={3-4}
 // counter.js
-import { createEvent } from "effector";
+import { createEvent } from 'effector';
 
 const incremented = createEvent();
 const decremented = createEvent();
@@ -32591,7 +33006,7 @@ const decremented = createEvent();
 
 ```ts ins={9-10}
 // counter.js
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 const $counter = createStore(0);
 
@@ -32648,26 +33063,34 @@ npm install effector effector-solid
   <TabItem label="React">
 
 ```jsx
-import { useUnit } from "effector-react";
-import { createEvent, createStore } from "effector";
-import { $counter, incremented, decremented } from "./counter.js";
+import { useUnit } from 'effector-react';
+import { createEvent, createStore } from 'effector';
+import { $counter, incremented, decremented } from './counter.js';
 
 export const Counter = () => {
-  const [counter, onIncremented, onDecremented] = useUnit([$counter, incremented, decremented]);
-  // или
-  const { counter, onIncremented, onDecremented } = useUnit({ $counter, incremented, decremented });
-  // или
-  const counter = useUnit($counter);
-  const onIncremented = useUnit(incremented);
-  const onDecremented = useUnit(decremented);
+	const [counter, onIncremented, onDecremented] = useUnit([
+		$counter,
+		incremented,
+		decremented,
+	]);
+	// или
+	const { counter, onIncremented, onDecremented } = useUnit({
+		$counter,
+		incremented,
+		decremented,
+	});
+	// или
+	const counter = useUnit($counter);
+	const onIncremented = useUnit(incremented);
+	const onDecremented = useUnit(decremented);
 
-  return (
-    <div>
-      <h1>Count: {counter}</h1>
-      <button onClick={onIncremented}>Increment</button>
-      <button onClick={onDecremented}>Decrement</button>
-    </div>
-  );
+	return (
+		<div>
+			<h1>Count: {counter}</h1>
+			<button onClick={onIncremented}>Increment</button>
+			<button onClick={onDecremented}>Decrement</button>
+		</div>
+	);
 };
 ```
 
@@ -32676,23 +33099,31 @@ export const Counter = () => {
 
 ```html
 <script setup>
-  import { useUnit } from "@effector-vue/composition";
-  import { $counter, incremented, decremented } from "./counter.js";
-  const [counter, onIncremented, onDecremented] = useUnit([$counter, incremented, decremented]);
-  // или
-  const { counter, onIncremented, onDecremented } = useUnit({ $counter, incremented, decremented });
-  // или
-  const counter = useUnit($counter);
-  const onIncremented = useUnit(incremented);
-  const onDecremented = useUnit(decremented);
+	import { useUnit } from '@effector-vue/composition';
+	import { $counter, incremented, decremented } from './counter.js';
+	const [counter, onIncremented, onDecremented] = useUnit([
+		$counter,
+		incremented,
+		decremented,
+	]);
+	// или
+	const { counter, onIncremented, onDecremented } = useUnit({
+		$counter,
+		incremented,
+		decremented,
+	});
+	// или
+	const counter = useUnit($counter);
+	const onIncremented = useUnit(incremented);
+	const onDecremented = useUnit(decremented);
 </script>
 
 <template>
-  <div>
-    <h1>Count: {{ counter }}</h1>
-    <button @click="onIncremented">Increment</button>
-    <button @click="onDecremented">Decrement</button>
-  </div>
+	<div>
+		<h1>Count: {{ counter }}</h1>
+		<button @click="onIncremented">Increment</button>
+		<button @click="onDecremented">Decrement</button>
+	</div>
 </template>
 ```
 
@@ -32700,26 +33131,34 @@ export const Counter = () => {
   <TabItem label="Solid">
 
 ```jsx
-import { createEvent, createStore } from "effector";
-import { useUnit } from "effector-solid";
-import { $counter, incremented, decremented } from "./counter.js";
+import { createEvent, createStore } from 'effector';
+import { useUnit } from 'effector-solid';
+import { $counter, incremented, decremented } from './counter.js';
 
 const Counter = () => {
-  const [counter, onIncremented, onDecremented] = useUnit([$counter, incremented, decremented]);
-  // или
-  const { counter, onIncremented, onDecremented } = useUnit({ $counter, incremented, decremented });
-  // или
-  const counter = useUnit($counter);
-  const onIncremented = useUnit(incremented);
-  const onDecremented = useUnit(decremented);
+	const [counter, onIncremented, onDecremented] = useUnit([
+		$counter,
+		incremented,
+		decremented,
+	]);
+	// или
+	const { counter, onIncremented, onDecremented } = useUnit({
+		$counter,
+		incremented,
+		decremented,
+	});
+	// или
+	const counter = useUnit($counter);
+	const onIncremented = useUnit(incremented);
+	const onDecremented = useUnit(decremented);
 
-  return (
-    <div>
-      <h1>Count: {counter()}</h1>
-      <button onClick={onIncremented}>Increment</button>
-      <button onClick={onDecremented}>Decrement</button>
-    </div>
-  );
+	return (
+		<div>
+			<h1>Count: {counter()}</h1>
+			<button onClick={onIncremented}>Increment</button>
+			<button onClick={onDecremented}>Decrement</button>
+		</div>
+	);
 };
 
 export default Counter;
@@ -32731,7 +33170,6 @@ export default Counter;
 > INFO А где Svelte ?:
 >
 > Для работы со Svelte не требуется дополнительные пакеты, он прекрасно работает с базовым пакетом effector.
-
 
 # Установка
 
@@ -32781,16 +33219,16 @@ Svelte работает с effector без установки дополните
 Чтобы использовать effector, просто импортируйте `effector.mjs` из любого CDN.
 
 ```typescript
-import { createStore } from "https://cdn.jsdelivr.net/npm/effector/effector.mjs";
+import { createStore } from 'https://cdn.jsdelivr.net/npm/effector/effector.mjs';
 ```
 
 Примеры CDN:
 
-* https://www.jsdelivr.com/package/npm/effector
-* https://cdn.jsdelivr.net/npm/effector/effector.cjs.js
-* https://cdn.jsdelivr.net/npm/effector/effector.mjs
-* https://cdn.jsdelivr.net/npm/effector-react/effector-react.cjs.js
-* https://cdn.jsdelivr.net/npm/effector-vue/effector-vue.cjs.js
+- https://www.jsdelivr.com/package/npm/effector
+- https://cdn.jsdelivr.net/npm/effector/effector.cjs.js
+- https://cdn.jsdelivr.net/npm/effector/effector.mjs
+- https://cdn.jsdelivr.net/npm/effector-react/effector-react.cjs.js
+- https://cdn.jsdelivr.net/npm/effector-vue/effector-vue.cjs.js
 
 ### DevTools
 
@@ -32828,17 +33266,17 @@ npm install -ED @effector/swc-plugin @swc/core
 
 ```json
 {
-  "plugins": [
-    [
-      "babel-plugin-module-resolver",
-      {
-        "alias": {
-          "^effector$": "effector/compat",
-          "^effector-react$": "effector-react/compat"
-        }
-      }
-    ]
-  ]
+	"plugins": [
+		[
+			"babel-plugin-module-resolver",
+			{
+				"alias": {
+					"^effector$": "effector/compat",
+					"^effector-react$": "effector-react/compat"
+				}
+			}
+		]
+	]
 }
 ```
 
@@ -32848,10 +33286,9 @@ Effector использует некоторые глобальные объек
 
 Вам может понадобиться установить следующие полифиллы:
 
-* `Promise`
-* `Object.assign`
-* `Array.prototype.flat`
-
+- `Promise`
+- `Object.assign`
+- `Array.prototype.flat`
 
 # Мотивация
 
@@ -32863,9 +33300,9 @@ Effector использует некоторые глобальные объек
 
 Effector был разработан с целью описывать бизнес-логику приложения простым и понятным языком, используя три базовых примитива:
 
-* Событие (Event) — для описания событий
-* Стор (Store) — для управления состоянием
-* Эффект (Effect) — для работы с сайд эффектами
+- Событие (Event) — для описания событий
+- Стор (Store) — для управления состоянием
+- Эффект (Effect) — для работы с сайд эффектами
 
 В то же время логика пользовательского интерфейса остается ответственностью фреймворка.
 Пусть каждый фреймворк решает свою задачу настолько эффективно, насколько это возможно.
@@ -32882,9 +33319,9 @@ Effector был разработан с целью описывать бизне
 
 В реальных проектах задачи от менеджера продукта редко содержат детали реализации интерфейса. Вместо этого они описывают сценарии взаимодействия пользователя с системой. Effector позволяет описывать эти сценарии на том же языке, на котором общается команда разработки:
 
-* Пользователи взаимодействуют с приложением → Events
-* Видят изменения на странице → Store
-* Приложение взаимодействует с внешним миром → Effects
+- Пользователи взаимодействуют с приложением → Events
+- Видят изменения на странице → Store
+- Приложение взаимодействует с внешним миром → Effects
 
 ### Независимость от фреймворков
 
@@ -32894,7 +33331,6 @@ Effector был разработан с целью описывать бизне
 1. Сфокусироваться на бизнес-логике, а не на особенностях фреймворка
 2. Легко переиспользовать код между разными частями приложения
 3. Создавать более поддерживаемые и масштабируемые решения
-
 
 # Как мыслить в парадигме Effector
 
@@ -32913,9 +33349,9 @@ Effector — это не просто «менеджер состояния», �
 
 Приложение — это поток изменений. Каждое изменение — это событие. Важно понимать, что событие не решает, что делать, оно лишь фиксирует факт произошедшего. Это ключевой момент, который помогает избежать жёстких зависимостей.
 
-* **Событие — это просто факт**: «что-то произошло».
-* **События не содержат логику** — они только объявляют событие, но не решают, как на него реагировать.
-* **Один факт может привести к разным последствиям** — одно событие может запускать несколько независимых процессов.
+- **Событие — это просто факт**: «что-то произошло».
+- **События не содержат логику** — они только объявляют событие, но не решают, как на него реагировать.
+- **Один факт может привести к разным последствиям** — одно событие может запускать несколько независимых процессов.
 
 Пример:
 
@@ -32938,8 +33374,8 @@ const buttonClicked = createEvent();
 
 Правильный подход к архитектуре — держать бизнес-логику отдельно от интерфейса. Effector позволяет это сделать, сохраняя UI простым, а логику — чистой и переиспользуемой.
 
-* UI только отображает данные.
-* Effector управляет состоянием и логикой.
+- UI только отображает данные.
+- Effector управляет состоянием и логикой.
 
 ### Как это выглядит в реальном приложении?
 
@@ -32947,9 +33383,9 @@ const buttonClicked = createEvent();
 
 ![кнопки действий для репозитория в гитхаб](/images/github-repo-actions.png)
 
-* Пользователь поставил/убрал звездочку - `repoStarToggled`
-* Строка поиска по репозиторию изменилась - `repoFileSearchChanged`
-* Репозиторий был форкнут - `repoForked`
+- Пользователь поставил/убрал звездочку - `repoStarToggled`
+- Строка поиска по репозиторию изменилась - `repoFileSearchChanged`
+- Репозиторий был форкнут - `repoForked`
 
 Логика строится вокруг событий и реакций на них. UI просто сообщает о действии, а их обработка это уже часть бизнес-логики.
 
@@ -32975,29 +33411,29 @@ const $repoStarsCount = createStore(0);
 
 // логика переключения звездочки
 sample({
-  clock: repoStarToggled,
-  source: $isRepoStarred,
-  fn: (isRepoStarred) => !isRepoStarred,
-  target: $isRepoStarred,
+	clock: repoStarToggled,
+	source: $isRepoStarred,
+	fn: (isRepoStarred) => !isRepoStarred,
+	target: $isRepoStarred,
 });
 
 // отправка запроса на сервер при переключении звезды
 sample({
-  clock: $isRepoStarred,
-  filter: (isRepoStarred) => isRepoStarred,
-  target: starRepoFx,
+	clock: $isRepoStarred,
+	filter: (isRepoStarred) => isRepoStarred,
+	target: starRepoFx,
 });
 
 sample({
-  clock: $isRepoStarred,
-  filter: (isRepoStarred) => !isRepoStarred,
-  target: unstarRepoFx,
+	clock: $isRepoStarred,
+	filter: (isRepoStarred) => !isRepoStarred,
+	target: unstarRepoFx,
 });
 
 // обновляем счетчик
 sample({
-  clock: [starRepoFx.doneData, unstarRepoFx.doneData],
-  target: $repoStarsCount,
+	clock: [starRepoFx.doneData, unstarRepoFx.doneData],
+	target: $repoStarsCount,
 });
 ```
 
@@ -33005,21 +33441,27 @@ sample({
 <TabItem label="UI">
 
 ```tsx
-import { repoStarToggled, $isRepoStarred, $repoStarsCount } from "./repo.model.ts";
+import {
+	repoStarToggled,
+	$isRepoStarred,
+	$repoStarsCount,
+} from './repo.model.ts';
 
 const RepoStarButton = () => {
-  const [onStarToggle, isRepoStarred, repoStarsCount] = useUnit([
-    repoStarToggled,
-    $isRepoStarred,
-    $repoStarsCount,
-  ]);
+	const [onStarToggle, isRepoStarred, repoStarsCount] = useUnit([
+		repoStarToggled,
+		$isRepoStarred,
+		$repoStarsCount,
+	]);
 
-  return (
-    <div>
-      <button onClick={onStarToggle}>{isRepoStarred ? "unstar" : "star"}</button>
-      <span>{repoStarsCount}</span>
-    </div>
-  );
+	return (
+		<div>
+			<button onClick={onStarToggle}>
+				{isRepoStarred ? 'unstar' : 'star'}
+			</button>
+			<span>{repoStarsCount}</span>
+		</div>
+	);
 };
 ```
 
@@ -33027,7 +33469,6 @@ const RepoStarButton = () => {
 </Tabs>
 
 При этом UI не знает что там будет происходить внутри, все за что он отвечает – это вызов событий и отображение данных.
-
 
 # Политика релизов
 
@@ -33041,8 +33482,8 @@ const RepoStarButton = () => {
 
 Например:
 
-* Когда была выпущена версия 22, функция "A" была помечена как устаревшая. Библиотека выводит предупреждение в консоль при её использовании.
-* Через год, в релизе версии 23, функция "A" удаляется.
+- Когда была выпущена версия 22, функция "A" была помечена как устаревшая. Библиотека выводит предупреждение в консоль при её использовании.
+- Через год, в релизе версии 23, функция "A" удаляется.
 
 ### Цикл релизов
 
@@ -33053,7 +33494,6 @@ const RepoStarButton = () => {
 Это необходимо, чтобы разработчики могли плавно планировать свою работу, учитывая возможные изменения в effector.
 
 Это также обязывает мейнтейнеров effector быть крайне осторожными при проектировании новых функций и внесении критических изменений в старые функции библиотеки, поскольку возможность удалить или серьезно изменить что-то в публичном API появляется только раз в два года.
-
 
 # Использование с пакетом effector-react
 
@@ -33087,15 +33527,15 @@ const RepoStarButton = () => {
 ```ts
 // Файл: /src/shared/api/message.ts
 interface Author {
-  id: string;
-  name: string;
+	id: string;
+	name: string;
 }
 
 export interface Message {
-  id: string;
-  author: Author;
-  text: string;
-  timestamp: number;
+	id: string;
+	author: Author;
+	text: string;
+	timestamp: number;
 }
 ```
 
@@ -33103,17 +33543,17 @@ export interface Message {
 
 ```ts
 // Файл: /src/shared/api/message.ts
-const LocalStorageKey = "effector-example-history";
+const LocalStorageKey = 'effector-example-history';
 
 function loadHistory(): Message[] | void {
-  const source = localStorage.getItem(LocalStorageKey);
-  if (source) {
-    return JSON.parse(source);
-  }
-  return undefined;
+	const source = localStorage.getItem(LocalStorageKey);
+	if (source) {
+		return JSON.parse(source);
+	}
+	return undefined;
 }
 function saveHistory(messages: Message[]) {
-  localStorage.setItem(LocalStorageKey, JSON.stringify(messages));
+	localStorage.setItem(LocalStorageKey, JSON.stringify(messages));
 }
 ```
 
@@ -33122,14 +33562,16 @@ function saveHistory(messages: Message[]) {
 ```ts
 // Файл: /src/shared/lib/oid.ts
 export const createOid = () =>
-  ((new Date().getTime() / 1000) | 0).toString(16) +
-  "xxxxxxxxxxxxxxxx".replace(/[x]/g, () => ((Math.random() * 16) | 0).toString(16)).toLowerCase();
+	((new Date().getTime() / 1000) | 0).toString(16) +
+	'xxxxxxxxxxxxxxxx'
+		.replace(/[x]/g, () => ((Math.random() * 16) | 0).toString(16))
+		.toLowerCase();
 ```
 
 ```ts
 // Файл: /src/shared/lib/wait.ts
 export function wait(timeout = Math.random() * 1500) {
-  return new Promise((resolve) => setTimeout(resolve, timeout));
+	return new Promise((resolve) => setTimeout(resolve, timeout));
 }
 ```
 
@@ -33141,39 +33583,41 @@ export function wait(timeout = Math.random() * 1500) {
 // Второй аргумент в типе определяет тип успешного результата.
 // Третий аргумент является необязательным и определяет тип неудачного результата.
 export const messagesLoadFx = createEffect<void, Message[], Error>(async () => {
-  const history = loadHistory();
-  await wait();
-  return history ?? [];
+	const history = loadHistory();
+	await wait();
+	return history ?? [];
 });
 
 interface SendMessage {
-  text: string;
-  author: Author;
+	text: string;
+	author: Author;
 }
 
 // Но мы можем использовать вывод типов и задавать типы аргументов в определении обработчика.
 // Наведите курсор на `messagesLoadFx`, чтобы увидеть выведенные типы:
 // `Effect<{ text: string; authorId: string; authorName: string }, void, Error>`
-export const messageSendFx = createEffect(async ({ text, author }: SendMessage) => {
-  const message: Message = {
-    id: createOid(),
-    author,
-    timestamp: Date.now(),
-    text,
-  };
-  const history = await messagesLoadFx();
-  saveHistory([...history, message]);
-  await wait();
-});
+export const messageSendFx = createEffect(
+	async ({ text, author }: SendMessage) => {
+		const message: Message = {
+			id: createOid(),
+			author,
+			timestamp: Date.now(),
+			text,
+		};
+		const history = await messagesLoadFx();
+		saveHistory([...history, message]);
+		await wait();
+	},
+);
 
 // Пожалуйста, обратите внимание, что мы будем использовать `wait()` для `messagesLoadFx` и `wait()` в текущем эффекте
 // Также, обратите внимание, что `saveHistory` и `loadHistory` могут выбрасывать исключения,
 // в этом случае эффект вызовет событие `messageDeleteFx.fail`.
 export const messageDeleteFx = createEffect(async (message: Message) => {
-  const history = await messagesLoadFx();
-  const updated = history.filter((found) => found.id !== message.id);
-  await wait();
-  saveHistory(updated);
+	const history = await messagesLoadFx();
+	const updated = history.filter((found) => found.id !== message.id);
+	await wait();
+	saveHistory(updated);
 });
 ```
 
@@ -33185,8 +33629,8 @@ export const messageDeleteFx = createEffect(async (message: Message) => {
 // Файл: /src/shared/api/session.ts
 // Это называется сессией, потому что описывает текущую сессию пользователя, а не Пользователя в целом.
 export interface Session {
-  id: string;
-  name: string;
+	id: string;
+	name: string;
 }
 ```
 
@@ -33194,7 +33638,7 @@ export interface Session {
 
 ```ts
 // Файл: /src/shared/api/session.ts
-import { uniqueNamesGenerator, Config, starWars } from "unique-names-generator";
+import { uniqueNamesGenerator, Config, starWars } from 'unique-names-generator';
 
 const nameGenerator: Config = { dictionaries: [starWars] };
 const createName = () => uniqueNamesGenerator(nameGenerator);
@@ -33204,37 +33648,37 @@ const createName = () => uniqueNamesGenerator(nameGenerator);
 
 ```ts
 // Файл: /src/shared/api/session.ts
-const LocalStorageKey = "effector-example-session";
+const LocalStorageKey = 'effector-example-session';
 
 // Обратите внимание, что в этом случае требуется явное определение типов, поскольку `JSON.parse()` возвращает `any`
 export const sessionLoadFx = createEffect<void, Session | null>(async () => {
-  const source = localStorage.getItem(LocalStorageKey);
-  await wait();
-  if (!source) {
-    return null;
-  }
-  return JSON.parse(source);
+	const source = localStorage.getItem(LocalStorageKey);
+	await wait();
+	if (!source) {
+		return null;
+	}
+	return JSON.parse(source);
 });
 
 // По умолчанияю, если нет аргументов, не предоставлены явные аргументы типа и нет оператора `return`,
 // эффект будет иметь тип: `Effect<void, void, Error>`
 export const sessionDeleteFx = createEffect(async () => {
-  localStorage.removeItem(LocalStorageKey);
-  await wait();
+	localStorage.removeItem(LocalStorageKey);
+	await wait();
 });
 
 // Взгляните на тип переменной `sessionCreateFx`.
 // Там будет `Effect<void, Session, Error>` потому что TypeScript может вывести тип из переменной `session`
 export const sessionCreateFx = createEffect(async () => {
-  // Я явно установил тип для следующей переменной, это позволит TypeScript помочь мне
-  // Если я забуду установить свойство, то я увижу ошибку в месте определения
-  // Это также позволяет IDE автоматически дополнять и завершать имена свойств
-  const session: Session = {
-    id: createOid(),
-    name: createName(),
-  };
-  localStorage.setItem(LocalStorageKey, JSON.stringify(session));
-  return session;
+	// Я явно установил тип для следующей переменной, это позволит TypeScript помочь мне
+	// Если я забуду установить свойство, то я увижу ошибку в месте определения
+	// Это также позволяет IDE автоматически дополнять и завершать имена свойств
+	const session: Session = {
+		id: createOid(),
+		name: createName(),
+	};
+	localStorage.setItem(LocalStorageKey, JSON.stringify(session));
+	return session;
 });
 ```
 
@@ -33246,12 +33690,12 @@ export const sessionCreateFx = createEffect(async () => {
 
 ```ts
 // Файл: /src/shared/api/index.ts
-export * as messageApi from "./message";
-export * as sessionApi from "./session";
+export * as messageApi from './message';
+export * as sessionApi from './session';
 
 // Types reexports made just for convenience
-export type { Message } from "./message";
-export type { Session } from "./session";
+export type { Message } from './message';
+export type { Session } from './session';
 ```
 
 ### Создадим страницу с логикой
@@ -33273,28 +33717,28 @@ src/
 ```tsx
 // Файл: /src/pages/chat/page.tsx
 export function ChatPage() {
-  return (
-    <div className="parent">
-      <ChatHistory />
-      <MessageForm />
-    </div>
-  );
+	return (
+		<div className='parent'>
+			<ChatHistory />
+			<MessageForm />
+		</div>
+	);
 }
 
 function ChatHistory() {
-  return (
-    <div className="chat-history">
-      <div>Тут будет список сообщений</div>
-    </div>
-  );
+	return (
+		<div className='chat-history'>
+			<div>Тут будет список сообщений</div>
+		</div>
+	);
 }
 
 function MessageForm() {
-  return (
-    <div className="message-form">
-      <div>Тут будет форма сообщения</div>
-    </div>
-  );
+	return (
+		<div className='message-form'>
+			<div>Тут будет форма сообщения</div>
+		</div>
+	);
 }
 ```
 
@@ -33304,7 +33748,7 @@ function MessageForm() {
 
 ```ts
 // Файл: /src/pages/chat/model.ts
-import { createEvent, createStore } from "effector";
+import { createEvent, createStore } from 'effector';
 
 // События просто сообщают о том, что что-то произошло
 export const messageDeleteClicked = createEvent<Message>();
@@ -33316,9 +33760,9 @@ export const logoutClicked = createEvent();
 
 // В данный момент есть только сырые данные без каких-либо знаний о том, как их загрузить.
 export const $loggedIn = createStore<boolean>(false);
-export const $userName = createStore("");
+export const $userName = createStore('');
 export const $messages = createStore<Message[]>([]);
-export const $messageText = createStore("");
+export const $messageText = createStore('');
 
 // Страница НЕ должна знать, откуда пришли данные.
 // Поэтому мы просто реэкспортируем их.
@@ -33332,30 +33776,36 @@ export const $messageSending = messageApi.messageSendFx.pending;
 
 ```tsx
 // Файл: /src/pages/chat/page.tsx
-import { useList, useUnit } from "effector-react";
-import * as model from "./model";
+import { useList, useUnit } from 'effector-react';
+import * as model from './model';
 
 // export function ChatPage { ... }
 
 function ChatHistory() {
-  const [messageDeleting, onMessageDelete] = useUnit([
-    model.$messageDeleting,
-    model.messageDeleteClicked,
-  ]);
+	const [messageDeleting, onMessageDelete] = useUnit([
+		model.$messageDeleting,
+		model.messageDeleteClicked,
+	]);
 
-  // Хук `useList` позволяет React не перерендерить сообщения, которые действительно не изменились.
-  const messages = useList(model.$messages, (message) => (
-    <div className="message-item" key={message.timestamp}>
-      <h3>From: {message.author.name}</h3>
-      <p>{message.text}</p>
-      <button onClick={() => onMessageDelete(message)} disabled={messageDeleting}>
-        {messageDeleting ? "Deleting" : "Delete"}
-      </button>
-    </div>
-  ));
-  // Здесь не нужен `useCallback` потому что мы передаем функцию в HTML-элемент, а не в кастомный компонент
+	// Хук `useList` позволяет React не перерендерить сообщения, которые действительно не изменились.
+	const messages = useList(model.$messages, (message) => (
+		<div
+			className='message-item'
+			key={message.timestamp}
+		>
+			<h3>From: {message.author.name}</h3>
+			<p>{message.text}</p>
+			<button
+				onClick={() => onMessageDelete(message)}
+				disabled={messageDeleting}
+			>
+				{messageDeleting ? 'Deleting' : 'Delete'}
+			</button>
+		</div>
+	));
+	// Здесь не нужен `useCallback` потому что мы передаем функцию в HTML-элемент, а не в кастомный компонент
 
-  return <div className="chat-history">{messages}</div>;
+	return <div className='chat-history'>{messages}</div>;
 }
 ```
 
@@ -33364,57 +33814,63 @@ function ChatHistory() {
 ```tsx
 // Файл: /src/pages/chat/page.tsx
 function MessageForm() {
-  const isLogged = useUnit(model.$loggedIn);
-  return isLogged ? <SendMessage /> : <LoginForm />;
+	const isLogged = useUnit(model.$loggedIn);
+	return isLogged ? <SendMessage /> : <LoginForm />;
 }
 
 function SendMessage() {
-  const [userName, messageText, messageSending] = useUnit([
-    model.$userName,
-    model.$messageText,
-    model.$messageSending,
-  ]);
+	const [userName, messageText, messageSending] = useUnit([
+		model.$userName,
+		model.$messageText,
+		model.$messageSending,
+	]);
 
-  const [handleLogout, handleTextChange, handleEnterPress, handleSendClick] = useUnit([
-    model.logoutClicked,
-    model.messageTextChanged,
-    model.messageEnterPressed,
-    model.messageSendClicked,
-  ]);
+	const [handleLogout, handleTextChange, handleEnterPress, handleSendClick] =
+		useUnit([
+			model.logoutClicked,
+			model.messageTextChanged,
+			model.messageEnterPressed,
+			model.messageSendClicked,
+		]);
 
-  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
-      handleEnterPress();
-    }
-  };
+	const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+		if (event.key === 'Enter') {
+			handleEnterPress();
+		}
+	};
 
-  return (
-    <div className="message-form">
-      <h3>{userName}</h3>
-      <input
-        value={messageText}
-        onChange={(event) => handleTextChange(event.target.value)}
-        onKeyPress={handleKeyPress}
-        className="chat-input"
-        placeholder="Type a message..."
-      />
-      <button onClick={() => handleSendClick()} disabled={messageSending}>
-        {messageSending ? "Sending..." : "Send"}
-      </button>
-      <button onClick={() => handleLogout()}>Log out</button>
-    </div>
-  );
+	return (
+		<div className='message-form'>
+			<h3>{userName}</h3>
+			<input
+				value={messageText}
+				onChange={(event) => handleTextChange(event.target.value)}
+				onKeyPress={handleKeyPress}
+				className='chat-input'
+				placeholder='Type a message...'
+			/>
+			<button
+				onClick={() => handleSendClick()}
+				disabled={messageSending}
+			>
+				{messageSending ? 'Sending...' : 'Send'}
+			</button>
+			<button onClick={() => handleLogout()}>Log out</button>
+		</div>
+	);
 }
 
 function LoginForm() {
-  const handleLogin = useUnit(model.loginClicked);
+	const handleLogin = useUnit(model.loginClicked);
 
-  return (
-    <div className="message-form">
-      <div>Please, log in to be able to send messages</div>
-      <button onClick={() => handleLogin()}>Login as a random user</button>
-    </div>
-  );
+	return (
+		<div className='message-form'>
+			<div>Please, log in to be able to send messages</div>
+			<button onClick={() => handleLogin()}>
+				Login as a random user
+			</button>
+		</div>
+	);
 }
 ```
 
@@ -33424,8 +33880,8 @@ function LoginForm() {
 
 ```ts
 // Файл: /src/entities/session/index.ts
-import { Session } from "shared/api";
-import { createStore } from "effector";
+import { Session } from 'shared/api';
+import { createStore } from 'effector';
 
 // Сущность просто хранит сессию и некоторую внутреннюю информацию о ней
 export const $session = createStore<Session | null>(null);
@@ -33460,18 +33916,18 @@ export const pageMounted = createEvent();
 ```tsx
 // Файл: /src/pages/chat/page.tsx
 export function ChatPage() {
-  const handlePageMount = useUnit(model.pageMounted);
+	const handlePageMount = useUnit(model.pageMounted);
 
-  React.useEffect(() => {
-    handlePageMount();
-  }, [handlePageMount]);
+	React.useEffect(() => {
+		handlePageMount();
+	}, [handlePageMount]);
 
-  return (
-    <div className="parent">
-      <ChatHistory />
-      <MessageForm />
-    </div>
-  );
+	return (
+		<div className='parent'>
+			<ChatHistory />
+			<MessageForm />
+		</div>
+	);
 }
 ```
 
@@ -33484,8 +33940,8 @@ export function ChatPage() {
 ```ts
 // Файл: /src/pages/chat/model.ts
 // Не забудьте про import { sample } from "effector"
-import { Message, messageApi, sessionApi } from "shared/api";
-import { $session } from "entities/session";
+import { Message, messageApi, sessionApi } from 'shared/api';
+import { $session } from 'entities/session';
 
 // export stores
 // export events
@@ -33495,8 +33951,8 @@ import { $session } from "entities/session";
 // Вы можете прочитать этот код так:
 // При загрузке страницы, одновременно вызываются загрузка сообщений и сессия пользователя
 sample({
-  clock: pageMounted,
-  target: [messageApi.messagesLoadFx, sessionApi.sessionLoadFx],
+	clock: pageMounted,
+	target: [messageApi.messagesLoadFx, sessionApi.sessionLoadFx],
 });
 ```
 
@@ -33518,19 +33974,19 @@ $session.on(sessionApi.sessionLoadFx.doneData, (_, session) => session);
 // Файл: /src/pages/chat/model.ts
 // Когда пользователь нажимает кнопку входа, нам нужно создать новую сессию
 sample({
-  clock: loginClicked,
-  target: sessionApi.sessionCreateFx,
+	clock: loginClicked,
+	target: sessionApi.sessionCreateFx,
 });
 // Когда сессия создана, просто положите его в хранилище сессий
 sample({
-  clock: sessionApi.sessionCreateFx.doneData,
-  target: $session,
+	clock: sessionApi.sessionCreateFx.doneData,
+	target: $session,
 });
 // Если создание сессии не удалось, просто сбросьте сессию
 sample({
-  clock: sessionApi.sessionCreateFx.fail,
-  fn: () => null,
-  target: $session,
+	clock: sessionApi.sessionCreateFx.fail,
+	fn: () => null,
+	target: $session,
 });
 ```
 
@@ -33540,14 +33996,14 @@ sample({
 // Файл: /src/pages/chat/model.ts
 // Когда пользователь нажал на кнопку выхода, нам нужно сбросить сессию и очистить наше хранилище
 sample({
-  clock: logoutClicked,
-  target: sessionApi.sessionDeleteFx,
+	clock: logoutClicked,
+	target: sessionApi.sessionDeleteFx,
 });
 // В любом случае, успешно или нет, нам нужно сбросить хранилище сессий
 sample({
-  clock: sessionApi.sessionDeleteFx.finally,
-  fn: () => null,
-  target: $session,
+	clock: sessionApi.sessionDeleteFx.finally,
+	fn: () => null,
+	target: $session,
 });
 ```
 
@@ -33558,11 +34014,11 @@ sample({
 
 ```ts
 // Файл: /src/pages/chat/model.ts
-import { $isLogged, $session } from "entities/session";
+import { $isLogged, $session } from 'entities/session';
 
 // В данный момент есть только сырые данные без каких-либо знаний о том, как их загрузить
 export const $loggedIn = $isLogged;
-export const $userName = $session.map((session) => session?.name ?? "");
+export const $userName = $session.map((session) => session?.name ?? '');
 ```
 
 Здесь мы просто реэкспортировали наш собственный стор из сущности сессии, но слой представления не меняется.
@@ -33582,9 +34038,9 @@ const messageSend = merge([messageEnterPressed, messageSendClicked]);
 
 // Нам нужно взять текст сообщения и информацию об авторе, а затем отправить ее в эффект
 sample({
-  clock: messageSend,
-  source: { author: $session, text: $messageText },
-  target: messageApi.messageSendFx,
+	clock: messageSend,
+	source: { author: $session, text: $messageText },
+	target: messageApi.messageSendFx,
 });
 ```
 
@@ -33597,12 +34053,12 @@ sample({
 ```ts
 // Файл: /src/pages/chat/model.ts
 sample({
-  clock: messageSend,
-  source: { author: $session, text: $messageText },
-  filter: (form): form is { author: Session; text: string } => {
-    return form.author !== null;
-  },
-  target: messageApi.messageSendFx,
+	clock: messageSend,
+	source: { author: $session, text: $messageText },
+	filter: (form): form is { author: Session; text: string } => {
+		return form.author !== null;
+	},
+	target: messageApi.messageSendFx,
 });
 ```
 
@@ -33619,18 +34075,20 @@ sample({
 
 ```ts
 // Файл: /src/shared/api/message.ts
-export const messageSendFx = createEffect(async ({ text, author }: SendMessage) => {
-  const message: Message = {
-    id: createOid(),
-    author,
-    timestamp: Date.now(),
-    text,
-  };
-  const history = await messagesLoadFx();
-  await wait();
-  saveHistory([...history, message]);
-  return message;
-});
+export const messageSendFx = createEffect(
+	async ({ text, author }: SendMessage) => {
+		const message: Message = {
+			id: createOid(),
+			author,
+			timestamp: Date.now(),
+			text,
+		};
+		const history = await messagesLoadFx();
+		await wait();
+		saveHistory([...history, message]);
+		return message;
+	},
+);
 ```
 
 Теперь мы можем просто добавить сообщение в конец списка:
@@ -33638,8 +34096,8 @@ export const messageSendFx = createEffect(async ({ text, author }: SendMessage) 
 ```ts
 // Файл: /src/pages/chat/model.ts
 $messages.on(messageApi.messageSendFx.doneData, (messages, newMessage) => [
-  ...messages,
-  newMessage,
+	...messages,
+	newMessage,
 ]);
 ```
 
@@ -33647,13 +34105,13 @@ $messages.on(messageApi.messageSendFx.doneData, (messages, newMessage) => [
 
 ```ts
 // Файл: /src/pages/chat/model.ts
-$messageText.on(messageSendFx, () => "");
+$messageText.on(messageSendFx, () => '');
 
 // Если отправка сообщения не удалась, просто восстановите сообщение
 sample({
-  clock: messageSendFx.fail,
-  fn: ({ params }) => params.text,
-  target: $messageText,
+	clock: messageSendFx.fail,
+	fn: ({ params }) => params.text,
+	target: $messageText,
 });
 ```
 
@@ -33664,12 +34122,14 @@ sample({
 ```ts
 // Файл: /src/pages/chat/model.ts
 sample({
-  clock: messageDeleteClicked,
-  target: messageApi.messageDeleteFx,
+	clock: messageDeleteClicked,
+	target: messageApi.messageDeleteFx,
 });
 
-$messages.on(messageApi.messageDeleteFx.done, (messages, { params: toDelete }) =>
-  messages.filter((message) => message.id !== toDelete.id),
+$messages.on(
+	messageApi.messageDeleteFx.done,
+	(messages, { params: toDelete }) =>
+		messages.filter((message) => message.id !== toDelete.id),
 );
 ```
 
@@ -33680,16 +34140,22 @@ $messages.on(messageApi.messageDeleteFx.done, (messages, { params: toDelete }) =
 ```tsx
 // Файл: /src/pages/chat/page.tsx
 const messages = useList(model.$messages, {
-  keys: [messageDeleting],
-  fn: (message) => (
-    <div className="message-item" key={message.timestamp}>
-      <h3>From: {message.author.name}</h3>
-      <p>{message.text}</p>
-      <button onClick={() => handleMessageDelete(message)} disabled={messageDeleting}>
-        {messageDeleting ? "Deleting" : "Delete"}
-      </button>
-    </div>
-  ),
+	keys: [messageDeleting],
+	fn: (message) => (
+		<div
+			className='message-item'
+			key={message.timestamp}
+		>
+			<h3>From: {message.author.name}</h3>
+			<p>{message.text}</p>
+			<button
+				onClick={() => handleMessageDelete(message)}
+				disabled={messageDeleting}
+			>
+				{messageDeleting ? 'Deleting' : 'Delete'}
+			</button>
+		</div>
+	),
 });
 ```
 
@@ -33698,4 +34164,3 @@ const messages = useList(model.$messages, {
 Это простой пример приложения на эффекторе с использованием React и TypeScript.
 
 Вы можете склонировать себе репозиторий [effector/examples/react-and-ts](https://github.com/effector/effector/tree/master/examples/react-and-ts) и запустить пример самостоятельно на собственном компьютере.
-

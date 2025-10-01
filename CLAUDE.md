@@ -22,6 +22,7 @@ bun install
 ## High-Level Architecture
 
 ### Tech Stack
+
 - **Framework**: Next.js 15 with App Router (server-first approach)
 - **Language**: TypeScript with strict mode
 - **Styling**: Tailwind CSS with custom futuristic dark theme
@@ -33,19 +34,19 @@ bun install
 1. **Server Components by Default**: Use Client Components only when interactivity is required (useState, useEffect, onClick, etc.)
 
 2. **API Client Pattern**: All API calls go through `/lib/api/client.ts` which handles:
-   - Bearer token authentication from cookies
-   - Type-safe responses with error handling
-   - External API integration (https://api.sobranie.yaropolk.tech)
+    - Bearer token authentication from cookies
+    - Type-safe responses with error handling
+    - External API integration (https://api.sobranie.yaropolk.tech)
 
 3. **Authentication Flow**:
-   - Cookie-based session management (`sobranie_token`)
-   - SessionProvider wraps the app for client-side session access
-   - Server-side session retrieval via `getSession()` in `/lib/auth/session.ts`
+    - Cookie-based session management (`sobranie_token`)
+    - SessionProvider wraps the app for client-side session access
+    - Server-side session retrieval via `getSession()` in `/lib/auth/session.ts`
 
 4. **Data Fetching Strategy**:
-   - Server Components fetch data directly using the API client
-   - Client Components use React Query hooks in `/lib/hooks/`
-   - Fallback content in `/lib/data/fallback-content.ts` for loading states
+    - Server Components fetch data directly using the API client
+    - Client Components use React Query hooks in `/lib/hooks/`
+    - Fallback content in `/lib/data/fallback-content.ts` for loading states
 
 ### Directory Structure & Purpose
 
@@ -71,27 +72,32 @@ bun install
 ### Key Implementation Details
 
 **API Integration**:
+
 - All API types are defined in `/lib/api/types.ts`
 - API client in `/lib/api/client.ts` handles all external API calls
 - Error responses follow a consistent structure with error codes
 
 **Component Patterns**:
+
 - Use `'use client'` directive only when necessary
 - Prefer composition over prop drilling
 - Keep components under 300 lines, extract when larger
 
 **Design System**:
+
 - Dark theme with midnight/dawn colors
 - Accent colors: purple-500, teal-400, amber-400
 - Custom gradients and animations for sci-fi aesthetic
 - Typography: Inter for body, Space Grotesk for headings
 
 **Environment Variables**:
+
 - `SOBRANIE_API_BASE_URL`: External API base URL (required)
 
 ## Development Workflow
 
 When implementing features:
+
 1. Check if similar patterns exist in the codebase first
 2. Follow the server-first approach - use Server Components by default
 3. Add types to `/lib/api/types.ts` for new API endpoints
