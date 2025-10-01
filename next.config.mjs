@@ -8,6 +8,20 @@ const nextConfig = {
 			},
 		],
 	},
+	// Отключаем кеширование в продакшене для динамического контента
+	headers: async () => {
+		return [
+			{
+				source: '/:path*',
+				headers: [
+					{
+						key: 'Cache-Control',
+						value: 'no-store, must-revalidate',
+					},
+				],
+			},
+		];
+	},
 	experimental: {
 		swcPlugins: [
 			[

@@ -142,6 +142,11 @@ jobs:
                       echo "🚀 Запуск обновленного контейнера..."
                       docker-compose up -d
 
+                      # Очистка кеша Next.js после запуска контейнера
+                      echo "🧹 Очистка кеша Next.js..."
+                      docker exec sobranie-frontend rm -rf .next/cache || true
+                      docker restart sobranie-frontend
+
                       # Ожидание запуска
                       echo "⏳ Ожидание запуска (30 секунд)..."
                       sleep 30
