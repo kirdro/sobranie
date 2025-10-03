@@ -52,7 +52,7 @@ export function FeedComposer({
 			toast.success('Пост успешно создан!');
 		});
 
-		const unsubscribeFail = createPostFx.failData.watch((error) => {
+		const unsubscribeFail = createPostFx.failData.watch(() => {
 			toast.error('Не удалось создать пост');
 		});
 

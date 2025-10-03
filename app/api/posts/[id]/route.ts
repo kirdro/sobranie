@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function DELETE(
 	request: NextRequest,
-	{ params }: { params: { id: string } }
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const postId = params.id;
+		const resolvedParams = await params;
+		const postId = resolvedParams.id;
 
 		// Симуляция задержки API
 		await new Promise((resolve) => setTimeout(resolve, 500));
@@ -20,7 +21,7 @@ export async function DELETE(
 			message: 'Пост успешно удален',
 			deletedId: postId
 		});
-	} catch (error) {
+	} catch {
 		return NextResponse.json(
 			{ error: 'Не удалось удалить пост' },
 			{ status: 500 }
@@ -30,10 +31,11 @@ export async function DELETE(
 
 export async function PUT(
 	request: NextRequest,
-	{ params }: { params: { id: string } }
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const postId = params.id;
+		const resolvedParams = await params;
+		const postId = resolvedParams.id;
 		const body = await request.json();
 
 		// Симуляция задержки API
@@ -55,7 +57,7 @@ export async function PUT(
 			message: 'Пост успешно обновлен',
 			data: updatedPost
 		});
-	} catch (error) {
+	} catch {
 		return NextResponse.json(
 			{ error: 'Не удалось обновить пост' },
 			{ status: 500 }

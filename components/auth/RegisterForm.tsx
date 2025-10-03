@@ -40,7 +40,7 @@ export function RegisterForm() {
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 			toast.success('Регистрация прошла успешно!');
 			router.push('/dashboard');
-		} catch (error) {
+		} catch {
 			setError('Ошибка при регистрации');
 			toast.error('Ошибка регистрации');
 		} finally {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextRequest, NextResponse } from 'next/server';
 
 type PrivacySettings = {
@@ -11,7 +12,7 @@ type PrivacySettings = {
 	showInSuggestions: boolean;
 };
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
 	try {
 		// Симуляция задержки API
 		await new Promise((resolve) => setTimeout(resolve, 300));
@@ -29,8 +30,8 @@ export async function GET(request: NextRequest) {
 		};
 
 		return NextResponse.json(currentSettings);
-	} catch (error) {
-		console.error('Ошибка получения настроек приватности:', error);
+	} catch (_error) {
+		console.error('Ошибка получения настроек приватности:', _error);
 		return NextResponse.json(
 			{ error: 'Не удалось загрузить настройки приватности' },
 			{ status: 500 }
@@ -92,8 +93,8 @@ export async function PATCH(request: NextRequest) {
 			message: 'Настройки приватности обновлены',
 			settings: updatedSettings,
 		});
-	} catch (error) {
-		console.error('Ошибка обновления настроек приватности:', error);
+	} catch (_error) {
+		console.error('Ошибка обновления настроек приватности:', _error);
 		return NextResponse.json(
 			{ error: 'Не удалось обновить настройки приватности' },
 			{ status: 500 }

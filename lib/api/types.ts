@@ -146,3 +146,276 @@ export type BacklogItem = {
 	due: string;
 	progress: number;
 };
+
+// ===== КРУГИ (CIRCLES) =====
+
+export type CircleRole = 'owner' | 'admin' | 'moderator' | 'member';
+
+export type CirclePrivacy = 'public' | 'private' | 'restricted';
+
+export type Circle = {
+	id: string;
+	name: string;
+	description: string;
+	isPrivate: boolean;
+	privacy: CirclePrivacy;
+	memberCount: number;
+	createdAt: string;
+	updatedAt?: string;
+	createdBy: string;
+	avatarUrl?: string;
+	coverUrl?: string;
+	settings?: {
+		allowPosts: boolean;
+		allowEvents: boolean;
+		allowFiles: boolean;
+		moderateContent: boolean;
+	};
+};
+
+export type CircleMember = {
+	id: string;
+	userId: string;
+	circleId: string;
+	role: CircleRole;
+	joinedAt: string;
+	user?: User;
+};
+
+export type CreateCircleRequest = {
+	name: string;
+	description: string;
+	privacy: CirclePrivacy;
+	settings?: {
+		allowPosts?: boolean;
+		allowEvents?: boolean;
+		allowFiles?: boolean;
+		moderateContent?: boolean;
+	};
+};
+
+export type UpdateCircleRequest = Partial<CreateCircleRequest>;
+
+// ===== ПРИГЛАШЕНИЯ И ЗАЯВКИ =====
+
+export type CircleInvitation = {
+	id: string;
+	circleId: string;
+	inviterId: string;
+	inviteeId: string;
+	inviteeEmail?: string;
+	status: 'pending' | 'accepted' | 'declined' | 'expired';
+	createdAt: string;
+	expiresAt?: string;
+	circle?: Circle;
+	inviter?: User;
+	invitee?: User;
+};
+
+export type CircleJoinRequest = {
+	id: string;
+	circleId: string;
+	userId: string;
+	status: 'pending' | 'approved' | 'rejected';
+	message?: string;
+	createdAt: string;
+	circle?: Circle;
+	user?: User;
+};
+
+export type SendInvitationRequest = {
+	circleId: string;
+	inviteeId?: string;
+	inviteeEmail?: string;
+	message?: string;
+};
+
+export type CreateJoinRequestRequest = {
+	circleId: string;
+	message?: string;
+};
+
+// ===== СОБЫТИЯ В КРУГАХ =====
+
+export type CircleEvent = {
+	id: string;
+	circleId: string;
+	creatorId: string;
+	title: string;
+	description: string;
+	startDate: string;
+	endDate?: string;
+	location?: string;
+	isOnline: boolean;
+	maxAttendees?: number;
+	currentAttendees: number;
+	status: 'draft' | 'published' | 'cancelled' | 'completed';
+	createdAt: string;
+	updatedAt?: string;
+	circle?: Circle;
+	creator?: User;
+};
+
+export type EventAttendee = {
+	id: string;
+	eventId: string;
+	userId: string;
+	status: 'going' | 'maybe' | 'not_going';
+	joinedAt: string;
+	user?: User;
+};
+
+export type CreateEventRequest = {
+	circleId: string;
+	title: string;
+	description: string;
+	startDate: string;
+	endDate?: string;
+	location?: string;
+	isOnline: boolean;
+	maxAttendees?: number;
+};
+
+export type UpdateEventRequest = Partial<Omit<CreateEventRequest, 'circleId'>>;
+
+// ===== МОДЕРАЦИЯ =====
+
+export type ContentReport = {
+	id: string;
+	reporterId: string;
+	contentType: 'post' | 'comment' | 'user' | 'event';
+	contentId: string;
+	reason: 'spam' | 'abuse' | 'inappropriate' | 'misinformation' | 'other';
+	description?: string;
+	status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+	createdAt: string;
+	reviewedAt?: string;
+	reviewedBy?: string;
+	reporter?: User;
+	reviewer?: User;
+};
+
+export type ModerationAction = {
+	id: string;
+	moderatorId: string;
+	targetType: 'user' | 'post' | 'comment' | 'event';
+	targetId: string;
+	action: 'warn' | 'ban' | 'delete' | 'hide' | 'restrict';
+	reason: string;
+	duration?: number; // в часах
+	createdAt: string;
+	expiresAt?: string;
+	moderator?: User;
+};
+
+export type CreateReportRequest = {
+	contentType: 'post' | 'comment' | 'user' | 'event';
+	contentId: string;
+	reason: 'spam' | 'abuse' | 'inappropriate' | 'misinformation' | 'other';
+	description?: string;
+};
+
+// ===== МЕДИАФАЙЛЫ =====
+
+export type UploadResponse = {
+	fileId: string;
+	url: string;
+	fileName: string;
+	fileSize: number;
+	mimeType: string;
+	thumbnail?: string;
+	dimensions?: {
+		width: number;
+		height: number;
+	};
+};
+
+export type FileInfo = {
+	id: string;
+	originalName: string;
+	url: string;
+	thumbnailUrl?: string;
+	size: number;
+	type: string;
+	mimeType: string;
+	uploadedAt: string;
+	uploadedBy: string;
+	circleId?: string;
+	postId?: string;
+	dimensions?: {
+		width: number;
+		height: number;
+	};
+	metadata?: Record<string, unknown>;
+};
+
+export type MediaGalleryItem = {
+	id: string;
+	type: 'image' | 'video' | 'document';
+	url: string;
+	thumbnailUrl?: string;
+	title?: string;
+	description?: string;
+	fileSize: number;
+	uploadedAt: string;
+	uploadedBy: string;
+	circleId?: string;
+	uploader?: User;
+};
+
+// ===== ФАЙЛОВОЕ ХРАНИЛИЩЕ =====
+
+export type CircleFile = {
+	id: string;
+	circleId: string;
+	uploadedBy: string;
+	name: string;
+	originalName: string;
+	url: string;
+	size: number;
+	mimeType: string;
+	type: 'document' | 'image' | 'video' | 'audio' | 'archive' | 'other';
+	uploadedAt: string;
+	lastAccessedAt?: string;
+	downloadCount: number;
+	description?: string;
+	tags?: string[];
+	permissions: {
+		read: CircleRole[];
+		write: CircleRole[];
+		delete: CircleRole[];
+	};
+	uploader?: User;
+};
+
+export type UploadFileRequest = {
+	circleId: string;
+	file: File;
+	description?: string;
+	tags?: string[];
+	permissions?: {
+		read?: CircleRole[];
+		write?: CircleRole[];
+		delete?: CircleRole[];
+	};
+};
+
+// ===== ОБНОВЛЕННЫЕ ТИПЫ ПОСТОВ С МЕДИА =====
+
+export type PostAttachment = {
+	id: string;
+	type: 'image' | 'video' | 'document';
+	url: string;
+	thumbnailUrl?: string;
+	fileName?: string;
+	fileSize?: number;
+	dimensions?: {
+		width: number;
+		height: number;
+	};
+};
+
+// Обновляем существующий тип Post для поддержки новых attachments
+export type PostWithMedia = Omit<Post, 'attachments'> & {
+	attachments?: PostAttachment[];
+};

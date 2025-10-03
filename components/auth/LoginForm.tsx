@@ -36,7 +36,7 @@ export function LoginForm() {
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 			toast.success('Вход выполнен успешно!');
 			router.push('/dashboard');
-		} catch (error) {
+		} catch {
 			setError('Неверный email или пароль');
 			toast.error('Ошибка входа');
 		} finally {

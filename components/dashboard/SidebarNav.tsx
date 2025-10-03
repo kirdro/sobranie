@@ -60,7 +60,7 @@ export function SidebarNav({ items }: SidebarNavProps) {
 			toast.success('Вы успешно вышли из системы');
 			router.replace('/');
 			router.refresh();
-		} catch (error) {
+		} catch {
 			toast.error('Ошибка при выходе из системы');
 		}
 	}, [router, onLogout]);

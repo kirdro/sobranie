@@ -4,7 +4,7 @@ import { createContext, useContext, useMemo, useEffect } from 'react';
 import { useUnit } from 'effector-react';
 import { $user, sessionCheckRequested } from '@/lib/effector';
 
-import type { User } from '@/lib/types/user';
+import type { User } from '@/lib/api/types';
 
 type SessionValue = {
 	user: User | null;

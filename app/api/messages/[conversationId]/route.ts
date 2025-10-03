@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextRequest, NextResponse } from 'next/server';
 
 type Message = {
@@ -12,10 +13,11 @@ type Message = {
 
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: { conversationId: string } }
+	{ params }: { params: Promise<{ conversationId: string }> }
 ) {
 	try {
-		const conversationId = params.conversationId;
+		const resolvedParams = await params;
+		// const conversationId = resolvedParams.conversationId; // Will be used when implementing real API
 		const { searchParams } = new URL(request.url);
 		const page = parseInt(searchParams.get('page') || '1');
 		const limit = parseInt(searchParams.get('limit') || '50');
@@ -88,11 +90,12 @@ export async function GET(
 }
 
 export async function PATCH(
-	request: NextRequest,
-	{ params }: { params: { conversationId: string } }
+	_request: NextRequest,
+	{ params }: { params: Promise<{ conversationId: string }> }
 ) {
 	try {
-		const conversationId = params.conversationId;
+		const resolvedParams = await params;
+		// const conversationId = resolvedParams.conversationId; // Will be used when implementing real API
 
 		// Симуляция задержки API
 		await new Promise((resolve) => setTimeout(resolve, 200));

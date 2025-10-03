@@ -1,12 +1,5 @@
 import { createStore, createEvent, sample } from 'effector';
-
-type User = {
-	id: string;
-	name: string;
-	email: string;
-	avatar?: string;
-	role: string;
-};
+import type { User } from '../api/types';
 
 export const authInitialized = createEvent<boolean>();
 export const authStateChanged = createEvent<boolean>();

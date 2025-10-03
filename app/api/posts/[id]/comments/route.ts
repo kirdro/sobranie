@@ -10,8 +10,10 @@ const mockComments: Comment[] = [
 		createdAt: new Date(Date.now() - 1800000).toISOString(),
 		author: {
 			id: 'user2',
-			name: 'Анна Смирнова',
+			firstName: 'Анна',
+			lastName: 'Смирнова',
 			email: 'anna@example.com',
+			role: 'user' as const,
 		}
 	},
 	{
@@ -22,18 +24,21 @@ const mockComments: Comment[] = [
 		createdAt: new Date(Date.now() - 900000).toISOString(),
 		author: {
 			id: 'user3',
-			name: 'Дмитрий Козлов',
+			firstName: 'Дмитрий',
+			lastName: 'Козлов',
 			email: 'dmitry@example.com',
+			role: 'user' as const,
 		}
 	},
 ];
 
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: { id: string } }
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const postId = params.id;
+		const resolvedParams = await params;
+		const postId = resolvedParams.id;
 		const { searchParams } = new URL(request.url);
 		const page = parseInt(searchParams.get('page') || '1');
 		const limit = parseInt(searchParams.get('limit') || '10');
@@ -60,7 +65,7 @@ export async function GET(
 		};
 
 		return NextResponse.json(response);
-	} catch (error) {
+	} catch {
 		return NextResponse.json(
 			{ error: 'Не удалось загрузить комментарии' },
 			{ status: 500 }
@@ -70,10 +75,11 @@ export async function GET(
 
 export async function POST(
 	request: NextRequest,
-	{ params }: { params: { id: string } }
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const postId = params.id;
+		const resolvedParams = await params;
+		const postId = resolvedParams.id;
 		const body = await request.json();
 
 		// Симуляция задержки API
@@ -87,13 +93,15 @@ export async function POST(
 			createdAt: new Date().toISOString(),
 			author: {
 				id: 'current_user',
-				name: 'Текущий пользователь',
+				firstName: 'Текущий',
+				lastName: 'Пользователь',
 				email: 'current@example.com',
+				role: 'user' as const,
 			}
 		};
 
 		return NextResponse.json(newComment);
-	} catch (error) {
+	} catch {
 		return NextResponse.json(
 			{ error: 'Не удалось создать комментарий' },
 			{ status: 500 }

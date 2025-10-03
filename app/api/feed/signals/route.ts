@@ -32,7 +32,7 @@ export async function GET() {
 			alerts: feedSignals,
 			total: feedSignals.length,
 		});
-	} catch (error) {
+	} catch {
 		return NextResponse.json(
 			{
 				error: 'UnexpectedError',

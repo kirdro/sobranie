@@ -39,8 +39,8 @@ export function ActivityStats() {
 		try {
 			const response = await fetchJson(`/api/users/activity?period=${period}`);
 			setStats(response);
-		} catch (error) {
-			console.error('Ошибка загрузки статистики:', error);
+		} catch (_error) {
+			console.error('Ошибка загрузки статистики:', _error);
 		} finally {
 			setIsLoading(false);
 		}
@@ -158,7 +158,7 @@ export function ActivityStats() {
 
 				<div className='rounded-[20px] border border-white/10 bg-white/5 p-4'>
 					<div className='flex items-end justify-between space-x-1' style={{ height: '120px' }}>
-						{stats.weeklyActivity.map((day, index) => {
+						{stats.weeklyActivity.map((day) => {
 							const totalActivity = day.posts + day.likes + day.comments;
 							const height = maxActivity > 0 ? (totalActivity / maxActivity) * 100 : 0;
 

@@ -53,7 +53,7 @@ export function AssistantPanel() {
 				setSources(result.sources);
 			}
 		},
-		onError: (error) => {
+		onError: () => {
 			toast.error('Ошибка при обращении к ассистенту');
 		},
 	});

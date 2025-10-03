@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUnit } from 'effector-react';
 import { LuMail, LuCalendar, LuPencil, LuSave, LuX } from 'react-icons/lu';
 import toast from 'react-hot-toast';
 
@@ -42,7 +41,7 @@ export function ProfileShell() {
 				location: profile.location || '',
 				website: profile.website || '',
 			});
-		} catch (error) {
+		} catch {
 			toast.error('Не удалось загрузить профиль');
 		} finally {
 			setIsLoading(false);

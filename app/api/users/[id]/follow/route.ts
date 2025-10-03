@@ -1,11 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
-	request: NextRequest,
-	{ params }: { params: { id: string } }
+	_request: NextRequest,
+	{ params: _params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const userId = params.id;
+		// const resolvedParams = await _params;
+		// const userId = resolvedParams.id; // Will be used when implementing real API
 
 		// Симуляция задержки API
 		await new Promise((resolve) => setTimeout(resolve, 500));
@@ -22,8 +24,8 @@ export async function POST(
 			message: 'Подписка оформлена',
 			isFollowing: true,
 		});
-	} catch (error) {
-		console.error('Ошибка подписки:', error);
+	} catch (_error) {
+		console.error('Ошибка подписки:', _error);
 		return NextResponse.json(
 			{ error: 'Не удалось оформить подписку' },
 			{ status: 500 }
@@ -32,11 +34,12 @@ export async function POST(
 }
 
 export async function DELETE(
-	request: NextRequest,
-	{ params }: { params: { id: string } }
+	_request: NextRequest,
+	{ params: _params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const userId = params.id;
+		// const resolvedParams = await _params;
+		// const userId = resolvedParams.id; // Will be used when implementing real API
 
 		// Симуляция задержки API
 		await new Promise((resolve) => setTimeout(resolve, 500));
@@ -51,8 +54,8 @@ export async function DELETE(
 			message: 'Отписка выполнена',
 			isFollowing: false,
 		});
-	} catch (error) {
-		console.error('Ошибка отписки:', error);
+	} catch (_error) {
+		console.error('Ошибка отписки:', _error);
 		return NextResponse.json(
 			{ error: 'Не удалось отписаться' },
 			{ status: 500 }

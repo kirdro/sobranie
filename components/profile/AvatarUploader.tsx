@@ -59,7 +59,7 @@ export function AvatarUploader({ currentAvatar, onAvatarChange }: AvatarUploader
 
 					onAvatarChange(response.avatarUrl);
 					toast.success('Аватар обновлен!');
-				} catch (error) {
+				} catch {
 					toast.error('Не удалось загрузить аватар');
 					setPreviewUrl(currentAvatar || null);
 				} finally {
@@ -67,7 +67,7 @@ export function AvatarUploader({ currentAvatar, onAvatarChange }: AvatarUploader
 				}
 			};
 			reader.readAsDataURL(file);
-		} catch (error) {
+		} catch {
 			toast.error('Ошибка при загрузке');
 			setIsUploading(false);
 		}
@@ -82,7 +82,7 @@ export function AvatarUploader({ currentAvatar, onAvatarChange }: AvatarUploader
 			setPreviewUrl(null);
 			onAvatarChange(null);
 			toast.success('Аватар удален');
-		} catch (error) {
+		} catch {
 			toast.error('Не удалось удалить аватар');
 		}
 	};

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextRequest, NextResponse } from 'next/server';
 
 type Following = {
@@ -10,10 +11,11 @@ type Following = {
 
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: { id: string } }
+	{ params: _params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const userId = params.id;
+		// const resolvedParams = await _params;
+		// const userId = resolvedParams.id; // Will be used when implementing real API
 		const { searchParams } = new URL(request.url);
 		const page = parseInt(searchParams.get('page') || '1');
 		const limit = parseInt(searchParams.get('limit') || '20');
@@ -53,8 +55,8 @@ export async function GET(
 				totalPages: Math.ceil(mockFollowing.length / limit),
 			},
 		});
-	} catch (error) {
-		console.error('Ошибка получения подписок:', error);
+	} catch (_error) {
+		console.error('Ошибка получения подписок:', _error);
 		return NextResponse.json(
 			{ error: 'Не удалось загрузить подписки' },
 			{ status: 500 }

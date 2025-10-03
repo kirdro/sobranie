@@ -142,11 +142,12 @@ export async function POST(request: NextRequest) {
 			is_reposted: false,
 			visibility: body.visibility || 'public',
 			tags: body.tags || [],
+			created_at: new Date().toISOString(),
 			createdAt: new Date().toISOString(),
 		};
 
 		return NextResponse.json(newPost);
-	} catch (error) {
+	} catch {
 		return NextResponse.json(
 			{ error: 'Не удалось создать пост' },
 			{ status: 500 }

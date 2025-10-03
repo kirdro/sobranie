@@ -38,7 +38,7 @@ export async function GET() {
 			loops: feedLoops,
 			total: feedLoops.length,
 		});
-	} catch (error) {
+	} catch {
 		return NextResponse.json(
 			{
 				error: 'UnexpectedError',

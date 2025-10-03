@@ -6,7 +6,7 @@ import { LuCalendarClock, LuTrendingUp } from 'react-icons/lu';
 
 import { DashboardLayout } from '@components/dashboard/DashboardLayout';
 import { circlesCopy } from '@/lib/content/circles';
-import type { CirclesResponse } from '@/lib/api/circles';
+import type { PaginatedResponse, Circle } from '@/lib/api/types';
 import { fetchJson } from '@/lib/frontend/fetch-json';
 import { CircleSkeleton } from '@/components/ui/skeletons/CircleSkeleton';
 import { PanelSpinner } from '@/components/ui/Spinner';
@@ -27,7 +27,7 @@ type SpotlightCommunity = {
 };
 
 function mapCirclesToSpotlight(
-	response: CirclesResponse | undefined,
+	response: PaginatedResponse<Circle> | undefined,
 ): SpotlightCommunity[] {
 	const items = response?.items ?? [];
 	if (!items.length) {
@@ -61,7 +61,7 @@ type BacklogResponse = {
 export function CirclesShell() {
 	const circlesQuery = useQuery({
 		queryKey: ['circles', 'list'],
-		queryFn: () => fetchJson<CirclesResponse>('/api/circles?limit=6'),
+		queryFn: () => fetchJson<PaginatedResponse<Circle>>('/api/circles?limit=6'),
 		staleTime: 60_000,
 	});
 

@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
 	request: NextRequest,
-	{ params }: { params: { id: string } }
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const postId = params.id;
+		const resolvedParams = await params;
+		const postId = resolvedParams.id;
 
 		// Симуляция задержки API
 		await new Promise((resolve) => setTimeout(resolve, 400));
@@ -22,7 +23,7 @@ export async function POST(
 			postId,
 			reposted: true
 		});
-	} catch (error) {
+	} catch {
 		return NextResponse.json(
 			{ error: 'Не удалось репостнуть' },
 			{ status: 500 }
@@ -32,10 +33,11 @@ export async function POST(
 
 export async function DELETE(
 	request: NextRequest,
-	{ params }: { params: { id: string } }
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const postId = params.id;
+		const resolvedParams = await params;
+		const postId = resolvedParams.id;
 
 		// Симуляция задержки API
 		await new Promise((resolve) => setTimeout(resolve, 300));
@@ -52,7 +54,7 @@ export async function DELETE(
 			postId,
 			reposted: false
 		});
-	} catch (error) {
+	} catch {
 		return NextResponse.json(
 			{ error: 'Не удалось отменить репост' },
 			{ status: 500 }

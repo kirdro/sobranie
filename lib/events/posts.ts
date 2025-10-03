@@ -1,5 +1,5 @@
 import { createEvent } from 'effector';
-import type { Post, PostsFilter } from '../api/types';
+import type { Post } from '../api/types';
 
 export const postsRequested = createEvent<{ page?: number; limit?: number } | void>();
 

@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode, useMemo, useState } from 'react';
 
-import type { User } from '@/lib/types/user';
+import type { User } from '@/lib/api/types';
 import { SessionProvider } from '@/components/auth/SessionProvider';
 import { EffectorProvider } from '@/lib/effector';
 

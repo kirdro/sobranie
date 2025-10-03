@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
@@ -60,8 +61,8 @@ export async function POST(request: NextRequest) {
 			message: 'Аватар успешно загружен',
 			avatarUrl: avatarUrl,
 		});
-	} catch (error) {
-		console.error('Ошибка загрузки аватара:', error);
+	} catch (_error) {
+		console.error('Ошибка загрузки аватара:', _error);
 		return NextResponse.json(
 			{ error: 'Не удалось загрузить аватар' },
 			{ status: 500 }
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
 	}
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(_request: NextRequest) {
 	try {
 		// Симуляция задержки
 		await new Promise((resolve) => setTimeout(resolve, 500));
@@ -83,8 +84,8 @@ export async function DELETE(request: NextRequest) {
 			success: true,
 			message: 'Аватар успешно удален',
 		});
-	} catch (error) {
-		console.error('Ошибка удаления аватара:', error);
+	} catch (_error) {
+		console.error('Ошибка удаления аватара:', _error);
 		return NextResponse.json(
 			{ error: 'Не удалось удалить аватар' },
 			{ status: 500 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(request: NextRequest) {
@@ -49,7 +50,7 @@ export async function PATCH(request: NextRequest) {
 			message: 'Профиль успешно обновлен',
 			user: updatedUser
 		});
-	} catch (error) {
+	} catch {
 		return NextResponse.json(
 			{ error: 'Не удалось обновить профиль' },
 			{ status: 500 }
@@ -57,7 +58,7 @@ export async function PATCH(request: NextRequest) {
 	}
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
 	try {
 		// Симуляция задержки API
 		await new Promise((resolve) => setTimeout(resolve, 300));
@@ -81,7 +82,7 @@ export async function GET(request: NextRequest) {
 		};
 
 		return NextResponse.json(currentUser);
-	} catch (error) {
+	} catch {
 		return NextResponse.json(
 			{ error: 'Не удалось загрузить профиль' },
 			{ status: 500 }

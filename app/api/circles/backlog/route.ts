@@ -40,7 +40,7 @@ export async function GET() {
 			items: backlogItems,
 			total: backlogItems.length,
 		});
-	} catch (error) {
+	} catch {
 		return NextResponse.json(
 			{
 				error: 'UnexpectedError',
