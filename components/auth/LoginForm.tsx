@@ -1,14 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUnit } from 'effector-react';
-import {
-	loginSubmitted,
-	$isLoading,
-	$authError,
-	loginSuccessful,
-} from '@/lib/effector';
+import toast from 'react-hot-toast';
 import { ButtonSpinner } from '@/components/ui/Spinner';
 
 type FormState = {
@@ -24,25 +18,8 @@ const initialState: FormState = {
 export function LoginForm() {
 	const router = useRouter();
 	const [form, setForm] = useState(initialState);
-
-	// Use Effector stores and events
-	const [isLoading, error, onLoginSubmit] = useUnit([
-		$isLoading,
-		$authError,
-		loginSubmitted,
-	]);
-
-	// Handle successful login navigation
-	useEffect(() => {
-		const unsubscribe = loginSuccessful.watch(({ redirect }) => {
-			if (redirect) {
-				router.push(redirect);
-				router.refresh();
-			}
-		});
-
-		return unsubscribe;
-	}, [router]);
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = event.target;
@@ -51,12 +28,20 @@ export function LoginForm() {
 
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
+		setIsLoading(true);
+		setError(null);
 
-		// Use Effector event to handle login
-		onLoginSubmit({
-			email: form.email,
-			password: form.password,
-		});
+		try {
+			// Mock login for now - will be replaced with real authentication
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+			toast.success('Вход выполнен успешно!');
+			router.push('/dashboard');
+		} catch (error) {
+			setError('Неверный email или пароль');
+			toast.error('Ошибка входа');
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	return (

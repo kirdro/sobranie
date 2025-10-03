@@ -18,15 +18,48 @@ type ApiRequestOptions = {
 	next?: NextFetchRequestConfig;
 };
 
+export type ApiErrorCode =
+	| 'NETWORK_ERROR'
+	| 'AUTH_REQUIRED'
+	| 'VALIDATION_ERROR'
+	| 'SERVER_ERROR'
+	| 'RATE_LIMITED'
+	| 'NOT_FOUND'
+	| 'FORBIDDEN';
+
 export class ApiError extends Error {
 	status: number;
 	payload: unknown;
+	errorCode: ApiErrorCode;
 
-	constructor(message: string, status: number, payload: unknown) {
+	constructor(message: string, status: number, payload: unknown, errorCode?: ApiErrorCode) {
 		super(message);
 		this.name = 'ApiError';
 		this.status = status;
 		this.payload = payload;
+		this.errorCode = errorCode ?? this.getErrorCodeFromStatus(status);
+	}
+
+	private getErrorCodeFromStatus(status: number): ApiErrorCode {
+		switch (status) {
+			case 401:
+				return 'AUTH_REQUIRED';
+			case 403:
+				return 'FORBIDDEN';
+			case 404:
+				return 'NOT_FOUND';
+			case 422:
+				return 'VALIDATION_ERROR';
+			case 429:
+				return 'RATE_LIMITED';
+			case 500:
+			case 502:
+			case 503:
+			case 504:
+				return 'SERVER_ERROR';
+			default:
+				return 'NETWORK_ERROR';
+		}
 	}
 }
 
@@ -79,6 +112,72 @@ export async function apiRequest<T>(
 
 	const data = await parseJson<T>(response);
 	return data ?? ({} as T);
+}
+
+export function handleApiError(error: unknown): string {
+	if (error instanceof ApiError) {
+		switch (error.errorCode) {
+			case 'NETWORK_ERROR':
+				return 'Проблемы с подключением к интернету. Проверьте соединение и попробуйте снова.';
+			case 'AUTH_REQUIRED':
+				return 'Необходимо войти в систему для выполнения этого действия.';
+			case 'FORBIDDEN':
+				return 'У вас нет прав для выполнения этого действия.';
+			case 'NOT_FOUND':
+				return 'Запрашиваемый ресурс не найден.';
+			case 'VALIDATION_ERROR':
+				return error.message || 'Некорректные данные. Проверьте введённую информацию.';
+			case 'RATE_LIMITED':
+				return 'Слишком много запросов. Попробуйте через несколько минут.';
+			case 'SERVER_ERROR':
+				return 'Ошибка сервера. Попробуйте позже или обратитесь в поддержку.';
+			default:
+				return error.message || 'Произошла неожиданная ошибка.';
+		}
+	}
+
+	if (error instanceof Error) {
+		return error.message;
+	}
+
+	return 'Произошла неожиданная ошибка.';
+}
+
+export async function apiRequestWithRetry<T>(
+	path: string,
+	options: ApiRequestOptions = {},
+	maxRetries = 2
+): Promise<T> {
+	let lastError: Error;
+
+	for (let attempt = 0; attempt <= maxRetries; attempt++) {
+		try {
+			return await apiRequest<T>(path, options);
+		} catch (error) {
+			lastError = error as Error;
+
+			// Не повторяем запрос для ошибок аутентификации и валидации
+			if (error instanceof ApiError) {
+				if (['AUTH_REQUIRED', 'FORBIDDEN', 'VALIDATION_ERROR'].includes(error.errorCode)) {
+					throw error;
+				}
+
+				// Для rate limit и server errors делаем паузу перед повтором
+				if (['RATE_LIMITED', 'SERVER_ERROR'].includes(error.errorCode) && attempt < maxRetries) {
+					const delay = Math.min(1000 * Math.pow(2, attempt), 5000); // exponential backoff
+					await new Promise(resolve => setTimeout(resolve, delay));
+					continue;
+				}
+			}
+
+			// Для последней попытки выбрасываем ошибку
+			if (attempt === maxRetries) {
+				throw lastError;
+			}
+		}
+	}
+
+	throw lastError!;
 }
 
 export { API_BASE_URL };

@@ -13,7 +13,7 @@ import type { Post } from '@/lib/api/types';
 import { $posts, $postsLoading, $postsError } from '@/lib/effector';
 import { initialsFromName } from '@/lib/data/feed';
 import { formatRelativeTime } from '@/lib/utils/datetime';
-import { PanelSpinner } from '@/components/ui/Spinner';
+import { PostSkeleton } from '@/components/ui/skeletons/PostSkeleton';
 
 type Activity = {
 	id: string;
@@ -136,19 +136,25 @@ export function ActivityStream() {
 	}, [posts]);
 
 	if (isLoading) {
-		return <PanelSpinner text='Загружаем живой поток...' />;
+		return (
+			<div className='space-y-4'>
+				{Array.from({ length: 3 }, (_, i) => (
+					<PostSkeleton key={i} />
+				))}
+			</div>
+		);
 	}
 
 	if (error) {
 		return (
-			<div className='rounded-[24px] border border-red-500/40 bg-red-500/10 p-6 text-sm text-red-200'>
+			<div className='rounded-[20px] border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200 sm:rounded-[24px] sm:p-6'>
 				Поток временно недоступен. Обновите страницу позже.
 			</div>
 		);
 	}
 
 	return (
-		<div className='space-y-4'>
+		<div className='space-y-3 sm:space-y-4'>
 			{pulses.map((item) => {
 				const meta = statusMeta[item.status];
 				const Icon = item.icon;
@@ -156,22 +162,22 @@ export function ActivityStream() {
 				return (
 					<article
 						key={item.id}
-						className='surface-panel group grid gap-5 rounded-[24px] border border-white/10 p-6 transition hover:border-white/20 hover:bg-white/10 sm:grid-cols-[auto,1fr] sm:items-center'
+						className='surface-panel group rounded-[20px] border border-white/10 p-4 transition hover:border-white/20 hover:bg-white/10 sm:rounded-[24px] sm:p-6'
 					>
-						<div className='flex flex-col items-center gap-3 sm:items-start'>
-							<div className='relative flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-white'>
-								<Icon className='h-6 w-6' />
+						<div className='mb-4 flex items-center justify-between sm:mb-0 sm:flex-col sm:items-center sm:gap-3'>
+							<div className='relative flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white sm:h-14 sm:w-14'>
+								<Icon className='h-5 w-5 sm:h-6 sm:w-6' />
 							</div>
 							<span
-								className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-midnight ${meta.accent}`}
+								className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-midnight sm:gap-2 sm:px-3 ${meta.accent}`}
 							>
 								{meta.icon}
 								{meta.label}
 							</span>
 						</div>
-						<div className='space-y-4'>
-							<header className='flex flex-col gap-2'>
-								<h3 className='text-xl font-semibold text-white'>
+						<div className='space-y-3 sm:space-y-4'>
+							<header className='flex flex-col gap-1 sm:gap-2'>
+								<h3 className='text-lg font-semibold text-white sm:text-xl'>
 									{item.title}
 								</h3>
 								<p className='text-sm text-dawn/60'>
@@ -181,15 +187,20 @@ export function ActivityStream() {
 							<p className='text-sm text-dawn/70'>
 								{item.description}
 							</p>
-							<div className='flex flex-wrap gap-3'>
-								{item.tags.map((tag) => (
+							<div className='flex flex-wrap gap-2 sm:gap-3'>
+								{item.tags.slice(0, 3).map((tag) => (
 									<span
 										key={tag}
-										className='rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.2em] text-dawn/60'
+										className='rounded-full border border-white/20 bg-white/5 px-2 py-1 text-xs uppercase tracking-[0.15em] text-dawn/60 sm:px-3 sm:tracking-[0.2em]'
 									>
 										{tag}
 									</span>
 								))}
+								{item.tags.length > 3 && (
+									<span className='rounded-full border border-white/20 bg-white/5 px-2 py-1 text-xs uppercase tracking-[0.15em] text-dawn/60 sm:px-3 sm:tracking-[0.2em]'>
+										+{item.tags.length - 3}
+									</span>
+								)}
 							</div>
 						</div>
 					</article>

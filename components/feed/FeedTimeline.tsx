@@ -16,11 +16,12 @@ import {
 } from '@/lib/effector';
 
 import { FeedCard } from './FeedCard';
-import { PanelSpinner } from '@/components/ui/Spinner';
+import { LoadMoreButton } from './LoadMoreButton';
+import { PostSkeleton } from '@/components/ui/skeletons/PostSkeleton';
 
 function mapPostToFeedCard(post: Post): FeedPost {
 	const authorInfo = post.author;
-	const fullName = authorInfo?.name || `User ${authorInfo.id.slice(0, 6)}`;
+	const fullName = authorInfo?.name || `User ${authorInfo?.id?.slice(0, 6) || 'Unknown'}`;
 	const createdAt = formatRelativeTime(post.created_at);
 	const tags =
 		Array.isArray(post.tags) ?
@@ -54,13 +55,13 @@ export function FeedTimeline() {
 		postsInitRequested,
 	]);
 
-	// Load posts on mount
+	// Load posts on mount only once
 	useEffect(() => {
-		// Only load if no posts yet and posts is defined
-		if (Array.isArray(posts) && posts.length === 0) {
+		// Only load if no posts yet and not loading
+		if (Array.isArray(posts) && posts.length === 0 && !isLoading) {
 			loadPosts();
 		}
-	}, [posts, loadPosts]); // Include dependencies
+	}, []); // Empty dependency array - run only once on mount
 
 	const items = useMemo<FeedPost[]>(() => {
 		if (!Array.isArray(posts) || posts.length === 0) {
@@ -71,7 +72,13 @@ export function FeedTimeline() {
 	}, [posts]);
 
 	if (isLoading) {
-		return <PanelSpinner text='Загружаем ленту...' />;
+		return (
+			<div className='grid gap-6'>
+				{Array.from({ length: 4 }, (_, i) => (
+					<PostSkeleton key={i} />
+				))}
+			</div>
+		);
 	}
 
 	if (error) {
@@ -90,6 +97,7 @@ export function FeedTimeline() {
 					post={post}
 				/>
 			))}
+			<LoadMoreButton />
 		</div>
 	);
 }

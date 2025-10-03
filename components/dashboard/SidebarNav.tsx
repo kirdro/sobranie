@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useUnit } from 'effector-react';
+import toast from 'react-hot-toast';
 import {
 	LuBell,
 	LuCompass,
@@ -15,6 +16,8 @@ import {
 	LuLogIn,
 	LuUserPlus,
 	LuUser,
+	LuMenu,
+	LuX,
 } from 'react-icons/lu';
 
 import { useSession } from '@/components/auth/SessionProvider';
@@ -40,6 +43,7 @@ type SidebarNavProps = {
 export function SidebarNav({ items }: SidebarNavProps) {
 	const pathname = usePathname();
 	const router = useRouter();
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	useSession(); // Access session context
 
 	// Use Effector stores
@@ -50,136 +54,297 @@ export function SidebarNav({ items }: SidebarNavProps) {
 	]);
 
 	const handleLogout = useCallback(async () => {
-		await fetch('/api/auth/logout', { method: 'POST' });
-		onLogout();
-		router.replace('/');
-		router.refresh();
+		try {
+			await fetch('/api/auth/logout', { method: 'POST' });
+			onLogout();
+			toast.success('Вы успешно вышли из системы');
+			router.replace('/');
+			router.refresh();
+		} catch (error) {
+			toast.error('Ошибка при выходе из системы');
+		}
 	}, [router, onLogout]);
 
 	return (
-		<nav className='surface-panel flex h-full flex-col justify-between rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur-2xl'>
-			<div className='space-y-8'>
-				<div className='flex items-center gap-2'>
-					<Link
-						href='/'
-						className='flex items-center gap-2 transition-opacity hover:opacity-90'
-					>
-						<Image
-							src='/logo.svg'
-							alt='Sobranie'
-							width={180}
-							height={60}
-							className='h-12 w-auto'
-							priority
-						/>
-					</Link>
-				</div>
-				<ul className='flex flex-col gap-2'>
-					{items.map((item) => {
-						const Icon = iconMap[item.icon] ?? fallbackIcon;
-						const isActive =
-							pathname === item.href ||
-							(item.href !== '/' &&
-								pathname.startsWith(item.href));
+		<>
+			{/* Mobile Menu Button */}
+			<button
+				type='button'
+				onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+				className='fixed left-4 top-4 z-50 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 backdrop-blur-2xl transition hover:border-accent-teal/50 hover:bg-white/10 lg:hidden'
+				aria-label='Toggle menu'
+			>
+				{isMobileMenuOpen ?
+					<LuX className='h-5 w-5 text-white' />
+				:	<LuMenu className='h-5 w-5 text-white' />
+				}
+			</button>
 
-						return (
-							<li key={item.id}>
+			{/* Mobile Menu Overlay */}
+			{isMobileMenuOpen && (
+				<div
+					className='fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden'
+					onClick={() => setIsMobileMenuOpen(false)}
+				/>
+			)}
+
+			{/* Mobile Menu */}
+			<nav
+				className={`fixed left-0 top-0 z-40 h-full w-80 transform overflow-y-auto border-r border-white/10 bg-midnight/95 backdrop-blur-2xl transition-transform duration-300 ease-in-out lg:hidden ${
+					isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+				}`}
+			>
+				<div className='flex h-full flex-col justify-between p-6 pt-20'>
+					<div className='space-y-8'>
+						<div className='flex items-center gap-2'>
+							<Link
+								href='/'
+								className='flex items-center gap-2 transition-opacity hover:opacity-90'
+								onClick={() => setIsMobileMenuOpen(false)}
+							>
+								<Image
+									src='/logo.svg'
+									alt='Sobranie'
+									width={180}
+									height={60}
+									className='h-10 w-auto'
+									priority
+								/>
+							</Link>
+						</div>
+						<ul className='flex flex-col gap-2'>
+							{items.map((item) => {
+								const Icon = iconMap[item.icon] ?? fallbackIcon;
+								const isActive =
+									pathname === item.href ||
+									(item.href !== '/' &&
+										pathname.startsWith(item.href));
+
+								return (
+									<li key={item.id}>
+										<Link
+											href={item.href}
+											className={`group flex items-center gap-4 rounded-2xl border border-transparent px-4 py-3 text-sm font-medium transition ${
+												isActive ?
+													'border-accent-teal/50 bg-white/10 text-white shadow-neon'
+												:	'text-dawn/60 hover:border-white/10 hover:bg-white/10 hover:text-white'
+											}`}
+											onClick={() => setIsMobileMenuOpen(false)}
+										>
+											<span className='relative'>
+												<span className='absolute inset-0 rounded-full bg-accent-teal/30 blur group-hover:opacity-90' />
+												<Icon className='relative z-10 h-5 w-5' />
+											</span>
+											{item.label}
+										</Link>
+									</li>
+								);
+							})}
+						</ul>
+					</div>
+					<div className='space-y-4'>
+						{isAuthenticated && user ?
+							<div className='space-y-3'>
 								<Link
-									href={item.href}
-									className={`group flex items-center gap-4 rounded-2xl border border-transparent px-4 py-3 text-sm font-medium transition ${
-										isActive ?
-											'border-accent-teal/50 bg-white/10 text-white shadow-neon'
-										:	'text-dawn/60 hover:border-white/10 hover:bg-white/10 hover:text-white'
-									}`}
+									href='/profile'
+									className='group block'
+									onClick={() => setIsMobileMenuOpen(false)}
+								>
+									<div className='flex items-center gap-3 rounded-3xl border border-white/10 bg-white/10 p-4 transition hover:border-accent-teal/50 hover:bg-white/15 hover:shadow-neon'>
+										<div className='flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-semibold text-white group-hover:border-accent-teal/30'>
+											{initialsFromName(user.name || user.email)}
+										</div>
+										<div className='flex-1 text-xs text-dawn/60'>
+											<p className='text-sm font-semibold text-white transition group-hover:text-accent-teal'>
+												{user.name || user.email}
+											</p>
+											<p className='transition group-hover:text-dawn/80'>
+												{user.email}
+											</p>
+										</div>
+										<LuUser className='h-4 w-4 text-dawn/40 transition group-hover:text-accent-teal' />
+									</div>
+								</Link>
+								<button
+									type='button'
+									onClick={() => {
+										handleLogout();
+										setIsMobileMenuOpen(false);
+									}}
+									className='flex w-full items-center justify-center gap-2 rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm uppercase tracking-[0.2em] text-dawn/60 transition hover:border-accent-teal/50 hover:bg-white/10 hover:text-white'
+								>
+									<LuLogOut className='h-4 w-4' />
+									выйти
+								</button>
+							</div>
+						:	<div className='space-y-3'>
+								<Link
+									href='/login'
+									className='group flex items-center gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 text-sm transition hover:border-accent-teal/50 hover:bg-white/10 hover:shadow-neon'
+									onClick={() => setIsMobileMenuOpen(false)}
 								>
 									<span className='relative'>
 										<span className='absolute inset-0 rounded-full bg-accent-teal/30 blur group-hover:opacity-90' />
-										<Icon className='relative z-10 h-5 w-5' />
+										<LuLogIn className='relative z-10 h-5 w-5 text-accent-teal' />
 									</span>
-									{item.label}
+									<div>
+										<p className='font-semibold text-white'>
+											Войти
+										</p>
+										<p className='text-xs text-dawn/60'>
+											В живую сеть сигналов
+										</p>
+									</div>
 								</Link>
-							</li>
-						);
-					})}
-				</ul>
-				<GlowingCube />
-			</div>
-			<div className='space-y-4'>
-				<div className='rounded-3xl border border-white/10 bg-white/5 p-5 text-xs text-dawn/70'>
-					<p className='font-semibold text-white'>ИИ-пульс дня</p>
-					<p className='mt-2 text-dawn/60'>
-						Наблюдаем всплеск обсуждений про realtime RAG.
-						Подготовьте сигналы для вечернего эфира.
-					</p>
+								<Link
+									href='/register'
+									className='group flex items-center gap-3 rounded-3xl border border-white/10 bg-gradient-to-r from-accent-purple/10 via-accent-teal/10 to-accent-amber/10 p-4 text-sm transition hover:from-accent-purple/20 hover:via-accent-teal/20 hover:to-accent-amber/20 hover:shadow-glow'
+									onClick={() => setIsMobileMenuOpen(false)}
+								>
+									<span className='relative'>
+										<span className='absolute inset-0 rounded-full bg-gradient-to-r from-accent-purple via-accent-teal to-accent-amber blur group-hover:opacity-90' />
+										<LuUserPlus className='relative z-10 h-5 w-5 text-white' />
+									</span>
+									<div>
+										<p className='font-semibold text-white'>
+											Регистрация
+										</p>
+										<p className='text-xs text-dawn/60'>
+											Подключиться к Собранию
+										</p>
+									</div>
+								</Link>
+							</div>
+						}
+					</div>
 				</div>
-				{isAuthenticated && user ?
-					<div className='space-y-3'>
+			</nav>
+
+			{/* Desktop Sidebar */}
+			<nav className='surface-panel hidden h-full flex-col justify-between rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur-2xl lg:flex'>
+				<div className='space-y-8'>
+					<div className='flex items-center gap-2'>
 						<Link
-							href='/profile'
-							className='group block'
+							href='/'
+							className='flex items-center gap-2 transition-opacity hover:opacity-90'
 						>
-							<div className='flex items-center gap-3 rounded-3xl border border-white/10 bg-white/10 p-4 transition hover:border-accent-teal/50 hover:bg-white/15 hover:shadow-neon'>
-								<div className='flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-semibold text-white group-hover:border-accent-teal/30'>
-									{initialsFromName(user.name || user.email)}
-								</div>
-								<div className='flex-1 text-xs text-dawn/60'>
-									<p className='text-sm font-semibold text-white transition group-hover:text-accent-teal'>
-										{user.name || user.email}
-									</p>
-									<p className='transition group-hover:text-dawn/80'>
-										{user.email}
-									</p>
-								</div>
-								<LuUser className='h-4 w-4 text-dawn/40 transition group-hover:text-accent-teal' />
-							</div>
-						</Link>
-						<button
-							type='button'
-							onClick={handleLogout}
-							className='flex w-full items-center justify-center gap-2 rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm uppercase tracking-[0.2em] text-dawn/60 transition hover:border-accent-teal/50 hover:bg-white/10 hover:text-white'
-						>
-							<LuLogOut className='h-4 w-4' />
-							выйти
-						</button>
-					</div>
-				:	<div className='space-y-3'>
-						<Link
-							href='/login'
-							className='group flex items-center gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 text-sm transition hover:border-accent-teal/50 hover:bg-white/10 hover:shadow-neon'
-						>
-							<span className='relative'>
-								<span className='absolute inset-0 rounded-full bg-accent-teal/30 blur group-hover:opacity-90' />
-								<LuLogIn className='relative z-10 h-5 w-5 text-accent-teal' />
-							</span>
-							<div>
-								<p className='font-semibold text-white'>
-									Войти
-								</p>
-								<p className='text-xs text-dawn/60'>
-									В живую сеть сигналов
-								</p>
-							</div>
-						</Link>
-						<Link
-							href='/register'
-							className='group flex items-center gap-3 rounded-3xl border border-white/10 bg-gradient-to-r from-accent-purple/10 via-accent-teal/10 to-accent-amber/10 p-4 text-sm transition hover:from-accent-purple/20 hover:via-accent-teal/20 hover:to-accent-amber/20 hover:shadow-glow'
-						>
-							<span className='relative'>
-								<span className='absolute inset-0 rounded-full bg-gradient-to-r from-accent-purple via-accent-teal to-accent-amber blur group-hover:opacity-90' />
-								<LuUserPlus className='relative z-10 h-5 w-5 text-white' />
-							</span>
-							<div>
-								<p className='font-semibold text-white'>
-									Регистрация
-								</p>
-								<p className='text-xs text-dawn/60'>
-									Подключиться к Собранию
-								</p>
-							</div>
+							<Image
+								src='/logo.svg'
+								alt='Sobranie'
+								width={180}
+								height={60}
+								className='h-12 w-auto'
+								priority
+							/>
 						</Link>
 					</div>
-				}
-			</div>
-		</nav>
+					<ul className='flex flex-col gap-2'>
+						{items.map((item) => {
+							const Icon = iconMap[item.icon] ?? fallbackIcon;
+							const isActive =
+								pathname === item.href ||
+								(item.href !== '/' &&
+									pathname.startsWith(item.href));
+
+							return (
+								<li key={item.id}>
+									<Link
+										href={item.href}
+										className={`group flex items-center gap-4 rounded-2xl border border-transparent px-4 py-3 text-sm font-medium transition ${
+											isActive ?
+												'border-accent-teal/50 bg-white/10 text-white shadow-neon'
+											:	'text-dawn/60 hover:border-white/10 hover:bg-white/10 hover:text-white'
+										}`}
+									>
+										<span className='relative'>
+											<span className='absolute inset-0 rounded-full bg-accent-teal/30 blur group-hover:opacity-90' />
+											<Icon className='relative z-10 h-5 w-5' />
+										</span>
+										{item.label}
+									</Link>
+								</li>
+							);
+						})}
+					</ul>
+					<GlowingCube />
+				</div>
+				<div className='space-y-4'>
+					<div className='rounded-3xl border border-white/10 bg-white/5 p-5 text-xs text-dawn/70'>
+						<p className='font-semibold text-white'>ИИ-пульс дня</p>
+						<p className='mt-2 text-dawn/60'>
+							Наблюдаем всплеск обсуждений про realtime RAG.
+							Подготовьте сигналы для вечернего эфира.
+						</p>
+					</div>
+					{isAuthenticated && user ?
+						<div className='space-y-3'>
+							<Link
+								href='/profile'
+								className='group block'
+							>
+								<div className='flex items-center gap-3 rounded-3xl border border-white/10 bg-white/10 p-4 transition hover:border-accent-teal/50 hover:bg-white/15 hover:shadow-neon'>
+									<div className='flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-semibold text-white group-hover:border-accent-teal/30'>
+										{initialsFromName(user.name || user.email)}
+									</div>
+									<div className='flex-1 text-xs text-dawn/60'>
+										<p className='text-sm font-semibold text-white transition group-hover:text-accent-teal'>
+											{user.name || user.email}
+										</p>
+										<p className='transition group-hover:text-dawn/80'>
+											{user.email}
+										</p>
+									</div>
+									<LuUser className='h-4 w-4 text-dawn/40 transition group-hover:text-accent-teal' />
+								</div>
+							</Link>
+							<button
+								type='button'
+								onClick={handleLogout}
+								className='flex w-full items-center justify-center gap-2 rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm uppercase tracking-[0.2em] text-dawn/60 transition hover:border-accent-teal/50 hover:bg-white/10 hover:text-white'
+							>
+								<LuLogOut className='h-4 w-4' />
+								выйти
+							</button>
+						</div>
+					:	<div className='space-y-3'>
+							<Link
+								href='/login'
+								className='group flex items-center gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 text-sm transition hover:border-accent-teal/50 hover:bg-white/10 hover:shadow-neon'
+							>
+								<span className='relative'>
+									<span className='absolute inset-0 rounded-full bg-accent-teal/30 blur group-hover:opacity-90' />
+									<LuLogIn className='relative z-10 h-5 w-5 text-accent-teal' />
+								</span>
+								<div>
+									<p className='font-semibold text-white'>
+										Войти
+									</p>
+									<p className='text-xs text-dawn/60'>
+										В живую сеть сигналов
+									</p>
+								</div>
+							</Link>
+							<Link
+								href='/register'
+								className='group flex items-center gap-3 rounded-3xl border border-white/10 bg-gradient-to-r from-accent-purple/10 via-accent-teal/10 to-accent-amber/10 p-4 text-sm transition hover:from-accent-purple/20 hover:via-accent-teal/20 hover:to-accent-amber/20 hover:shadow-glow'
+							>
+								<span className='relative'>
+									<span className='absolute inset-0 rounded-full bg-gradient-to-r from-accent-purple via-accent-teal to-accent-amber blur group-hover:opacity-90' />
+									<LuUserPlus className='relative z-10 h-5 w-5 text-white' />
+								</span>
+								<div>
+									<p className='font-semibold text-white'>
+										Регистрация
+									</p>
+									<p className='text-xs text-dawn/60'>
+										Подключиться к Собранию
+									</p>
+								</div>
+							</Link>
+						</div>
+					}
+				</div>
+			</nav>
+		</>
 	);
 }

@@ -1,14 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUnit } from 'effector-react';
-import {
-	registerSubmitted,
-	$isLoading,
-	$authError,
-	loginSuccessful,
-} from '@/lib/effector';
+import toast from 'react-hot-toast';
 import { ButtonSpinner } from '@/components/ui/Spinner';
 
 type FormState = {
@@ -28,25 +22,8 @@ const initialState: FormState = {
 export function RegisterForm() {
 	const router = useRouter();
 	const [form, setForm] = useState(initialState);
-
-	// Use Effector stores and events
-	const [isLoading, error, onRegisterSubmit] = useUnit([
-		$isLoading,
-		$authError,
-		registerSubmitted,
-	]);
-
-	// Handle successful registration navigation
-	useEffect(() => {
-		const unsubscribe = loginSuccessful.watch(({ redirect }) => {
-			if (redirect) {
-				router.push(redirect);
-				router.refresh();
-			}
-		});
-
-		return unsubscribe;
-	}, [router]);
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = event.target;
@@ -55,17 +32,20 @@ export function RegisterForm() {
 
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
+		setIsLoading(true);
+		setError(null);
 
-		// Use Effector event to handle registration
-		onRegisterSubmit({
-			email: form.email,
-			password: form.password,
-			name:
-				`${form.firstName} ${form.lastName}`.trim() ||
-				form.firstName ||
-				form.lastName ||
-				'User',
-		});
+		try {
+			// Mock registration for now - will be replaced with real authentication
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+			toast.success('Регистрация прошла успешно!');
+			router.push('/dashboard');
+		} catch (error) {
+			setError('Ошибка при регистрации');
+			toast.error('Ошибка регистрации');
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	return (

@@ -1,3 +1,4 @@
+import { createStore } from 'effector';
 import { fetchCurrentUser } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
 import { clearAuthToken, getAuthToken } from '@/lib/auth/cookies';
@@ -51,3 +52,5 @@ export async function getSessionUser(): Promise<User | null> {
 export function clearSessionCache(): void {
 	userCache = null;
 }
+
+export const $isAuthenticated = createStore<boolean>(false);

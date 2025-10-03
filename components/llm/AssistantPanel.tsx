@@ -1,10 +1,12 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { HiOutlinePaperAirplane, HiOutlineSparkles } from 'react-icons/hi2';
 import { LuBookMarked } from 'react-icons/lu';
 import { HiArrowPath } from 'react-icons/hi2';
+import toast from 'react-hot-toast';
+import { fetchJson } from '@/lib/frontend/fetch-json';
 
 type Message = {
 	role: 'assistant' | 'user';
@@ -20,30 +22,16 @@ const systemSeed: Message[] = [
 	},
 ];
 
-const knowledgeBase = [
-	{
-		title: 'Свежие практики сообществ',
-		excerpt:
-			'Координаторы используют цикл "созыв — разведка — сбор" для быстрой реакции на изменения.',
-	},
-	{
-		title: 'Гайд по RAG',
-		excerpt:
-			'Подготовьте 20-30 эталонных заметок, чтобы ассистент подбирал контекст с нужным тоном.',
-	},
-	{
-		title: 'Сводка за 24 часа',
-		excerpt:
-			'Активность сконцентрирована в канале "Лаборатория RAG" и в эфире "Радио Собрание".',
-	},
-];
+type AssistantResponse = {
+	reply: string;
+	sources: Array<{ title: string; excerpt: string }>;
+};
 
-const emulateLLM = async (prompt: string) => {
-	await new Promise((resolve) => setTimeout(resolve, 620));
-	return {
-		reply: `Сводим для вас главное по запросу \"${prompt}\". Предлагаю начать с обзорной заметки и подключить живой эфир.`,
-		sources: knowledgeBase.slice(0, 2),
-	};
+const fetchAssistantResponse = async (prompt: string): Promise<AssistantResponse> => {
+	return fetchJson<AssistantResponse>('/api/assistant/chat', {
+		method: 'POST',
+		body: { prompt },
+	});
 };
 
 export function AssistantPanel() {
@@ -51,7 +39,7 @@ export function AssistantPanel() {
 
 	const { mutateAsync, isPending } = useMutation({
 		mutationKey: ['assistant'],
-		mutationFn: emulateLLM,
+		mutationFn: fetchAssistantResponse,
 		onSuccess: (result) => {
 			setMessages((prev) => [
 				...prev,
@@ -61,10 +49,16 @@ export function AssistantPanel() {
 					sources: result.sources,
 				},
 			]);
+			if (result.sources && result.sources.length > 0) {
+				setSources(result.sources);
+			}
+		},
+		onError: (error) => {
+			toast.error('Ошибка при обращении к ассистенту');
 		},
 	});
 
-	const sources = useMemo(() => knowledgeBase, []);
+	const [sources, setSources] = useState<Array<{ title: string; excerpt: string }>>([]);
 
 	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();

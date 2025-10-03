@@ -1,8 +1,7 @@
 'use client';
 
-import { LuMessageSquare, LuShare2, LuSignal } from 'react-icons/lu';
-
 import type { FeedPost } from '@/lib/data/feed';
+import { PostActions } from './PostActions';
 
 type FeedCardProps = {
 	post: FeedPost;
@@ -54,20 +53,20 @@ export function FeedCard({ post }: FeedCardProps) {
 					</span>
 				))}
 			</div>
-			<footer className='mt-6 flex items-center gap-6 text-xs text-dawn/60'>
-				<span className='flex items-center gap-2'>
-					<LuMessageSquare className='h-4 w-4' />
-					{post.stats.comments}
-				</span>
-				<span className='flex items-center gap-2'>
-					<LuShare2 className='h-4 w-4' />
-					{post.stats.boosts}
-				</span>
-				<span className='flex items-center gap-2'>
-					<LuSignal className='h-4 w-4' />
-					{post.stats.signals}
-				</span>
-			</footer>
+			<PostActions
+				post={{
+					id: post.id,
+					content: post.content,
+					tags: post.tags,
+					is_liked: false, // TODO: Получать из состояния поста
+					is_reposted: false, // TODO: Получать из состояния поста
+					likes_count: post.stats.boosts,
+					reposts_count: post.stats.signals,
+					comments_count: post.stats.comments,
+					authorId: 'current_user' // TODO: Получать реального автора
+				}}
+				isOwnPost={false} // TODO: Проверять по текущему пользователю
+			/>
 		</article>
 	);
 }

@@ -8,7 +8,7 @@ import { notificationsCopy } from '@/lib/content/notifications';
 import type { NotificationsResponse } from '@/lib/api/types';
 import { fetchJson } from '@/lib/frontend/fetch-json';
 import { useSession } from '@/components/auth/SessionProvider';
-import { PanelSpinner } from '@/components/ui/Spinner';
+import { NotificationSkeleton } from '@/components/ui/skeletons/NotificationSkeleton';
 
 type NotificationEntry = NotificationsResponse['items'][number];
 
@@ -65,7 +65,11 @@ export function NotificationsShell() {
 						</span>
 					</header>
 					{notificationsQuery.isLoading ?
-						<PanelSpinner text='Загружаем уведомления...' />
+						<div className='mt-6 space-y-4'>
+							{Array.from({ length: 3 }, (_, i) => (
+								<NotificationSkeleton key={i} />
+							))}
+						</div>
 					: hasNotifications ?
 						<ul className='mt-6 space-y-4'>
 							{notifications.map((entry) => (

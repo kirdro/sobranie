@@ -4,7 +4,36 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="98062a41-2e79-4b1e-8492-ff896914d863" name="Changes" comment="Add `.prettierignore` file for formatting exclusions&#10;&#10;- Exclude common build, environment-specific, and asset directories from Prettier formatting.&#10;- Add placeholder `tsconfig.tsbuildinfo` file." />
+    <list default="true" id="98062a41-2e79-4b1e-8492-ff896914d863" name="Changes" comment="Add `.prettierignore` file for formatting exclusions&#10;&#10;- Exclude common build, environment-specific, and asset directories from Prettier formatting.&#10;- Add placeholder `tsconfig.tsbuildinfo` file.">
+      <change afterPath="$PROJECT_DIR$/docs/architect/tasks.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/architect/tasks_2.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/posts/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/posts/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bun.lock" beforeDir="false" afterPath="$PROJECT_DIR$/bun.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/auth/LoginForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/auth/LoginForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/auth/RegisterForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/auth/RegisterForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/dashboard/CirclesShell.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/CirclesShell.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/dashboard/DashboardLayout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/DashboardLayout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/dashboard/FeedShell.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/FeedShell.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/dashboard/NotificationsShell.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/NotificationsShell.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/dashboard/ProfileShell.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/ProfileShell.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/dashboard/SidebarNav.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/SidebarNav.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/feed/ActivityStream.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/feed/ActivityStream.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/feed/FeedCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/feed/FeedCard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/feed/FeedComposer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/feed/FeedComposer.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/feed/FeedTimeline.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/feed/FeedTimeline.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/llm/AssistantPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/llm/AssistantPanel.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/api/client.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/api/client.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/api/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/api/types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/auth/session.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/auth/session.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/effector/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/effector/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/effects/posts.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/effects/posts.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/events/posts.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/events/posts.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/stores/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/stores/auth.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/stores/posts.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/stores/posts.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -33,32 +62,33 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "js.debugger.nextJs.config.created.client": "true",
-    "js.debugger.nextJs.config.created.server": "true",
-    "last_opened_file_path": "/home/kirill/projects/sobranie",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "bun",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "ts.external.directory.path": "/home/kirill/projects/sobranie/node_modules/typescript/lib",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;js.debugger.nextJs.config.created.client&quot;: &quot;true&quot;,
+    &quot;js.debugger.nextJs.config.created.server&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/kirill/projects/sobranie&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;bun&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/home/kirill/projects/sobranie/node_modules/typescript/lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/app/images" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/docs/architect" />
       <recent name="$PROJECT_DIR$/docs" />
     </key>
   </component>
@@ -80,7 +110,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-9c94529fcfe0-JavaScript-WS-252.26199.162" />
+        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-WS-252.26830.93" />
       </set>
     </attachedChunks>
   </component>
@@ -100,6 +130,8 @@
       <workItem from="1759233251148" duration="5158000" />
       <workItem from="1759259828965" duration="3037000" />
       <workItem from="1759311361017" duration="6083000" />
+      <workItem from="1759400706516" duration="14949000" />
+      <workItem from="1759470567304" duration="1293000" />
     </task>
     <task id="LOCAL-00001" summary="&quot;Add deployment pipeline with Docker integration, GitHub Actions workflow, and server configuration scripts. Implement production environment setup, monitoring tools, and profile page structure.&quot;">
       <option name="closed" value="true" />

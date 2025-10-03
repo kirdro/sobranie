@@ -57,14 +57,15 @@ export function DashboardLayout({
 
 	return (
 		<div className='relative mx-auto flex w-full max-w-[1440px] flex-1 gap-6 pb-16 lg:gap-8'>
-			<aside className='sticky top-8 hidden h-[calc(100vh-6rem)] w-[260px] flex-shrink-0 lg:block'>
+			{/* Navigation Component handles both mobile and desktop */}
+			<aside className='sticky top-8 h-[calc(100vh-6rem)] w-[260px] flex-shrink-0'>
 				<SidebarNav items={navItems} />
 			</aside>
 
-			<section className='flex min-w-0 flex-1 flex-col gap-6'>
+			<section className='flex min-w-0 flex-1 flex-col gap-6 px-4 pt-16 lg:px-0 lg:pt-0'>
 				{hero && (
 					<header className='space-y-6'>
-						<h1 className='font-display text-hero text-white'>
+						<h1 className='font-display text-2xl text-white sm:text-3xl lg:text-hero'>
 							{hero.title}
 						</h1>
 						{hero.description ?

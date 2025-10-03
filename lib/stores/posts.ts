@@ -1,16 +1,19 @@
 import { createStore, sample, combine } from 'effector';
-import type { Post, PostsFilter, PostsPagination } from '../types';
+import type { Post, PostsFilter, PostsPagination } from '../api/types';
 import {
 	postsRequested,
 	postsInitRequested,
+	loadMorePostsRequested,
 	postCreated,
 	postDeleted,
 	postLiked,
 	postUnliked,
 	postReposted,
+	postUnreposted,
 	postSelected,
 	postModalOpened,
 	postModalClosed,
+	postEditRequested,
 } from '../events';
 import {
 	fetchPostsFx,
@@ -19,7 +22,9 @@ import {
 	likePostFx,
 	unlikePostFx,
 	repostFx,
+	unrepostFx,
 	deletePostFx,
+	editPostFx,
 } from '../effects';
 
 // Posts stores
@@ -76,17 +81,32 @@ export const $hasMorePosts = $postsPagination.map(
 	},
 );
 
-// Handle posts loading
+// Handle posts loading - prevent duplicates
 sample({
 	clock: postsRequested,
+	source: $postsLoading,
+	filter: (loading) => !loading,
 	target: fetchPostsFx,
 	skipVoid: false,
 });
 
-// Handle initial posts loading
+// Handle initial posts loading - prevent duplicates
 sample({
 	clock: postsInitRequested,
+	source: { posts: $posts, loading: $postsLoading },
+	filter: ({ posts, loading }) => !loading && posts.length === 0,
 	target: initPostsFx,
+});
+
+// Handle load more posts
+sample({
+	clock: loadMorePostsRequested,
+	source: $postsPagination,
+	fn: (pagination) => ({
+		page: pagination.page + 1,
+		limit: pagination.limit,
+	}),
+	target: fetchPostsFx,
 });
 
 // Update posts on successful fetch
@@ -152,6 +172,12 @@ sample({
 	skipVoid: false,
 });
 
+sample({
+	clock: postUnreposted,
+	target: unrepostFx,
+	skipVoid: false,
+});
+
 // Update post state after successful like
 sample({
 	clock: likePostFx.done,
@@ -197,6 +223,23 @@ sample({
 					...post,
 					is_reposted: true,
 					reposts_count: post.reposts_count + 1,
+				}
+			:	post,
+		),
+	target: $posts,
+});
+
+// Update post state after successful unrepost
+sample({
+	clock: unrepostFx.done,
+	source: $posts,
+	fn: (posts, { params: postId }) =>
+		posts.map((post) =>
+			post.id === postId ?
+				{
+					...post,
+					is_reposted: false,
+					reposts_count: Math.max(0, post.reposts_count - 1),
 				}
 			:	post,
 		),
@@ -253,6 +296,23 @@ sample({
 	skipVoid: false,
 });
 
+// Handle post editing
+sample({
+	clock: postEditRequested,
+	target: editPostFx,
+	skipVoid: false,
+});
+
+sample({
+	clock: editPostFx.done,
+	source: $posts,
+	fn: (posts, { result: updatedPost }) =>
+		posts.map((post) =>
+			post.id === updatedPost.id ? updatedPost : post
+		),
+	target: $posts,
+});
+
 // Error handling
 sample({
 	clock: [
@@ -260,7 +320,11 @@ sample({
 		initPostsFx.failData,
 		createPostFx.failData,
 		likePostFx.failData,
+		unlikePostFx.failData,
+		repostFx.failData,
+		unrepostFx.failData,
 		deletePostFx.failData,
+		editPostFx.failData,
 	],
 	fn: (error) => error.message,
 	target: $postsError,
@@ -268,7 +332,7 @@ sample({
 
 // Clear errors on new requests
 sample({
-	clock: [postsRequested, postsInitRequested, postCreated, postLiked],
+	clock: [postsRequested, postsInitRequested, postCreated, postLiked, postUnliked, postReposted, postUnreposted, postEditRequested],
 	fn: () => null,
 	target: $postsError,
 	skipVoid: false,

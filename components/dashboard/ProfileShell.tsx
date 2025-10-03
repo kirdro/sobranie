@@ -1,41 +1,89 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUnit } from 'effector-react';
 import { LuMail, LuCalendar, LuPencil, LuSave, LuX } from 'react-icons/lu';
+import toast from 'react-hot-toast';
 
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { $user } from '@/lib/effector';
+import { AvatarUploader } from '@/components/profile/AvatarUploader';
+import { FollowersModal } from '@/components/profile/FollowersModal';
+import { ActivityStats } from '@/components/profile/ActivityStats';
+import { PrivacySettings } from '@/components/profile/PrivacySettings';
 import { initialsFromName } from '@/lib/data/feed';
+import { fetchJson } from '@/lib/frontend/fetch-json';
 
 type EditableField = 'name' | 'bio' | 'location' | 'website' | null;
 
 export function ProfileShell() {
-	const [user] = useUnit([$user]);
+	const [user, setUser] = useState<any>(null);
+	const [isLoading, setIsLoading] = useState(true);
+	const [isSaving, setIsSaving] = useState(false);
 	const [editingField, setEditingField] = useState<EditableField>(null);
 	const [formData, setFormData] = useState({
-		name: user?.name || '',
+		name: '',
 		bio: '',
 		location: '',
 		website: '',
 	});
+	const [followersModalType, setFollowersModalType] = useState<'followers' | 'following' | null>(null);
+
+	useEffect(() => {
+		loadProfile();
+	}, []);
+
+	const loadProfile = async () => {
+		try {
+			const profile = await fetchJson('/api/users/profile');
+			setUser(profile);
+			setFormData({
+				name: profile.name || '',
+				bio: profile.bio || '',
+				location: profile.location || '',
+				website: profile.website || '',
+			});
+		} catch (error) {
+			toast.error('Не удалось загрузить профиль');
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	const handleEdit = (field: EditableField) => {
 		setEditingField(field);
 	};
 
-	const handleSave = () => {
-		// TODO: Implement save functionality
-		setEditingField(null);
+	const handleSave = async () => {
+		setIsSaving(true);
+		try {
+			const result = await fetchJson('/api/users/profile', {
+				method: 'PATCH',
+				body: formData,
+			});
+
+			setUser(result.user);
+			setEditingField(null);
+			toast.success('Профиль обновлён!');
+		} catch (error: any) {
+			if (error.details) {
+				error.details.forEach((detail: string) => {
+					toast.error(detail);
+				});
+			} else {
+				toast.error('Не удалось сохранить изменения');
+			}
+		} finally {
+			setIsSaving(false);
+		}
 	};
 
 	const handleCancel = () => {
 		setEditingField(null);
 		setFormData({
 			name: user?.name || '',
-			bio: '',
-			location: '',
-			website: '',
+			bio: user?.bio || '',
+			location: user?.location || '',
+			website: user?.website || '',
 		});
 	};
 
@@ -43,7 +91,11 @@ export function ProfileShell() {
 		setFormData((prev) => ({ ...prev, [field]: value }));
 	};
 
-	if (!user) {
+	const handleAvatarChange = (avatarUrl: string | null) => {
+		setUser((prev) => ({ ...prev, avatar: avatarUrl }));
+	};
+
+	if (isLoading || !user) {
 		return (
 			<DashboardLayout
 				hero={{
@@ -52,7 +104,8 @@ export function ProfileShell() {
 				}}
 			>
 				<div className='rounded-[28px] border border-white/10 bg-white/5 p-8 text-center backdrop-blur-2xl'>
-					<p className='text-dawn/60'>Загрузка...</p>
+					<div className='animate-spin rounded-full h-8 w-8 border-b-2 border-accent-teal mx-auto mb-4'></div>
+					<p className='text-dawn/60'>Загрузка профиля...</p>
 				</div>
 			</DashboardLayout>
 		);
@@ -70,10 +123,20 @@ export function ProfileShell() {
 				<div className='flex items-start gap-6'>
 					{/* Avatar */}
 					<div className='relative'>
-						<div className='flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-tr from-accent-purple/70 via-accent-teal/60 to-accent-amber/50 text-2xl font-bold text-white shadow-neon'>
-							{initialsFromName(user.name || user.email)}
-							<div className='pointer-events-none absolute inset-0 rounded-3xl border border-white/20' />
-						</div>
+						{user.avatar ? (
+							<div className='relative h-24 w-24 overflow-hidden rounded-3xl border-2 border-white/20'>
+								<img
+									src={user.avatar}
+									alt='Аватар'
+									className='h-full w-full object-cover'
+								/>
+							</div>
+						) : (
+							<div className='flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-tr from-accent-purple/70 via-accent-teal/60 to-accent-amber/50 text-2xl font-bold text-white shadow-neon'>
+								{initialsFromName(user.name || user.email)}
+								<div className='pointer-events-none absolute inset-0 rounded-3xl border border-white/20' />
+							</div>
+						)}
 					</div>
 
 					{/* Profile Info */}
@@ -106,10 +169,11 @@ export function ProfileShell() {
 									/>
 									<button
 										onClick={handleSave}
-										className='flex items-center gap-2 rounded-full border border-accent-teal/50 bg-accent-teal/10 px-3 py-1 text-xs text-accent-teal transition hover:bg-accent-teal/20'
+										disabled={isSaving}
+										className='flex items-center gap-2 rounded-full border border-accent-teal/50 bg-accent-teal/10 px-3 py-1 text-xs text-accent-teal transition hover:bg-accent-teal/20 disabled:opacity-50 disabled:cursor-not-allowed'
 									>
 										<LuSave className='h-3 w-3' />
-										сохранить
+										{isSaving ? 'сохраняем...' : 'сохранить'}
 									</button>
 									<button
 										onClick={handleCancel}
@@ -178,6 +242,17 @@ export function ProfileShell() {
 				</div>
 			</section>
 
+			{/* Avatar Upload Section */}
+			<section className='rounded-[28px] border border-white/10 bg-white/5 p-6 backdrop-blur-2xl'>
+				<h2 className='mb-6 text-xl font-semibold text-white'>
+					Аватар профиля
+				</h2>
+				<AvatarUploader
+					currentAvatar={user.avatar}
+					onAvatarChange={handleAvatarChange}
+				/>
+			</section>
+
 			{/* Additional Profile Sections */}
 			<div className='grid gap-6 xl:grid-cols-2'>
 				{/* Bio Section */}
@@ -211,10 +286,11 @@ export function ProfileShell() {
 							<div className='flex gap-2'>
 								<button
 									onClick={handleSave}
-									className='flex items-center gap-2 rounded-full border border-accent-teal/50 bg-accent-teal/10 px-3 py-1 text-xs text-accent-teal transition hover:bg-accent-teal/20'
+									disabled={isSaving}
+									className='flex items-center gap-2 rounded-full border border-accent-teal/50 bg-accent-teal/10 px-3 py-1 text-xs text-accent-teal transition hover:bg-accent-teal/20 disabled:opacity-50 disabled:cursor-not-allowed'
 								>
 									<LuSave className='h-3 w-3' />
-									сохранить
+									{isSaving ? 'сохраняем...' : 'сохранить'}
 								</button>
 								<button
 									onClick={handleCancel}
@@ -244,7 +320,7 @@ export function ProfileShell() {
 					<div className='mt-6 grid grid-cols-2 gap-4'>
 						<div className='rounded-[20px] border border-white/10 bg-white/5 p-4 text-center'>
 							<div className='text-2xl font-bold text-accent-teal'>
-								0
+								{user.stats?.posts || 0}
 							</div>
 							<div className='text-xs text-dawn/60'>постов</div>
 						</div>
@@ -254,23 +330,45 @@ export function ProfileShell() {
 							</div>
 							<div className='text-xs text-dawn/60'>кругов</div>
 						</div>
-						<div className='rounded-[20px] border border-white/10 bg-white/5 p-4 text-center'>
+						<button
+							onClick={() => setFollowersModalType('followers')}
+							className='rounded-[20px] border border-white/10 bg-white/5 p-4 text-center transition hover:border-white/20 hover:bg-white/10'
+						>
 							<div className='text-2xl font-bold text-accent-amber'>
-								0
+								{user.stats?.followers || 0}
 							</div>
 							<div className='text-xs text-dawn/60'>
 								подписчиков
 							</div>
-						</div>
-						<div className='rounded-[20px] border border-white/10 bg-white/5 p-4 text-center'>
+						</button>
+						<button
+							onClick={() => setFollowersModalType('following')}
+							className='rounded-[20px] border border-white/10 bg-white/5 p-4 text-center transition hover:border-white/20 hover:bg-white/10'
+						>
 							<div className='text-2xl font-bold text-white'>
-								0
+								{user.stats?.following || 0}
 							</div>
 							<div className='text-xs text-dawn/60'>подписок</div>
-						</div>
+						</button>
 					</div>
 				</section>
 			</div>
+
+			{/* Activity Statistics */}
+			<ActivityStats />
+
+			{/* Privacy Settings */}
+			<PrivacySettings />
+
+			{/* Followers/Following Modal */}
+			{followersModalType && (
+				<FollowersModal
+					isOpen={true}
+					onClose={() => setFollowersModalType(null)}
+					userId={user.id}
+					type={followersModalType}
+				/>
+			)}
 		</DashboardLayout>
 	);
 }

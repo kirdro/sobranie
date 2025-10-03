@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
 
 import { Background } from '@components/layout/Background';
+import { Toaster } from '@components/ui/Toaster';
 import { Providers } from './providers';
 
 const inter = Inter({
@@ -52,6 +53,7 @@ export default async function RootLayout({
 					<main className='relative z-10 flex min-h-screen flex-col px-4 pb-8 pt-6 md:px-8'>
 						{children}
 					</main>
+					<Toaster />
 				</Providers>
 			</body>
 		</html>

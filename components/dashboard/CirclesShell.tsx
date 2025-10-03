@@ -8,6 +8,7 @@ import { DashboardLayout } from '@components/dashboard/DashboardLayout';
 import { circlesCopy } from '@/lib/content/circles';
 import type { CirclesResponse } from '@/lib/api/circles';
 import { fetchJson } from '@/lib/frontend/fetch-json';
+import { CircleSkeleton } from '@/components/ui/skeletons/CircleSkeleton';
 import { PanelSpinner } from '@/components/ui/Spinner';
 
 const toneMap: Record<'purple' | 'teal', string> = {
@@ -45,10 +46,28 @@ function mapCirclesToSpotlight(
 	}));
 }
 
+type BacklogItem = {
+	id: string;
+	title: string;
+	due: string;
+	owner: string;
+	progress: number;
+};
+
+type BacklogResponse = {
+	items: BacklogItem[];
+};
+
 export function CirclesShell() {
 	const circlesQuery = useQuery({
 		queryKey: ['circles', 'list'],
 		queryFn: () => fetchJson<CirclesResponse>('/api/circles?limit=6'),
+		staleTime: 60_000,
+	});
+
+	const backlogQuery = useQuery({
+		queryKey: ['backlog', 'weekly'],
+		queryFn: () => fetchJson<BacklogResponse>('/api/backlog/weekly'),
 		staleTime: 60_000,
 	});
 
@@ -59,30 +78,37 @@ export function CirclesShell() {
 
 	return (
 		<DashboardLayout hero={circlesCopy.hero}>
-			<section className='rounded-[28px] border border-white/10 bg-white/5 p-6 backdrop-blur-2xl'>
-				<header className='flex items-center justify-between'>
-					<div>
-						<p className='text-xs uppercase tracking-[0.25em] text-dawn/60'>
-							{circlesCopy.spotlight.label}
-						</p>
-						<h2 className='mt-3 text-xl font-semibold text-white'>
-							Сейчас в фокусе
-						</h2>
+			<section className='rounded-[20px] border border-white/10 bg-white/5 p-4 backdrop-blur-2xl sm:rounded-[28px] sm:p-6'>
+				<header className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-0'>
+					<div className='flex items-center gap-3 sm:flex-col sm:items-start sm:gap-0'>
+						<LuTrendingUp className='h-5 w-5 text-accent-teal sm:hidden' />
+						<div>
+							<p className='text-xs uppercase tracking-[0.25em] text-dawn/60'>
+								{circlesCopy.spotlight.label}
+							</p>
+							<h2 className='mt-1 text-lg font-semibold text-white sm:mt-3 sm:text-xl'>
+								Сейчас в фокусе
+							</h2>
+						</div>
 					</div>
-					<LuTrendingUp className='h-6 w-6 text-accent-teal' />
+					<LuTrendingUp className='hidden h-6 w-6 text-accent-teal sm:block' />
 				</header>
 				{circlesQuery.isLoading ?
-					<PanelSpinner text='Загружаем круги...' />
-				:	<div className='mt-6 grid gap-4 md:grid-cols-2'>
+					<div className='mt-4 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2'>
+						{Array.from({ length: 4 }, (_, i) => (
+							<CircleSkeleton key={i} />
+						))}
+					</div>
+				:	<div className='mt-4 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2'>
 						{spotlight.map((community) => (
 							<article
 								key={community.id}
-								className='relative overflow-hidden rounded-[24px] border border-white/10 bg-white/5 p-4'
+								className='relative overflow-hidden rounded-[20px] border border-white/10 bg-white/5 p-3 sm:rounded-[24px] sm:p-4'
 							>
 								<div
 									className={`absolute inset-0 bg-gradient-to-br ${toneMap[community.tone]} opacity-50`}
 								/>
-								<div className='relative z-10 space-y-3 text-sm text-dawn/70'>
+								<div className='relative z-10 space-y-2 text-sm text-dawn/70 sm:space-y-3'>
 									<div className='flex items-center justify-between'>
 										<div>
 											<p className='text-base font-semibold text-white'>
@@ -125,7 +151,13 @@ export function CirclesShell() {
 					</div>
 				</header>
 				<div className='mt-6 space-y-4'>
-					{circlesCopy.backlog.items.map((item) => (
+					{backlogQuery.isLoading ?
+						<PanelSpinner text='Загружаем план на неделю...' />
+					: backlogQuery.error ?
+						<div className='rounded-[24px] border border-red-500/20 bg-red-500/5 p-4 text-center'>
+							<p className='text-sm text-red-400'>Ошибка загрузки плана</p>
+						</div>
+					: backlogQuery.data?.items.map((item) => (
 						<article
 							key={item.id}
 							className='rounded-[24px] border border-white/10 bg-white/5 p-4'
@@ -146,7 +178,8 @@ export function CirclesShell() {
 								/>
 							</div>
 						</article>
-					))}
+					))
+					}
 				</div>
 			</section>
 		</DashboardLayout>
